@@ -15,6 +15,8 @@ import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/shelf_meta.dart' show shelfMetaByName;
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/custom_ui/panel_style.dart'
+    show PanelThemeScope;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
@@ -72,6 +74,7 @@ class ValuesCard extends StatelessWidget {
     final sect = Section(
       title: card.name,
       tone: card.tone,
+      surface: customEval?.result.surface,
       trailing:
           (at < 0 || doc.actions.onCardMove == null) &&
               doc.actions.onCardReset == null &&
@@ -287,30 +290,37 @@ class _FoldRow extends StatelessWidget {
   final bool open;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(top: Shape.s(4)),
-    child: Pressable(
-      onTap: onTap,
-      builder: (_, h) => Container(
-        height: Shape.z(24),
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: const InspectorHairline().rule),
+  Widget build(BuildContext context) {
+    final theme = PanelThemeScope.of(context);
+    final rule =
+        theme.border?.withValues(alpha: 0.35) ?? const InspectorHairline().rule;
+    return Padding(
+      padding: EdgeInsets.only(top: Shape.s(4)),
+      child: Pressable(
+        onTap: onTap,
+        builder: (_, h) => Container(
+          height: Shape.z(24),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: rule)),
+          ),
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: TextStyles.label(
+                  h || open
+                      ? (theme.fg ?? Grey.g95)
+                      : (theme.muted ?? Grey.g63),
+                ),
+              ),
+              const Spacer(),
+              DisclosureTriangle(open: open, hot: h || open),
+            ],
           ),
         ),
-        child: Row(
-          children: [
-            Text(
-              label,
-              style: TextStyles.label(h || open ? Grey.g95 : Grey.g63),
-            ),
-            const Spacer(),
-            DisclosureTriangle(open: open, hot: h || open),
-          ],
-        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Draws the ≡ grip, three short lines. Dragging an effect card by it moves the effect up or down its stack.

@@ -55,8 +55,13 @@ const ui = {
   xy(label, x, y, opts) { return Object.assign({ type: "xy", label: String(label ?? ""), x: Number(x ?? 0), y: Number(y ?? 0) }, opts); },
   canvas(height, draw, opts) { return Object.assign({ type: "canvas", height: Number(height ?? 96), draw: draw || [] }, opts); },
   svg(height, svg, opts) { return Object.assign({ type: "svg", height: Number(height ?? 96), svg: String(svg ?? "") }, opts); },
-  divider() { return { type: "divider" }; },
-  spacer(size) { return { type: "spacer", size: Number(size ?? 6) }; },
+  box(children, opts) { const list = Array.isArray(children) ? children : (children ? [children] : []); return Object.assign({ type: "box", children: list }, opts); },
+  stack(children, opts) { return Object.assign({ type: "stack", children: children || [] }, opts); },
+  knob(label, value, opts) { return Object.assign({ type: "knob", label: String(label ?? ""), value: Number(value ?? 0) }, opts); },
+  image(src, opts) { return Object.assign({ type: "image", src: String(src ?? "") }, opts); },
+  scene3d(height, opts) { return Object.assign({ type: "scene3d", height: Number(height ?? 120) }, opts); },
+  divider(opts) { return Object.assign({ type: "divider" }, opts); },
+  spacer(size) { return size === undefined ? { type: "spacer" } : { type: "spacer", size: Number(size) }; },
 };
 )JS";
 

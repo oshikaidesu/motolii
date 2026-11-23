@@ -77,53 +77,171 @@ declare namespace MotoliiUi {
     points?: Array<[number, number]>;
   }
 
+  interface PanelShadow {
+    x?: number;
+    y?: number;
+    blur?: number;
+    spread?: number;
+    color?: string;
+  }
+
+  /** Optional VST faceplate & per-control visual styling overrides. */
+  interface PanelStyle {
+    bg?: string;
+    bg2?: string;
+    gradAngle?: number;
+    fg?: string;
+    muted?: string;
+    accent?: string;
+    border?: string;
+    borderWidth?: number;
+    radius?: number;
+    pad?: number;
+    padX?: number;
+    padY?: number;
+    gap?: number;
+    fontSize?: number;
+    letterSpacing?: number;
+    height?: number;
+    mono?: boolean;
+    align?: "left" | "center" | "right";
+    framed?: boolean;
+    shadow?: PanelShadow;
+    controlBg?: string;
+    controlFg?: string;
+    controlBorder?: string;
+  }
+
+  interface Scene3dObject {
+    shape?: "cube" | "sphere" | "torus" | "icosahedron" | "crystal" | "pyramid" | "cone" | "cylinder" | "ring";
+    x?: number;
+    y?: number;
+    z?: number;
+    scale?: number;
+    rx?: number;
+    ry?: number;
+    rz?: number;
+    color?: string;
+    look?: "studio" | "toon" | "wireframe" | "holo" | "clay";
+  }
+
+  interface Scene3dOptions {
+    id?: string;
+    label?: string;
+    shape?: "cube" | "sphere" | "torus" | "icosahedron" | "crystal" | "pyramid" | "cone" | "cylinder" | "ring" | "wavetable" | "gizmo";
+    /** Optional relative or absolute `.glb` / `.obj` model file next to `.ui.js`. */
+    model?: string;
+    look?: "studio" | "toon" | "wireframe" | "holo" | "clay";
+    yaw?: number;
+    pitch?: number;
+    roll?: number;
+    zoom?: number;
+    color?: string;
+    color2?: string;
+    outline?: string;
+    outlineWidth?: number;
+    bg?: string;
+    bg2?: string;
+    lightYaw?: number;
+    lightPitch?: number;
+    rimColor?: string;
+    ambientColor?: string;
+    ambient?: number;
+    gloss?: number;
+    grid?: boolean;
+    axes?: boolean;
+    shadow?: boolean;
+    wireframe?: boolean;
+    warp?: number;
+    phase?: number;
+    harmonics?: number;
+    vertices?: Array<[number, number, number]>;
+    faces?: number[][];
+    objects?: Scene3dObject[];
+    framed?: boolean;
+    style?: PanelStyle;
+  }
+
   interface UiBuilder {
-    column(children: UiNode[], opts?: Record<string, unknown>): UiNode;
-    row(children: UiNode[], opts?: Record<string, unknown>): UiNode;
-    grid(children: UiNode[], opts?: { cols?: number }): UiNode;
-    section(title: string, children: UiNode[], opts?: { open?: boolean }): UiNode;
-    text(text: string, opts?: { muted?: boolean; bold?: boolean }): UiNode;
-    badge(text: string, opts?: { tone?: Tone }): UiNode;
-    meter(value: number, opts?: { label?: string; tone?: Tone }): UiNode;
-    swatch(color: string, opts?: { id?: string; active?: boolean; tip?: string }): UiNode;
-    button(label: string, id?: string, opts?: { accent?: boolean; tone?: Tone; disabled?: boolean }): UiNode;
-    toggle(label: string, value: boolean, opts?: { id?: string; disabled?: boolean }): UiNode;
+    column(children: UiNode[], opts?: { style?: PanelStyle } & Record<string, unknown>): UiNode;
+    row(children: UiNode[], opts?: { style?: PanelStyle } & Record<string, unknown>): UiNode;
+    grid(children: UiNode[], opts?: { cols?: number; style?: PanelStyle }): UiNode;
+    section(title: string, children: UiNode[], opts?: { open?: boolean; style?: PanelStyle }): UiNode;
+    /** Styled faceplate/module box container (background, gradient, thick border, hard/soft shadow). */
+    box(children: UiNode | UiNode[], opts?: PanelStyle & { id?: string; align?: string; inset?: number; style?: PanelStyle }): UiNode;
+    /** Overlay stack container. Children may declare `align` ("topLeft".."bottomRight"|"center"|"fill") and `inset`. */
+    stack(children: UiNode[], opts?: { align?: string }): UiNode;
+    text(text: string, opts?: { muted?: boolean; bold?: boolean; align?: string; style?: PanelStyle }): UiNode;
+    badge(text: string, opts?: { tone?: Tone; align?: string; inset?: number; style?: PanelStyle }): UiNode;
+    meter(value: number, opts?: { label?: string; tone?: Tone; style?: PanelStyle }): UiNode;
+    swatch(color: string, opts?: { id?: string; active?: boolean; tip?: string; style?: PanelStyle }): UiNode;
+    button(label: string, id?: string, opts?: { accent?: boolean; tone?: Tone; disabled?: boolean; style?: PanelStyle }): UiNode;
+    toggle(label: string, value: boolean, opts?: { id?: string; disabled?: boolean; style?: PanelStyle }): UiNode;
+    /** Tactile VST rotary knob (vertical drag, Shift for fine precision, double-click resets to `def`). */
+    knob(
+      label: string,
+      value: number,
+      opts?: {
+        id?: string;
+        min?: number;
+        max?: number;
+        def?: number;
+        step?: number;
+        dec?: number;
+        unit?: string;
+        size?: number;
+        look?: "arc" | "pop" | "hardware" | "minimal";
+        color?: string;
+        trackColor?: string;
+        capColor?: string;
+        borderColor?: string;
+        style?: PanelStyle;
+      }
+    ): UiNode;
     slider(
       label: string,
       value: number,
-      opts?: { id?: string; min?: number; max?: number; step?: number; dec?: number; unit?: string }
+      opts?: { id?: string; min?: number; max?: number; step?: number; dec?: number; unit?: string; style?: PanelStyle }
     ): UiNode;
     number(
       label: string,
       value: number,
-      opts?: { id?: string; min?: number; max?: number; step?: number; dec?: number; unit?: string }
+      opts?: { id?: string; min?: number; max?: number; step?: number; dec?: number; unit?: string; style?: PanelStyle }
     ): UiNode;
-    select(label: string, value: string, options: string[], opts?: { id?: string }): UiNode;
-    input(label: string, value: string, opts?: { id?: string; placeholder?: string }): UiNode;
-    color(label: string, value: string, opts?: { id?: string }): UiNode;
+    select(label: string, value: string, options: string[], opts?: { id?: string; style?: PanelStyle }): UiNode;
+    input(label: string, value: string, opts?: { id?: string; placeholder?: string; style?: PanelStyle }): UiNode;
+    color(label: string, value: string, opts?: { id?: string; style?: PanelStyle }): UiNode;
     xy(
       label: string,
       x: number,
       y: number,
-      opts?: { id?: string; min?: number; max?: number; snap9?: boolean }
+      opts?: { id?: string; min?: number; max?: number; snap9?: boolean; style?: PanelStyle }
     ): UiNode;
     /**
      * Renders standard SVG markup natively via `flutter_svg`.
-     * Use `var(--accent)`, `var(--blend)`, `var(--place)`, `var(--time)`, `var(--layer)`,
-     * `var(--layout)`, `var(--border)`, `var(--muted)`, `var(--text)`, `var(--well)`
-     * so colors adapt automatically to every Motolii skin.
+     * Set `framed: false` to blend seamlessly into a custom faceplate.
      */
     svg(
       height: number,
       svgMarkup: string,
-      opts?: { id?: string; label?: string; fit?: "contain" | "fill" | "cover" }
+      opts?: { id?: string; label?: string; fit?: "contain" | "fill" | "cover"; framed?: boolean; style?: PanelStyle }
     ): UiNode;
     canvas(
       height: number,
       draw: DrawOp[],
-      opts?: { id?: string; label?: string }
+      opts?: { id?: string; label?: string; framed?: boolean; style?: PanelStyle }
     ): UiNode;
-    divider(): UiNode;
+    /** Renders a PNG/WebP/JPG from a relative path next to `.ui.js` or a `data:image/...;base64,...` URI. */
+    image(
+      src: string,
+      opts?: { id?: string; label?: string; height?: number; fit?: "contain" | "fill" | "cover"; framed?: boolean; style?: PanelStyle }
+    ): UiNode;
+    /**
+     * Flutter-native 3D viewport widget (primitives, Serum-style 3D wavetable, `.glb`/`.obj` models,
+     * interactive orbit drag emitting `{ yaw, pitch, x, y, phase, shift }`).
+     */
+    scene3d(height: number, opts?: Scene3dOptions): UiNode;
+    divider(opts?: { style?: PanelStyle }): UiNode;
     spacer(size?: number): UiNode;
   }
 
@@ -165,6 +283,8 @@ declare namespace MotoliiUi {
   interface CardRenderResult {
     /** Parameter names tucked into the collapsible `Parameters >` fold (still keyframeable & Macro-mappable). */
     hide?: string[];
+    /** Optional VST-style custom faceplate styling for the entire Inspector card container. */
+    surface?: PanelStyle;
     /** Root declarative UI node tree. */
     ui: UiNode;
   }

@@ -169,6 +169,7 @@ class _JsPanelToolState extends State<JsPanelTool> {
         if (renderRes.root case final root?)
           PanelTreeView(
             node: root,
+            baseFile: widget.panel.path,
             onAction: (id, value, {live = false}) =>
                 _onAction(ws, id, value, live: live),
           ),

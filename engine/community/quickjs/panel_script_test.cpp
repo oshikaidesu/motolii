@@ -149,5 +149,23 @@ TEST(PanelScript, ExpressionSidecarsExcludeFromShelfAndRenderCleanly) {
   EXPECT_NE(grabLo.find("\"drag\":\"lo\""), std::string::npos) << grabLo;
 }
 
+TEST(PanelScript, EvaluatesVstShowcaseAndNewUiPreludeHelpers) {
+  const std::string listed = panel_list();
+  EXPECT_NE(listed.find("VST Showcase\t"), std::string::npos) << listed;
+
+  const auto panelPath = doc_folders("panels").front() / "VST Showcase.js";
+  std::string err;
+  for (const char* skin :
+       {"Pop 3D", "Wavetable", "Hardware", "Studio", "Retro 98", "Kawaii"}) {
+    const std::string ctx =
+        std::string(R"JSON({"state":{"skin":")JSON") + skin + R"JSON("}})JSON";
+    const std::string tree =
+        panel_eval_render(panelPath.generic_string(), ctx, &err);
+    ASSERT_TRUE(err.empty()) << skin << ": " << err;
+    EXPECT_NE(tree.find("\"type\":\"scene3d\""), std::string::npos) << skin;
+    EXPECT_NE(tree.find("\"type\":\"box\""), std::string::npos) << skin;
+  }
+}
+
 }  // namespace
 }  // namespace motolii

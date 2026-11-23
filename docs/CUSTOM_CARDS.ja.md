@@ -127,10 +127,40 @@ function onCardAction(action, ctx) {
 すべての描画は Motolii のネイティブウィジェットで行われます（HTML / WebView は使いません）。利用可能な全メソッドとオプションの正本は [`shelves/motolii-ui.d.ts`](../shelves/motolii-ui.d.ts) を参照してください。
 
 ### 組み込みコントロール
-- **レイアウト**: `ui.column`, `ui.row`, `ui.grid`, `ui.section`, `ui.divider`, `ui.spacer`
-- **表示**: `ui.text`, `ui.badge`, `ui.meter`, `ui.swatch`
-- **操作**: `ui.button`, `ui.toggle`, `ui.slider`, `ui.number`, `ui.select`, `ui.input`, `ui.color`, `ui.xy`
-- **自由描画**: **`ui.svg`**（推奨）、`ui.canvas`
+- **レイアウト**: `ui.column`, `ui.row`, `ui.grid`, `ui.section`, **`ui.box`**, **`ui.stack`**, `ui.divider`, `ui.spacer`
+- **表示**: `ui.text`, `ui.badge`, `ui.meter`, `ui.swatch`, **`ui.image`**
+- **操作**: `ui.button`, `ui.toggle`, **`ui.knob`**, `ui.slider`, `ui.number`, `ui.select`, `ui.input`, `ui.color`, `ui.xy`
+- **自由描画 / 3D**: **`ui.scene3d`**（Flutter ネイティブ 3D・`.glb`/`.obj`/ウェーブテーブル対応）、**`ui.svg`**、`ui.canvas`
+
+### VST フェイスプレート（`surface` / `style`）と `ui.knob`・`ui.scene3d`
+
+`renderCard(ctx)` の戻り値に `surface` を付けると、カード全体を VST プラグインのフェイスプレートのように独自デザイン化できます（省略時は従来の Motolii 統一スキン）。
+
+```js
+return {
+  hide: ["bounce", "squash"],
+  surface: {
+    bg: "#FFF4C4", fg: "#141414", accent: "#FF3B7F",
+    border: "#141414", borderWidth: 2.5, radius: 14,
+    shadow: { x: 4, y: 4, blur: 0, color: "#141414" },
+  },
+  ui: ui.column([
+    ui.scene3d(120, {
+      id: "orbit", shape: "cube", look: "toon",
+      yaw, pitch, color: "#00D4FF", outline: "#141414", grid: true,
+    }),
+    ui.row([
+      ui.knob("BOUNCE", bounce, { id: "bounce", min: 0, max: 1, look: "pop", color: "#FF3B7F" }),
+      ui.knob("SQUASH", squash, { id: "squash", min: 0, max: 1, look: "pop", color: "#00D4FF" }),
+    ]),
+  ]),
+};
+```
+
+- **`ui.box(children, style)` / `ui.stack(children)`**: 背景グラデーション（`bg` + `bg2`）・太枠・ハード／ソフト影・バッジ重ね配置が可能。
+- **`ui.knob(label, value, { look, color, min, max, def })`**: 上下ドラッグ（Shift で微調整）・ダブルクリック初期化対応の VST ロータリーノブ（`look`: `"arc"` / `"pop"` / `"hardware"` / `"minimal"`）。
+- **`ui.scene3d(height, opts)`**: Flutter 側で完結するネイティブ 3D ビューポート。プリミティブ（`cube`, `sphere`, `torus`, `icosahedron`, `crystal`, `wavetable`, `gizmo`）に加え、`.ui.js` と同じフォルダに置いた **`.glb` / `.obj` モデル**（`model: "mascot.glb"`）の読み込み、5 種のシェーディング（`studio`, `toon`, `wireframe`, `holo`, `clay`）、ドラッグ回転（`{ yaw, pitch, phase }`）に対応します。
+- **`ui.image(src, opts)`**: `.ui.js` からの相対パスの PNG/WebP または `data:image/...;base64,...` を表示できます。
 
 ### `ui.svg(height, svgMarkup, { id?, label?, fit? })`
 標準の SVG 文字列をネイティブ描画（`flutter_svg`）します。`<path>`・`<linearGradient>`・`<radialGradient>`・`stroke-dasharray`・`transform` など SVG 標準の表現がそのまま使えます。

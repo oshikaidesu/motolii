@@ -1,6 +1,25 @@
 // Files the Create and Effects shelves read and write beside their items: the code a user pasted, the names given to
 // the user's files, and the create scripts' folders. Panels import this instead of dart:io.
 import 'dart:io';
+import 'dart:typed_data';
+
+/// Resolves [target] relative to [baseFile]'s folder (when not absolute) and
+/// returns its raw bytes, or null when missing or unreadable.
+Uint8List? readRelativeBytes(String baseFile, String target) {
+  final trimmed = target.trim();
+  if (trimmed.isEmpty) return null;
+  try {
+    final f = trimmed.startsWith('/')
+        ? File(trimmed)
+        : (baseFile.isNotEmpty
+              ? File('${File(baseFile).parent.path}/$trimmed')
+              : File(trimmed));
+    if (!f.existsSync()) return null;
+    return f.readAsBytesSync();
+  } catch (_) {
+    return null;
+  }
+}
 
 /// The paths of the files under [folder], down into its subfolders when [recursive]. None when there is no such folder.
 List<String> filesUnder(String folder, {bool recursive = false}) {

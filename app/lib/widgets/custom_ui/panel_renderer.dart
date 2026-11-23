@@ -1,6 +1,7 @@
 // Shared native Flutter renderer for declarative QuickJS UI trees
 // (used by both Custom Docking Tabs and Effect Custom Inspector Cards).
 // 詳細: docs/design/custom_panels.md
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
@@ -10,8 +11,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/script_files.dart' show readRelativeBytes;
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/custom_ui/panel_knob.dart';
 import 'package:motolii/widgets/custom_ui/panel_node.dart';
+import 'package:motolii/widgets/custom_ui/scene3d_view.dart';
 import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/number_format.dart';
@@ -24,38 +28,70 @@ typedef PanelActionCallback = void Function(
   bool live,
 });
 
-/// Renders a [PanelNode] tree using Motolii's native widgets and current skin.
+/// Renders a [PanelNode] tree using Motolii's native widgets and current skin
+/// (or a creator's VST faceplate theme when `surface` / `style` is declared).
 class PanelTreeView extends StatelessWidget {
-  const PanelTreeView({required this.node, required this.onAction, super.key});
+  const PanelTreeView({
+    required this.node,
+    required this.onAction,
+    this.baseFile = '',
+    super.key,
+  });
 
   final PanelNode node;
   final PanelActionCallback onAction;
+  final String baseFile;
 
   @override
   Widget build(BuildContext context) => _buildNode(context, node);
 
+  Alignment _parseAlign(String align) => switch (align) {
+    'topLeft' => Alignment.topLeft,
+    'topCenter' => Alignment.topCenter,
+    'topRight' => Alignment.topRight,
+    'centerLeft' => Alignment.centerLeft,
+    'centerRight' => Alignment.centerRight,
+    'bottomLeft' => Alignment.bottomLeft,
+    'bottomCenter' => Alignment.bottomCenter,
+    'bottomRight' => Alignment.bottomRight,
+    _ => Alignment.center,
+  };
+
+  TextAlign _parseTextAlign(String align) => switch (align) {
+    'center' => TextAlign.center,
+    'right' => TextAlign.right,
+    _ => TextAlign.left,
+  };
+
   Widget _buildNode(BuildContext context, PanelNode n) {
+    final theme = PanelThemeScope.of(context);
+    final st = n.style;
+
     switch (n.type) {
       case 'column':
+        final gap = st?.gap ?? Shape.s(6);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final (i, c) in n.children.indexed) ...[
-              if (i > 0) SizedBox(height: Shape.s(6)),
+              if (i > 0) SizedBox(height: gap),
               _buildNode(context, c),
             ],
           ],
         );
 
       case 'row':
+        final gap = st?.gap ?? Shape.s(5);
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             for (final (i, c) in n.children.indexed) ...[
-              if (i > 0) SizedBox(width: Shape.s(5)),
+              if (i > 0) SizedBox(width: gap),
               if (c.type == 'spacer')
-                SizedBox(width: Shape.s(c.size ?? 6))
+                (c.size == null
+                    ? const Spacer()
+                    : SizedBox(width: Shape.s(c.size!)))
               else if (c.type == 'badge' || c.type == 'text')
                 _buildNode(context, c)
               else
@@ -67,16 +103,17 @@ class PanelTreeView extends StatelessWidget {
       case 'grid':
         final cols = n.cols.clamp(1, 12);
         final rows = (n.children.length / cols).ceil();
+        final gap = st?.gap ?? Shape.s(4);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var r = 0; r < rows; r++) ...[
-              if (r > 0) SizedBox(height: Shape.s(4)),
+              if (r > 0) SizedBox(height: gap),
               Row(
                 children: [
                   for (var c = 0; c < cols; c++) ...[
-                    if (c > 0) SizedBox(width: Shape.s(4)),
+                    if (c > 0) SizedBox(width: gap),
                     Expanded(
                       child: (r * cols + c) < n.children.length
                           ? _buildNode(context, n.children[r * cols + c])
@@ -89,16 +126,82 @@ class PanelTreeView extends StatelessWidget {
           ],
         );
 
+      case 'box':
+        final nextTheme = theme.mergeStyle(st);
+        final gap = st?.gap ?? Shape.s(5);
+        final pad = st?.resolvePadding() ?? EdgeInsets.all(Shape.s(8));
+        final inner = n.children.length == 1
+            ? _buildNode(context, n.children.first)
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (i, c) in n.children.indexed) ...[
+                    if (i > 0) SizedBox(height: gap),
+                    _buildNode(context, c),
+                  ],
+                ],
+              );
+        final dec =
+            st?.toDecoration(
+              fallbackRadius: 8.0,
+              fallbackBorder: theme.border,
+              fallbackBorderWidth: theme.borderWidth ?? 1.0,
+            ) ??
+            BoxDecoration(
+              color: WindowTokens.card,
+              borderRadius: Shape.round(6),
+              border: Border.all(color: Grey.g20),
+            );
+        final Widget box = Container(
+          height: st?.height,
+          padding: pad,
+          decoration: dec,
+          child: PanelThemeScope(data: nextTheme, child: inner),
+        );
+        if (n.id.isNotEmpty) {
+          return Pressable(
+            key: ValueKey('panel:box:${n.id}'),
+            onTap: n.disabled ? null : () => onAction(n.id, true),
+            builder: (_, _) => box,
+          );
+        }
+        return box;
+
+      case 'stack':
+        return Stack(
+          clipBehavior: Clip.none,
+          alignment: _parseAlign(n.align),
+          children: [
+            for (final (i, c) in n.children.indexed)
+              if (i == 0 && c.align.isEmpty)
+                _buildNode(context, c)
+              else if (c.align == 'fill')
+                Positioned.fill(child: _buildNode(context, c))
+              else
+                Positioned.fill(
+                  child: Align(
+                    alignment: _parseAlign(c.align),
+                    child: Padding(
+                      padding: EdgeInsets.all(c.inset ?? 6.0),
+                      child: _buildNode(context, c),
+                    ),
+                  ),
+                ),
+          ],
+        );
+
       case 'section':
         return _PanelSection(
           title: n.title,
           initialOpen: n.open,
+          style: st,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (final (i, c) in n.children.indexed) ...[
-                if (i > 0) SizedBox(height: Shape.s(5)),
+                if (i > 0) SizedBox(height: st?.gap ?? Shape.s(5)),
                 _buildNode(context, c),
               ],
             ],
@@ -106,50 +209,117 @@ class PanelTreeView extends StatelessWidget {
         );
 
       case 'divider':
-        return Container(height: 1, color: Grey.g20);
+        final col =
+            resolvePanelColor(st?.border ?? '') ??
+            resolvePanelColor(st?.bg ?? '') ??
+            theme.border?.withValues(alpha: 0.35) ??
+            Grey.g20;
+        return Container(height: st?.height ?? 1.0, color: col);
 
       case 'spacer':
         return SizedBox(height: Shape.s(n.size ?? 6));
 
       case 'text':
+        final ink =
+            resolvePanelColor(st?.fg ?? '') ??
+            (n.muted ? (theme.muted ?? Grey.g56) : (theme.fg ?? Grey.g91));
+        final useMono = (st?.mono ?? false) || theme.mono;
+        var ts = (n.bold ? TextStyles.name : TextStyles.micro)(ink);
+        if (st?.fontSize != null || st?.letterSpacing != null || useMono) {
+          ts = ts.copyWith(
+            fontSize: st?.fontSize != null
+                ? TextStyles.px(st!.fontSize!)
+                : null,
+            letterSpacing: st?.letterSpacing,
+            fontFamily: useMono ? 'Menlo' : null,
+          );
+        }
         return Text(
           n.text,
-          style: (n.bold ? TextStyles.name : TextStyles.micro)(
-            n.muted ? Grey.g56 : Grey.g91,
-          ),
+          textAlign: _parseTextAlign(st?.align ?? n.align),
+          style: ts,
         );
 
       case 'badge':
-        final tone = panelToneColor(n.tone);
+        final tone =
+            resolvePanelColor(st?.accent ?? '') ??
+            resolvePanelColor(st?.bg ?? '') ??
+            (n.tone.isEmpty
+                ? (theme.accent ?? Accent.fill)
+                : panelToneColor(n.tone));
+        final customBg = resolvePanelColor(st?.bg ?? '');
+        final customFg = resolvePanelColor(st?.fg ?? '');
+        final customBorder = resolvePanelColor(st?.border ?? '');
+        final bw = st?.borderWidth ?? 1.0;
+        final rad = st?.radius ?? 4.0;
+        final useMono = (st?.mono ?? false) || theme.mono;
         return Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: Shape.s(6),
-            vertical: Shape.s(2),
-          ),
+          padding:
+              st?.resolvePadding() ??
+              EdgeInsets.symmetric(
+                horizontal: Shape.s(6),
+                vertical: Shape.s(2),
+              ),
           decoration: BoxDecoration(
-            color: tone.withValues(alpha: 0.16),
-            borderRadius: Shape.round(4),
-            border: Border.all(color: tone.withValues(alpha: 0.45)),
+            color: customBg ?? tone.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(rad),
+            border: bw > 0
+                ? Border.all(
+                    color: customBorder ?? tone.withValues(alpha: 0.45),
+                    width: bw,
+                  )
+                : null,
+            boxShadow: st?.shadow == null ? null : [st!.shadow!.toBoxShadow()],
           ),
-          child: Text(n.text, style: TextStyles.micro(tone)),
+          child: Text(
+            n.text,
+            style:
+                TextStyles.micro(
+                  customFg ??
+                      (customBg != null ? readableInkOn(customBg) : tone),
+                ).copyWith(
+                  fontSize: st?.fontSize != null
+                      ? TextStyles.px(st!.fontSize!)
+                      : null,
+                  letterSpacing: st?.letterSpacing,
+                  fontWeight: customBg != null ? FontWeight.w800 : null,
+                  fontFamily: useMono ? 'Menlo' : null,
+                ),
+          ),
         );
 
       case 'meter':
-        final tone = panelToneColor(n.tone);
+        final tone =
+            resolvePanelColor(st?.accent ?? '') ??
+            (n.tone.isEmpty
+                ? (theme.accent ?? Accent.fill)
+                : panelToneColor(n.tone));
+        final trackCol =
+            resolvePanelColor(st?.bg ?? '') ?? theme.controlBg ?? Grey.g20;
+        final borderCol = resolvePanelColor(st?.border ?? '') ?? theme.border;
         final v = (n.numValue ?? 0.0).clamp(0.0, 1.0);
+        final rad = st?.radius ?? 3.0;
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (n.label.isNotEmpty) ...[
-              Text(n.label, style: TextStyles.micro(Grey.g56)),
+              Text(
+                n.label,
+                style: TextStyles.micro(
+                  resolvePanelColor(st?.muted ?? '') ?? theme.muted ?? Grey.g56,
+                ),
+              ),
               SizedBox(height: Shape.s(3)),
             ],
             Container(
-              height: Shape.z(6),
+              height: st?.height ?? Shape.z(6),
               decoration: BoxDecoration(
-                color: Grey.g20,
-                borderRadius: Shape.round(3),
+                color: trackCol,
+                borderRadius: BorderRadius.circular(rad),
+                border: borderCol != null && (st?.borderWidth ?? 0) > 0
+                    ? Border.all(color: borderCol, width: st!.borderWidth!)
+                    : null,
               ),
               alignment: Alignment.centerLeft,
               child: FractionallySizedBox(
@@ -157,7 +327,7 @@ class PanelTreeView extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: tone,
-                    borderRadius: Shape.round(3),
+                    borderRadius: BorderRadius.circular(rad),
                   ),
                 ),
               ),
@@ -167,58 +337,126 @@ class PanelTreeView extends StatelessWidget {
 
       case 'swatch':
         final swatchColor = parseHexColor(n.color) ?? Grey.g56;
+        final rad = st?.radius ?? theme.radius ?? 4.0;
+        final borderCol =
+            resolvePanelColor(st?.border ?? '') ?? theme.border ?? Grey.g26;
+        final bw = st?.borderWidth ?? (n.active ? 1.8 : 1.0);
         return Pressable(
           key: n.id.isEmpty ? null : ValueKey('panel:swatch:${n.id}'),
           onTap: n.id.isEmpty ? null : () => onAction(n.id, n.color),
           builder: (_, hot) => Container(
-            height: Shape.z(22),
+            height: st?.height ?? Shape.z(22),
             decoration: BoxDecoration(
               color: swatchColor,
-              borderRadius: Shape.round(4),
+              borderRadius: BorderRadius.circular(rad),
               border: Border.all(
-                color: n.active ? Grey.g95 : (hot ? Grey.g76 : Grey.g26),
-                width: n.active ? 1.8 : 1.0,
+                color: n.active
+                    ? (theme.fg ?? Grey.g95)
+                    : (hot ? Grey.g76 : borderCol),
+                width: n.active ? math.max(1.8, bw) : bw,
               ),
+              boxShadow: st?.shadow == null
+                  ? null
+                  : [st!.shadow!.toBoxShadow()],
             ),
           ),
         );
 
       case 'button':
-        final activeTone = n.accent ? Accent.fill : Grey.g91;
+        final accentCol =
+            resolvePanelColor(st?.accent ?? '') ?? theme.accent ?? Accent.fill;
+        final customBg = resolvePanelColor(st?.bg ?? '');
+        final baseBg = customBg ?? theme.controlBg;
+        final customFg = resolvePanelColor(st?.fg ?? '');
+        final borderCol =
+            resolvePanelColor(st?.border ?? '') ??
+            theme.controlBorder ??
+            theme.border;
+        final bw = st?.borderWidth ?? theme.borderWidth ?? 1.0;
+        final rad = st?.radius ?? theme.radius ?? 5.0;
+        final sh = st?.shadow;
+        final useMono = (st?.mono ?? false) || theme.mono;
+        final isSolidStyled =
+            customBg != null || (n.accent && theme.accent != null);
         return Opacity(
           opacity: n.disabled ? 0.4 : 1.0,
           child: Pressable(
             key: n.id.isEmpty ? null : ValueKey('panel:btn:${n.id}'),
             onTap: n.disabled ? null : () => onAction(n.id, true),
-            builder: (_, hot) => Container(
-              height: Shape.z(24),
-              padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: n.accent
-                    ? Accent.fill.withValues(alpha: hot ? 0.28 : 0.18)
-                    : (hot ? Grey.g26 : InspectorSkin.well),
-                borderRadius: Shape.round(5),
-                border: Border.all(
-                  color: n.accent
-                      ? Accent.fill.withValues(alpha: 0.70)
-                      : Grey.g26,
+            builder: (_, hot) {
+              final fillCol = customBg != null
+                  ? (hot
+                        ? Color.lerp(customBg, DarkGrey.g100, 0.12)!
+                        : customBg)
+                  : (n.accent
+                        ? (theme.accent != null
+                              ? (hot
+                                    ? Color.lerp(
+                                        accentCol,
+                                        DarkGrey.g100,
+                                        0.12,
+                                      )!
+                                    : accentCol)
+                              : accentCol.withValues(alpha: hot ? 0.28 : 0.18))
+                        : (baseBg != null
+                              ? (hot
+                                    ? Color.lerp(baseBg, accentCol, 0.14)!
+                                    : baseBg)
+                              : (hot ? Grey.g26 : InspectorSkin.well)));
+              final textCol =
+                  customFg ??
+                  (isSolidStyled
+                      ? readableInkOn(fillCol)
+                      : (n.accent
+                            ? accentCol
+                            : (theme.controlFg ??
+                                  (hot ? Grey.g95 : Grey.g91))));
+              final strokeCol =
+                  borderCol ??
+                  (n.accent ? accentCol.withValues(alpha: 0.70) : Grey.g26);
+              return Container(
+                height: st?.height ?? Shape.z(24),
+                padding:
+                    st?.resolvePadding() ??
+                    EdgeInsets.symmetric(horizontal: Shape.s(8)),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: fillCol,
+                  borderRadius: BorderRadius.circular(rad),
+                  border: bw > 0
+                      ? Border.all(color: strokeCol, width: bw)
+                      : null,
+                  boxShadow: sh == null ? null : [sh.toBoxShadow()],
                 ),
-              ),
-              child: Text(
-                n.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyles.micro(
-                  n.accent ? activeTone : (hot ? Grey.g95 : Grey.g91),
+                child: Text(
+                  n.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyles.micro(textCol).copyWith(
+                    fontSize: st?.fontSize != null
+                        ? TextStyles.px(st!.fontSize!)
+                        : null,
+                    letterSpacing: st?.letterSpacing,
+                    fontWeight: (isSolidStyled || bw >= 1.8)
+                        ? FontWeight.w800
+                        : null,
+                    fontFamily: useMono ? 'Menlo' : null,
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         );
 
       case 'toggle':
         final on = n.boolValue ?? false;
+        final accentCol =
+            resolvePanelColor(st?.accent ?? '') ?? theme.accent ?? Accent.fill;
+        final borderCol =
+            resolvePanelColor(st?.border ?? '') ??
+            theme.controlBorder ??
+            theme.border;
+        final bw = st?.borderWidth ?? theme.borderWidth ?? 1.0;
         return Pressable(
           key: n.id.isEmpty ? null : ValueKey('panel:toggle:${n.id}'),
           onTap: n.disabled ? null : () => onAction(n.id, !on),
@@ -230,11 +468,15 @@ class PanelTreeView extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: on
-                      ? Accent.fill.withValues(alpha: 0.22)
-                      : (hot ? Grey.g26 : InspectorSkin.well),
+                      ? accentCol.withValues(alpha: 0.22)
+                      : (theme.controlBg ??
+                            (hot ? Grey.g26 : InspectorSkin.well)),
                   borderRadius: Shape.round(3),
                   border: Border.all(
-                    color: on ? Accent.fill : (hot ? Grey.g56 : Grey.g38),
+                    color: on
+                        ? accentCol
+                        : (borderCol ?? (hot ? Grey.g56 : Grey.g38)),
+                    width: bw,
                   ),
                 ),
                 child: on
@@ -242,7 +484,7 @@ class PanelTreeView extends StatelessWidget {
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: Accent.fill,
+                          color: accentCol,
                           borderRadius: Shape.round(1.5),
                         ),
                       )
@@ -254,11 +496,36 @@ class PanelTreeView extends StatelessWidget {
                   n.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyles.micro(hot ? Grey.g95 : Grey.g91),
+                  style: TextStyles.micro(
+                    resolvePanelColor(st?.fg ?? '') ??
+                        theme.fg ??
+                        (hot ? Grey.g95 : Grey.g91),
+                  ),
                 ),
               ),
             ],
           ),
+        );
+
+      case 'knob':
+        return PanelKnob(
+          knobKey: n.id.isEmpty ? null : ValueKey('panel:knob:${n.id}'),
+          label: n.label,
+          value: n.numValue ?? 0.0,
+          min: n.min ?? 0.0,
+          max: n.max ?? 1.0,
+          def: n.def,
+          step: n.step,
+          dec: n.dec,
+          unit: n.unit,
+          size: n.size ?? 44.0,
+          look: n.look.isEmpty ? 'arc' : n.look,
+          color: n.color,
+          trackColor: n.trackColor,
+          capColor: n.capColor,
+          borderColor: n.borderColor,
+          style: st,
+          onChanged: (v, {bool live = false}) => onAction(n.id, v, live: live),
         );
 
       case 'number':
@@ -286,54 +553,96 @@ class PanelTreeView extends StatelessWidget {
           onChange: (v) => onAction(n.id, v, live: true),
           onType: (v) => onAction(n.id, v),
           onDrop: () => onAction(n.id, cur),
-          height: InspectorSkin.tile,
+          height: st?.height ?? InspectorSkin.tile,
           pad: InspectorSkin.tilePad,
         );
 
       case 'select':
+        final accentCol =
+            resolvePanelColor(st?.accent ?? '') ?? theme.accent ?? Accent.fill;
+        final customBg = resolvePanelColor(st?.bg ?? '') ?? theme.controlBg;
+        final borderCol =
+            resolvePanelColor(st?.border ?? '') ??
+            theme.controlBorder ??
+            theme.border;
+        final bw = st?.borderWidth ?? theme.borderWidth ?? 1.0;
+        final rad = st?.radius ?? theme.radius ?? 4.0;
+        final useMono = (st?.mono ?? false) || theme.mono;
+        final solidSelected =
+            st?.accent.isNotEmpty == true || theme.accent != null;
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (n.label.isNotEmpty) ...[
-              Text(n.label, style: TextStyles.micro(Grey.g56)),
+              Text(
+                n.label,
+                style: TextStyles.micro(
+                  resolvePanelColor(st?.muted ?? '') ?? theme.muted ?? Grey.g56,
+                ),
+              ),
               SizedBox(height: Shape.s(3)),
             ],
             Row(
               children: [
                 for (final (i, opt) in n.options.indexed) ...[
-                  if (i > 0) SizedBox(width: Shape.s(3)),
+                  if (i > 0) SizedBox(width: st?.gap ?? Shape.s(3)),
                   Expanded(
                     child: Pressable(
                       key: n.id.isEmpty
                           ? null
                           : ValueKey('panel:opt:${n.id}:$opt'),
                       onTap: () => onAction(n.id, opt),
-                      builder: (_, hot) => Container(
-                        height: Shape.z(22),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: n.stringValue == opt
-                              ? Accent.fill.withValues(alpha: 0.20)
-                              : (hot ? Grey.g26 : InspectorSkin.well),
-                          borderRadius: Shape.round(4),
-                          border: Border.all(
-                            color: n.stringValue == opt
-                                ? Accent.fill.withValues(alpha: 0.65)
-                                : Grey.g26,
+                      builder: (_, hot) {
+                        final selected = n.stringValue == opt;
+                        final bgCol = selected
+                            ? (solidSelected
+                                  ? accentCol
+                                  : accentCol.withValues(alpha: 0.20))
+                            : (customBg ??
+                                  (hot ? Grey.g26 : InspectorSkin.well));
+                        final fgCol = selected
+                            ? (solidSelected
+                                  ? readableInkOn(accentCol)
+                                  : accentCol)
+                            : (resolvePanelColor(st?.fg ?? '') ??
+                                  theme.controlFg ??
+                                  (hot ? Grey.g95 : Grey.g76));
+                        return Container(
+                          height: st?.height ?? Shape.z(22),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: bgCol,
+                            borderRadius: BorderRadius.circular(rad),
+                            border: bw > 0
+                                ? Border.all(
+                                    color: selected
+                                        ? (borderCol ??
+                                              accentCol.withValues(alpha: 0.65))
+                                        : (borderCol ?? Grey.g26),
+                                    width: bw,
+                                  )
+                                : null,
+                            boxShadow: st?.shadow == null
+                                ? null
+                                : [st!.shadow!.toBoxShadow()],
                           ),
-                        ),
-                        child: Text(
-                          opt,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyles.micro(
-                            n.stringValue == opt
-                                ? Accent.fill
-                                : (hot ? Grey.g95 : Grey.g76),
+                          child: Text(
+                            opt,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyles.micro(fgCol).copyWith(
+                              fontSize: st?.fontSize != null
+                                  ? TextStyles.px(st!.fontSize!)
+                                  : null,
+                              fontWeight: selected && solidSelected
+                                  ? FontWeight.w800
+                                  : null,
+                              fontFamily: useMono ? 'Menlo' : null,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -345,21 +654,34 @@ class PanelTreeView extends StatelessWidget {
       case 'input':
       case 'color':
         final swatch = n.type == 'color' ? parseHexColor(n.stringValue) : null;
+        final bgCol =
+            resolvePanelColor(st?.bg ?? '') ??
+            theme.controlBg ??
+            InspectorSkin.well;
+        final borderCol =
+            resolvePanelColor(st?.border ?? '') ??
+            theme.controlBorder ??
+            Grey.g26;
+        final fgCol =
+            resolvePanelColor(st?.fg ?? '') ?? theme.controlFg ?? Grey.g91;
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (n.label.isNotEmpty) ...[
-              Text(n.label, style: TextStyles.micro(Grey.g56)),
+              Text(n.label, style: TextStyles.micro(theme.muted ?? Grey.g56)),
               SizedBox(height: Shape.s(3)),
             ],
             Container(
-              height: Shape.z(22),
+              height: st?.height ?? Shape.z(22),
               padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
               decoration: BoxDecoration(
-                color: InspectorSkin.well,
-                borderRadius: Shape.round(4),
-                border: Border.all(color: Grey.g26),
+                color: bgCol,
+                borderRadius: BorderRadius.circular(st?.radius ?? 4.0),
+                border: Border.all(
+                  color: borderCol,
+                  width: st?.borderWidth ?? 1.0,
+                ),
               ),
               child: Row(
                 children: [
@@ -381,8 +703,8 @@ class PanelTreeView extends StatelessWidget {
                       text: n.stringValue,
                       standing: true,
                       escapes: true,
-                      style: TextStyles.micro(Grey.g91),
-                      cursor: Grey.g95,
+                      style: TextStyles.micro(fgCol),
+                      cursor: fgCol,
                       backgroundCursor: Grey.g20,
                       selection: Role.selected.withValues(alpha: 0.4),
                       onDone: (said) {
@@ -405,6 +727,7 @@ class PanelTreeView extends StatelessWidget {
           min: n.min ?? -1.0,
           max: n.max ?? 1.0,
           snap9: n.snap9,
+          style: st,
           onPick: (nx, ny, {bool live = false}) =>
               onAction(n.id, {'x': nx, 'y': ny}, live: live),
         );
@@ -415,6 +738,8 @@ class PanelTreeView extends StatelessWidget {
           label: n.label,
           height: (n.height ?? 96.0).clamp(32.0, 360.0),
           interactive: n.id.isNotEmpty,
+          framed: n.framed ?? st?.framed ?? true,
+          style: st,
           onPointer: (x, y, phase, {bool live = false}) => onAction(n.id, {
             'x': x,
             'y': y,
@@ -437,8 +762,10 @@ class PanelTreeView extends StatelessWidget {
         return _InteractiveSurface(
           surfaceKey: n.id.isEmpty ? null : ValueKey('panel:svg:${n.id}'),
           label: n.label,
-          height: (n.height ?? 96.0).clamp(32.0, 360.0),
+          height: (n.height ?? 96.0).clamp(20.0, 360.0),
           interactive: n.id.isNotEmpty,
+          framed: n.framed ?? st?.framed ?? true,
+          style: st,
           onPointer: (x, y, phase, {bool live = false}) => onAction(n.id, {
             'x': x,
             'y': y,
@@ -455,6 +782,60 @@ class PanelTreeView extends StatelessWidget {
               : const SizedBox.shrink(),
         );
 
+      case 'image':
+        final bytes = _decodeImageBytes(n.src, baseFile);
+        final fit = switch (n.fit) {
+          'fill' => BoxFit.fill,
+          'cover' => BoxFit.cover,
+          _ => BoxFit.contain,
+        };
+        return _InteractiveSurface(
+          surfaceKey: n.id.isEmpty ? null : ValueKey('panel:img:${n.id}'),
+          label: n.label,
+          height: (n.height ?? 96.0).clamp(24.0, 360.0),
+          interactive: n.id.isNotEmpty,
+          framed: n.framed ?? st?.framed ?? false,
+          style: st,
+          onPointer: (x, y, phase, {bool live = false}) => onAction(n.id, {
+            'x': x,
+            'y': y,
+            'phase': phase,
+            'shift': HardwareKeyboard.instance.isShiftPressed,
+          }, live: live),
+          builder: (size) => bytes != null
+              ? Image.memory(
+                  bytes,
+                  width: size.width,
+                  height: size.height,
+                  fit: fit,
+                  gaplessPlayback: true,
+                )
+              : const SizedBox.shrink(),
+        );
+
+      case 'scene3d':
+        return PanelScene3d(
+          surfaceKey: n.id.isEmpty ? null : ValueKey('panel:3d:${n.id}'),
+          spec: n.scene3d ?? const Scene3dSpec(),
+          height: (n.height ?? 120.0).clamp(48.0, 360.0),
+          interactive: n.id.isNotEmpty,
+          label: n.label,
+          baseFile: baseFile,
+          framed: n.framed ?? st?.framed ?? true,
+          style: st,
+          onOrbit: n.id.isEmpty
+              ? null
+              : (yaw, pitch, x, y, phase, {bool live = false}) =>
+                    onAction(n.id, {
+                      'yaw': yaw,
+                      'pitch': pitch,
+                      'x': x,
+                      'y': y,
+                      'phase': phase,
+                      'shift': HardwareKeyboard.instance.isShiftPressed,
+                    }, live: live),
+        );
+
       default:
         return Text(
           'Unknown node: ${n.type}',
@@ -464,16 +845,33 @@ class PanelTreeView extends StatelessWidget {
   }
 }
 
+Uint8List? _decodeImageBytes(String src, String baseFile) {
+  final trimmed = src.trim();
+  if (trimmed.isEmpty) return null;
+  if (trimmed.startsWith('data:image/')) {
+    final comma = trimmed.indexOf(',');
+    if (comma < 0) return null;
+    try {
+      return base64Decode(trimmed.substring(comma + 1));
+    } catch (_) {
+      return null;
+    }
+  }
+  return readRelativeBytes(baseFile, trimmed);
+}
+
 class _PanelSection extends StatefulWidget {
   const _PanelSection({
     required this.title,
     required this.initialOpen,
     required this.child,
+    this.style,
   });
 
   final String title;
   final bool initialOpen;
   final Widget child;
+  final PanelStyle? style;
 
   @override
   State<_PanelSection> createState() => _PanelSectionState();
@@ -483,41 +881,62 @@ class _PanelSectionState extends State<_PanelSection> {
   late bool _open = widget.initialOpen;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.all(Shape.s(6)),
-    decoration: BoxDecoration(
-      color: WindowTokens.card,
-      borderRadius: Shape.round(6),
-      border: Border.all(color: Grey.g20),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Pressable(
-          onTap: () => setState(() => _open = !_open),
-          builder: (_, hot) => Row(
-            children: [
-              CustomPaint(
-                size: const Size(8, 8),
-                painter: Draw(
-                  (c, s) =>
-                      _drawChevron(c, s, _open, hot ? Grey.g95 : Grey.g56),
-                  (_open, hot),
-                ),
-              ),
-              SizedBox(width: Shape.s(4)),
-              Text(
-                widget.title,
-                style: TextStyles.micro(hot ? Grey.g95 : Grey.g76),
-              ),
-            ],
+  Widget build(BuildContext context) {
+    final theme = PanelThemeScope.of(context);
+    final st = widget.style;
+    final dec =
+        st?.toDecoration(
+          fallbackBg: theme.controlBg ?? WindowTokens.card,
+          fallbackBorder: theme.border ?? Grey.g20,
+          fallbackRadius: theme.radius ?? 6.0,
+          forceBorder: true,
+        ) ??
+        BoxDecoration(
+          color: theme.controlBg ?? WindowTokens.card,
+          borderRadius: BorderRadius.circular(theme.radius ?? 6.0),
+          border: Border.all(
+            color: theme.border ?? Grey.g20,
+            width: theme.borderWidth ?? 1.0,
           ),
-        ),
-        if (_open) ...[SizedBox(height: Shape.s(5)), widget.child],
-      ],
-    ),
-  );
+        );
+    return Container(
+      padding: st?.resolvePadding() ?? EdgeInsets.all(Shape.s(6)),
+      decoration: dec,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Pressable(
+            onTap: () => setState(() => _open = !_open),
+            builder: (_, hot) => Row(
+              children: [
+                CustomPaint(
+                  size: const Size(8, 8),
+                  painter: Draw(
+                    (c, s) => _drawChevron(
+                      c,
+                      s,
+                      _open,
+                      hot ? (theme.fg ?? Grey.g95) : (theme.muted ?? Grey.g56),
+                    ),
+                    (_open, hot, theme.fg, theme.muted),
+                  ),
+                ),
+                SizedBox(width: Shape.s(4)),
+                Text(
+                  widget.title,
+                  style: TextStyles.micro(
+                    hot ? (theme.fg ?? Grey.g95) : (theme.fg ?? Grey.g76),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_open) ...[SizedBox(height: Shape.s(5)), widget.child],
+        ],
+      ),
+    );
+  }
 }
 
 class _XyPad extends StatelessWidget {
@@ -530,6 +949,7 @@ class _XyPad extends StatelessWidget {
     required this.max,
     required this.snap9,
     required this.onPick,
+    this.style,
   });
 
   final Key? padKey;
@@ -539,6 +959,7 @@ class _XyPad extends StatelessWidget {
   final double min;
   final double max;
   final bool snap9;
+  final PanelStyle? style;
   final void Function(double x, double y, {bool live}) onPick;
 
   (double, double) _toValue(Offset local, Size size) {
@@ -565,9 +986,19 @@ class _XyPad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = PanelThemeScope.of(context);
+    final st = style;
     final span = math.max(1e-6, max - min);
     final u = ((x - min) / span).clamp(0.0, 1.0);
     final v = ((y - min) / span).clamp(0.0, 1.0);
+    final accentCol =
+        resolvePanelColor(st?.accent ?? '') ?? theme.accent ?? Accent.fill;
+    final bgCol =
+        resolvePanelColor(st?.bg ?? '') ??
+        theme.controlBg ??
+        InspectorSkin.well;
+    final borderCol =
+        resolvePanelColor(st?.border ?? '') ?? theme.controlBorder ?? Grey.g26;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -576,11 +1007,11 @@ class _XyPad extends StatelessWidget {
         if (label.isNotEmpty) ...[
           Row(
             children: [
-              Text(label, style: TextStyles.micro(Grey.g56)),
+              Text(label, style: TextStyles.micro(theme.muted ?? Grey.g56)),
               const Spacer(),
               Text(
                 '${formatNumber(x, 2)}, ${formatNumber(y, 2)}',
-                style: TextStyles.micro(Grey.g76),
+                style: TextStyles.micro(theme.fg ?? Grey.g76),
               ),
             ],
           ),
@@ -588,7 +1019,7 @@ class _XyPad extends StatelessWidget {
         ],
         LayoutBuilder(
           builder: (context, box) {
-            final size = Size(box.maxWidth, Shape.z(64));
+            final size = Size(box.maxWidth, st?.height ?? Shape.z(64));
             return GestureDetector(
               key: padKey,
               behavior: HitTestBehavior.opaque,
@@ -604,15 +1035,26 @@ class _XyPad extends StatelessWidget {
               child: Container(
                 height: size.height,
                 decoration: BoxDecoration(
-                  color: InspectorSkin.well,
-                  borderRadius: Shape.round(6),
-                  border: Border.all(color: Grey.g26),
+                  color: bgCol,
+                  borderRadius: BorderRadius.circular(st?.radius ?? 6.0),
+                  border: Border.all(
+                    color: borderCol,
+                    width: st?.borderWidth ?? 1.0,
+                  ),
                 ),
                 child: CustomPaint(
                   size: size,
                   painter: Draw(
-                    (c, s) => _drawXyPad(c, s, u, v, snap9: snap9),
-                    (u, v, snap9),
+                    (c, s) => _drawXyPad(
+                      c,
+                      s,
+                      u,
+                      v,
+                      snap9: snap9,
+                      accent: accentCol,
+                      gridLine: borderCol,
+                    ),
+                    (u, v, snap9, accentCol, borderCol),
                   ),
                 ),
               ),
@@ -624,13 +1066,21 @@ class _XyPad extends StatelessWidget {
   }
 }
 
-void _drawXyPad(Canvas c, Size s, double u, double v, {required bool snap9}) {
+void _drawXyPad(
+  Canvas c,
+  Size s,
+  double u,
+  double v, {
+  required bool snap9,
+  required Color accent,
+  required Color gridLine,
+}) {
   const pad = 10.0;
   final w = math.max(1.0, s.width - pad * 2);
   final h = math.max(1.0, s.height - pad * 2);
 
   final line = Paint()
-    ..color = Grey.g26
+    ..color = gridLine
     ..strokeWidth = 1;
   c.drawLine(Offset(pad + w * 0.5, pad), Offset(pad + w * 0.5, pad + h), line);
   c.drawLine(Offset(pad, pad + h * 0.5), Offset(pad + w, pad + h * 0.5), line);
@@ -652,7 +1102,7 @@ void _drawXyPad(Canvas c, Size s, double u, double v, {required bool snap9}) {
       Offset(pad + w * 0.5, pad + h * 0.5),
       Offset(px, py),
       Paint()
-        ..color = Accent.fill.withValues(alpha: 0.70)
+        ..color = accent.withValues(alpha: 0.70)
         ..strokeWidth = 1.6
         ..strokeCap = StrokeCap.round,
     );
@@ -660,9 +1110,9 @@ void _drawXyPad(Canvas c, Size s, double u, double v, {required bool snap9}) {
   c.drawCircle(
     Offset(px, py),
     5.5,
-    Paint()..color = Accent.fill.withValues(alpha: 0.25),
+    Paint()..color = accent.withValues(alpha: 0.25),
   );
-  c.drawCircle(Offset(px, py), 3.5, Paint()..color = Accent.fill);
+  c.drawCircle(Offset(px, py), 3.5, Paint()..color = accent);
 }
 
 void _drawChevron(Canvas c, Size s, bool open, Color col) {
@@ -687,21 +1137,25 @@ void _drawChevron(Canvas c, Size s, bool open, Color col) {
   c.drawPath(path, p);
 }
 
-/// Shared interactive vector surface for both `ui.canvas` and `ui.svg`.
+/// Shared interactive vector/image surface for `ui.canvas`, `ui.svg`, and `ui.image`.
 class _InteractiveSurface extends StatefulWidget {
   const _InteractiveSurface({
     this.surfaceKey,
     required this.label,
     required this.height,
     required this.interactive,
+    required this.framed,
     required this.onPointer,
     required this.builder,
+    this.style,
   });
 
   final Key? surfaceKey;
   final String label;
   final double height;
   final bool interactive;
+  final bool framed;
+  final PanelStyle? style;
   final void Function(double x, double y, String phase, {bool live}) onPointer;
   final Widget Function(Size size) builder;
 
@@ -723,30 +1177,50 @@ class _InteractiveSurfaceState extends State<_InteractiveSurface> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = PanelThemeScope.of(context);
+    final st = widget.style;
     final h = Shape.z(widget.height);
+    final rad = st?.radius ?? 6.0;
+    final bg = resolvePanelColor(st?.bg ?? '');
+    final borderCol = resolvePanelColor(st?.border ?? '') ?? Grey.g26;
+    final bw = st?.borderWidth ?? 1.0;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.label.isNotEmpty) ...[
-          Text(widget.label, style: TextStyles.micro(Grey.g56)),
+          Text(widget.label, style: TextStyles.micro(theme.muted ?? Grey.g56)),
           SizedBox(height: Shape.s(3)),
         ],
         LayoutBuilder(
           builder: (context, box) {
             final size = Size(box.maxWidth, h);
-            final surface = Container(
-              height: h,
-              decoration: BoxDecoration(
-                color: InspectorSkin.well,
-                borderRadius: Shape.round(6),
-                border: Border.all(color: Grey.g26),
-              ),
-              child: ClipRRect(
-                borderRadius: Shape.round(5),
-                child: widget.builder(size),
-              ),
-            );
+            final surface = widget.framed
+                ? Container(
+                    height: h,
+                    decoration: BoxDecoration(
+                      color: bg ?? InspectorSkin.well,
+                      borderRadius: BorderRadius.circular(rad),
+                      border: bw > 0
+                          ? Border.all(color: borderCol, width: bw)
+                          : null,
+                      boxShadow: st?.shadow == null
+                          ? null
+                          : [st!.shadow!.toBoxShadow()],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(math.max(0, rad - 1)),
+                      child: widget.builder(size),
+                    ),
+                  )
+                : SizedBox(
+                    height: h,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(st?.radius ?? 0),
+                      child: widget.builder(size),
+                    ),
+                  );
             if (!widget.interactive) return surface;
             return GestureDetector(
               key: widget.surfaceKey,

@@ -7,6 +7,7 @@ import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/custom_ui/panel_style.dart';
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/forms/forms.dart';
 
@@ -19,6 +20,7 @@ class Section extends StatelessWidget {
     required this.children,
     required this.trailing,
     required this.tone,
+    this.surface,
   });
 
   /// The heading text. It also names the card's fold flag in the document.
@@ -32,6 +34,9 @@ class Section extends StatelessWidget {
 
   /// The colour of the card's badge.
   final Color tone;
+
+  /// Optional VST-style custom faceplate styling declared by a `.ui.js` card.
+  final PanelStyle? surface;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +52,12 @@ class Section extends StatelessWidget {
       doc.flag('fold.$title', open);
     }
 
+    final surf = surface;
+    final customFg = surf != null ? resolvePanelColor(surf.fg) : null;
+    final customAccent = surf != null ? resolvePanelColor(surf.accent) : null;
+    final badgeTone = customAccent ?? tone;
+    final useMono = surf?.mono ?? false;
+
     final head = Pressable(
       onTap: toggle,
       builder: (_, h) => SizedBox(
@@ -56,17 +67,20 @@ class Section extends StatelessWidget {
             // The mark is centred in its box and the gap after it equals the card's inset, so it has equal space on both sides.
             DisclosureTriangle(open: open, hot: h),
             SizedBox(width: InspectorSkin.inset),
-            layerBadge(tone),
+            layerBadge(badgeTone),
             SizedBox(width: Shape.s(6)),
             Expanded(
               child: Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyles.title(h ? Grey.g100 : Grey.g95).copyWith(
-                  fontSize: TextStyles.px(12),
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyles.title(customFg ?? (h ? Grey.g100 : Grey.g95))
+                    .copyWith(
+                      fontSize: TextStyles.px(surf?.fontSize ?? 12),
+                      letterSpacing: surf?.letterSpacing ?? 0,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: useMono ? 'Menlo' : null,
+                    ),
               ),
             ),
             ?trailing,
@@ -75,11 +89,14 @@ class Section extends StatelessWidget {
       ),
     );
     final body = open ? children : const <Widget>[];
+    final pad =
+        surf?.resolvePadding() ??
+        EdgeInsets.symmetric(
+          horizontal: InspectorSkin.inset,
+          vertical: InspectorSkin.insetY,
+        );
     final content = Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: InspectorSkin.inset,
-        vertical: InspectorSkin.insetY,
-      ),
+      padding: pad,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -106,6 +123,23 @@ class Section extends StatelessWidget {
         ],
       ),
     );
+    if (surf != null) {
+      final inherited = const PanelThemeData().mergeStyle(surf);
+      final bottomMargin = surf.shadow != null
+          ? (InspectorSkin.gap + surf.shadow!.y.abs() + surf.shadow!.blur * 0.4)
+          : InspectorSkin.gap;
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottomMargin),
+        child: Container(
+          decoration: surf.toDecoration(
+            fallbackBg: InspectorSkin.card,
+            fallbackBorder: Grey.g26,
+            fallbackRadius: 8.0,
+          ),
+          child: PanelThemeScope(data: inherited, child: content),
+        ),
+      );
+    }
     return Padding(
       padding: EdgeInsets.only(bottom: InspectorSkin.gap),
       child: Forms.worn.card(

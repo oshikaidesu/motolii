@@ -8,6 +8,12 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/custom_ui/panel_style.dart';
+import 'package:motolii/widgets/custom_ui/scene3d_view.dart' show Scene3dSpec;
+
+export 'package:motolii/widgets/custom_ui/panel_style.dart';
+export 'package:motolii/widgets/custom_ui/scene3d_view.dart'
+    show Scene3dObjectSpec, Scene3dSpec;
 
 /// Metadata for one `.js` custom tab discovered under `shelves/panels/` or user `panels/`.
 typedef PanelDescriptor = ({
@@ -202,6 +208,7 @@ class PanelNode {
     this.max,
     this.step,
     this.dec,
+    this.def,
     this.size,
     this.height,
     this.cols = 3,
@@ -215,7 +222,17 @@ class PanelNode {
     this.options = const [],
     this.draw = const [],
     this.svg = '',
+    this.src = '',
     this.fit = 'contain',
+    this.look = '',
+    this.trackColor = '',
+    this.capColor = '',
+    this.borderColor = '',
+    this.align = '',
+    this.inset,
+    this.framed,
+    this.style,
+    this.scene3d,
     this.children = const [],
   });
 
@@ -238,6 +255,7 @@ class PanelNode {
   final double? max;
   final double? step;
   final int? dec;
+  final double? def;
   final double? size;
   final double? height;
   final int cols;
@@ -251,7 +269,17 @@ class PanelNode {
   final List<String> options;
   final List<CanvasDrawOp> draw;
   final String svg;
+  final String src;
   final String fit;
+  final String look;
+  final String trackColor;
+  final String capColor;
+  final String borderColor;
+  final String align;
+  final double? inset;
+  final bool? framed;
+  final PanelStyle? style;
+  final Scene3dSpec? scene3d;
   final List<PanelNode> children;
 
   static PanelNode? fromJson(Object? raw) {
@@ -259,6 +287,15 @@ class PanelNode {
     final type = raw['type']?.toString() ?? '';
     if (type.isEmpty) return null;
     final val = raw['value'];
+    // Allow shorthand visual properties directly on `box` / controls as well as nested `style: { ... }`.
+    final style =
+        PanelStyle.fromJson(raw['style']) ??
+        (type == 'box' ? PanelStyle.fromJson(raw) : null);
+    final childList = <PanelNode>[
+      if (raw['children'] is List)
+        for (final c in raw['children'] as List) ?PanelNode.fromJson(c),
+      if (raw['child'] is Map) ?PanelNode.fromJson(raw['child']),
+    ];
     return PanelNode(
       type: type,
       id: raw['id']?.toString() ?? '',
@@ -279,6 +316,7 @@ class PanelNode {
       max: raw['max'] is num ? (raw['max'] as num).toDouble() : null,
       step: raw['step'] is num ? (raw['step'] as num).toDouble() : null,
       dec: raw['dec'] is num ? (raw['dec'] as num).toInt() : null,
+      def: raw['def'] is num ? (raw['def'] as num).toDouble() : null,
       size: raw['size'] is num ? (raw['size'] as num).toDouble() : null,
       height: raw['height'] is num ? (raw['height'] as num).toDouble() : null,
       cols: raw['cols'] is num ? (raw['cols'] as num).toInt().clamp(1, 12) : 3,
@@ -298,11 +336,18 @@ class PanelNode {
           for (final d in raw['draw'] as List) ?CanvasDrawOp.fromJson(d),
       ],
       svg: raw['svg']?.toString() ?? '',
+      src: raw['src']?.toString() ?? '',
       fit: raw['fit']?.toString() ?? 'contain',
-      children: [
-        if (raw['children'] is List)
-          for (final c in raw['children'] as List) ?PanelNode.fromJson(c),
-      ],
+      look: raw['look']?.toString() ?? '',
+      trackColor: raw['trackColor']?.toString() ?? '',
+      capColor: raw['capColor']?.toString() ?? '',
+      borderColor: raw['borderColor']?.toString() ?? '',
+      align: raw['align']?.toString() ?? '',
+      inset: raw['inset'] is num ? (raw['inset'] as num).toDouble() : null,
+      framed: raw['framed'] is bool ? raw['framed'] as bool : null,
+      style: style,
+      scene3d: type == 'scene3d' ? Scene3dSpec.fromJson(raw) : null,
+      children: childList,
     );
   }
 }
@@ -471,11 +516,12 @@ PanelActionResult parsePanelActionResponse(String rawJson) {
   }
 }
 
-/// Parsed result of `motolii_card_ui_render`: supports either `{ hide: [...], ui: {...} }`
+/// Parsed result of `motolii_card_ui_render`: supports `{ hide?, surface?, ui }`
 /// or a bare `PanelNode` directly.
 typedef CardUiRenderResult = ({
   PanelNode? root,
   Set<String> hide,
+  PanelStyle? surface,
   String? error,
 });
 
@@ -483,12 +529,18 @@ CardUiRenderResult parseCardUiRenderResponse(String rawJson) {
   try {
     final decoded = jsonDecode(rawJson);
     if (decoded is! Map) {
-      return (root: null, hide: const {}, error: 'Invalid card UI response');
+      return (
+        root: null,
+        hide: const {},
+        surface: null,
+        error: 'Invalid card UI response',
+      );
     }
     if (decoded['ok'] != true) {
       return (
         root: null,
         hide: const {},
+        surface: null,
         error: decoded['error']?.toString() ?? 'Card UI render failed',
       );
     }
@@ -498,10 +550,12 @@ CardUiRenderResult parseCardUiRenderResponse(String rawJson) {
         if (payload['hide'] is List)
           for (final h in payload['hide'] as List) h.toString(),
       };
+      final surface = PanelStyle.fromJson(payload['surface']);
       final root = PanelNode.fromJson(payload['ui']);
       return (
         root: root,
         hide: hide,
+        surface: surface,
         error: root == null ? 'Card UI `ui` field must be a UI node' : null,
       );
     }
@@ -509,10 +563,16 @@ CardUiRenderResult parseCardUiRenderResponse(String rawJson) {
     return (
       root: root,
       hide: const {},
+      surface: null,
       error: root == null ? 'renderCard(ctx) must return a UI node' : null,
     );
   } catch (e) {
-    return (root: null, hide: const {}, error: 'Card UI JSON error: $e');
+    return (
+      root: null,
+      hide: const {},
+      surface: null,
+      error: 'Card UI JSON error: $e',
+    );
   }
 }
 

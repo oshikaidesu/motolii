@@ -351,7 +351,11 @@ class _CustomCardBodyState extends State<CustomCardBody> {
             SizedBox(height: Shape.s(5)),
           ],
           if (active.root case final root?)
-            PanelTreeView(node: root, onAction: _onAction),
+            PanelTreeView(
+              node: root,
+              baseFile: widget.ui.uiFile,
+              onAction: _onAction,
+            ),
         ],
       ),
     );

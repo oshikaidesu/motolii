@@ -1,5 +1,6 @@
 // Unit & widget tests for WebView-less JS Custom Panels (panel_node + panel_renderer).
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,8 @@ import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/custom_ui/panel_node.dart';
 import 'package:motolii/widgets/custom_ui/panel_renderer.dart';
+import 'package:motolii/widgets/custom_ui/scene3d_view.dart'
+    show parseGlbMesh, parseObjMesh;
 
 void main() {
   test('parses panel list, render tree, and action ops cleanly', () {
@@ -584,4 +587,196 @@ struct Params {
       expect(find.text('Grab Lo'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'VST primitives: ui.knob drag/reset, ui.scene3d orbit drag, ui.box, ui.stack, and card surface',
+    (tester) async {
+      final fired = <(String, Object?, bool)>[];
+      final tree = PanelNode.fromJson({
+        'type': 'box',
+        'bg': '#FFF4C4',
+        'fg': '#141414',
+        'border': '#141414',
+        'borderWidth': 2.5,
+        'radius': 12,
+        'shadow': {'x': 4, 'y': 4, 'blur': 0, 'color': '#141414'},
+        'children': [
+          {
+            'type': 'stack',
+            'children': [
+              {
+                'type': 'scene3d',
+                'id': 'cube3d',
+                'height': 100,
+                'shape': 'cube',
+                'look': 'toon',
+                'yaw': 0.5,
+                'pitch': 0.3,
+                'color': '#00D4FF',
+                'grid': true,
+              },
+              {
+                'type': 'badge',
+                'text': 'POP!',
+                'align': 'topRight',
+                'style': {'bg': '#FFE600', 'fg': '#141414'},
+              },
+            ],
+          },
+          {
+            'type': 'row',
+            'children': [
+              {
+                'type': 'knob',
+                'id': 'bounce',
+                'label': 'BOUNCE',
+                'value': 0.5,
+                'min': 0.0,
+                'max': 1.0,
+                'def': 0.25,
+                'look': 'pop',
+                'color': '#FF3B7F',
+              },
+              {
+                'type': 'knob',
+                'id': 'drive',
+                'label': 'DRIVE',
+                'value': 0.4,
+                'min': 0.0,
+                'max': 1.0,
+                'look': 'hardware',
+                'color': '#FF521B',
+              },
+            ],
+          },
+        ],
+      })!;
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Container(
+            color: Grey.g10,
+            padding: const EdgeInsets.all(10),
+            child: PanelTreeView(
+              node: tree,
+              onAction: (id, value, {live = false}) =>
+                  fired.add((id, value, live)),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('POP!'), findsOneWidget);
+      expect(find.text('BOUNCE'), findsOneWidget);
+
+      // Drag knob upwards to increase value.
+      await tester.drag(
+        find.byKey(const ValueKey('panel:knob:bounce')),
+        const Offset(0, -30),
+      );
+      await tester.pumpAndSettle();
+      final knobEvents = fired.where((e) => e.$1 == 'bounce').toList();
+      expect(knobEvents, isNotEmpty);
+      expect((knobEvents.last.$2 as double), greaterThan(0.5));
+      expect(knobEvents.last.$3, isFalse);
+
+      // Double-tap knob resets to declared `def` (0.25).
+      fired.clear();
+      final knobCenter = tester.getCenter(
+        find.byKey(const ValueKey('panel:knob:bounce')),
+      );
+      await tester.tapAt(knobCenter);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tapAt(knobCenter);
+      await tester.pumpAndSettle();
+      expect(fired.last, ('bounce', 0.25, false));
+
+      // Orbit drag on `ui.scene3d` emits yaw/pitch phases.
+      fired.clear();
+      await tester.drag(
+        find.byKey(const ValueKey('panel:3d:cube3d')),
+        const Offset(40, -15),
+      );
+      await tester.pumpAndSettle();
+      final orbitEvents = fired.where((e) => e.$1 == 'cube3d').toList();
+      expect(orbitEvents, isNotEmpty);
+      final finalPayload = orbitEvents.last.$2 as Map<String, Object?>;
+      expect(finalPayload['phase'], 'up');
+      expect((finalPayload['yaw'] as double), greaterThan(0.5));
+    },
+  );
+
+  test('parseObjMesh and parseGlbMesh decode external 3D meshes cleanly', () {
+    const obj = '''
+v 0 1 0
+v -1 -1 1
+v 1 -1 1
+v 0 -1 -1
+f 1 2 3
+f 1 3 4
+f 1 4 2
+f 2 4 3
+''';
+    final mesh = parseObjMesh(obj);
+    expect(mesh, isNotNull);
+    expect(mesh!.verts.length, 4);
+    expect(mesh.faces.length, 4);
+
+    // Build a minimal valid binary glTF 2.0 (.glb) triangle in memory.
+    final bin = ByteData(36 + 6);
+    final coords = [0.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0];
+    for (var i = 0; i < coords.length; i++) {
+      bin.setFloat32(i * 4, coords[i], Endian.little);
+    }
+    bin.setUint16(36, 0, Endian.little);
+    bin.setUint16(38, 1, Endian.little);
+    bin.setUint16(40, 2, Endian.little);
+    final binBytes = Uint8List(44)..setRange(0, 42, bin.buffer.asUint8List());
+
+    final jsonMap = {
+      'asset': {'version': '2.0'},
+      'meshes': [
+        {
+          'primitives': [
+            {
+              'attributes': {'POSITION': 0},
+              'indices': 1,
+            },
+          ],
+        },
+      ],
+      'accessors': [
+        {'bufferView': 0, 'componentType': 5126, 'count': 3, 'type': 'VEC3'},
+        {'bufferView': 1, 'componentType': 5123, 'count': 3, 'type': 'SCALAR'},
+      ],
+      'bufferViews': [
+        {'buffer': 0, 'byteOffset': 0, 'byteLength': 36},
+        {'buffer': 0, 'byteOffset': 36, 'byteLength': 6},
+      ],
+    };
+    final jsonBytes = List<int>.from(utf8.encode(jsonEncode(jsonMap)));
+    while (jsonBytes.length % 4 != 0) {
+      jsonBytes.add(0x20);
+    }
+    final total = 12 + 8 + jsonBytes.length + 8 + binBytes.length;
+    final glb = ByteData(total);
+    final out = glb.buffer.asUint8List();
+    out.setRange(0, 4, utf8.encode('glTF'));
+    glb.setUint32(4, 2, Endian.little);
+    glb.setUint32(8, total, Endian.little);
+    glb.setUint32(12, jsonBytes.length, Endian.little);
+    out.setRange(16, 20, utf8.encode('JSON'));
+    out.setRange(20, 20 + jsonBytes.length, jsonBytes);
+    final binChunkStart = 20 + jsonBytes.length;
+    glb.setUint32(binChunkStart, binBytes.length, Endian.little);
+    out.setRange(binChunkStart + 4, binChunkStart + 8, utf8.encode('BIN\x00'));
+    out.setRange(binChunkStart + 8, total, binBytes);
+
+    final glbMesh = parseGlbMesh(out);
+    expect(glbMesh, isNotNull);
+    expect(glbMesh!.verts.length, 3);
+    expect(glbMesh.faces.length, 1);
+  });
 }
