@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/panel_presets_file.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/custom_ui/script_watch.dart';
 import 'package:motolii/workspace/state/custom_panel_service.dart';
@@ -79,7 +80,8 @@ class _JsPanelToolState extends State<JsPanelTool> {
     bool live = false,
   }) {
     if (!customPanelsReady(ws)) return;
-    final ctxJson = customPanelCtxJson(ws, _stateOf(ws));
+    final presets = readPanelPresets(widget.panel.name);
+    final ctxJson = customPanelCtxJson(ws, _stateOf(ws), presets: presets);
     final actionJson = jsonEncode({'id': id, 'value': value, 'live': live});
     final res = parsePanelActionResponse(
       customPanelAction(ws, widget.panel.path, actionJson, ctxJson),
@@ -95,6 +97,25 @@ class _JsPanelToolState extends State<JsPanelTool> {
     if (res.notice != null && res.notice!.isNotEmpty) {
       ws.notice = res.notice;
     }
+    var presetsChanged = false;
+    final nextPresets = Map<String, Object?>.of(presets);
+    for (final o in res.ops) {
+      if (o.op == 'preset_save' && o.name.isNotEmpty) {
+        try {
+          nextPresets[o.name] = jsonDecode(o.word);
+        } catch (_) {
+          nextPresets[o.name] = o.word;
+        }
+        presetsChanged = true;
+      } else if (o.op == 'preset_delete' && o.name.isNotEmpty) {
+        nextPresets.remove(o.name);
+        presetsChanged = true;
+      }
+    }
+    if (presetsChanged) {
+      writePanelPresets(widget.panel.name, nextPresets);
+      setState(() {});
+    }
     if (res.ops.isNotEmpty) {
       applyCustomPanelOps(ws, [
         for (final o in res.ops)
@@ -105,6 +126,8 @@ class _JsPanelToolState extends State<JsPanelTool> {
             word: o.word,
             kind: o.kind,
             file: o.file,
+            ease: o.ease,
+            mode: o.mode,
             value: o.value,
             at: o.at,
             layers: o.layers,
@@ -135,7 +158,11 @@ class _JsPanelToolState extends State<JsPanelTool> {
       customPanelRender(
         ws,
         widget.panel.path,
-        customPanelCtxJson(ws, _stateOf(ws)),
+        customPanelCtxJson(
+          ws,
+          _stateOf(ws),
+          presets: readPanelPresets(widget.panel.name),
+        ),
       ),
     );
     final err = _actionError ?? renderRes.error;

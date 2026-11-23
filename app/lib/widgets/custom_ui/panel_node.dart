@@ -316,6 +316,8 @@ class PanelOp {
     this.word = '',
     this.kind = '',
     this.file = '',
+    this.ease = '',
+    this.mode = '',
     this.value,
     this.at,
     this.layers = const [],
@@ -327,6 +329,8 @@ class PanelOp {
   final String word;
   final String kind;
   final String file;
+  final String ease;
+  final String mode;
   final double? value;
   final double? at;
   final List<int> layers;
@@ -342,6 +346,8 @@ class PanelOp {
       word: raw['word']?.toString() ?? '',
       kind: raw['kind']?.toString() ?? '',
       file: raw['file']?.toString() ?? '',
+      ease: raw['ease']?.toString() ?? '',
+      mode: raw['mode']?.toString() ?? '',
       value: raw['value'] is num ? (raw['value'] as num).toDouble() : null,
       at: raw['at'] is num ? (raw['at'] as num).toDouble() : null,
       layers: [
@@ -477,11 +483,13 @@ CardUiRenderResult parseCardUiRenderResponse(String rawJson) {
 }
 
 /// Parsed result of `motolii_card_ui_action`:
-/// `{ set?: { param: num }, say?: { param: word }, state?: { key: val } }`.
+/// `{ set?: { param: num }, say?: { param: word }, state?: { key: val }, ops?: PanelOp[], notice?: string }`.
 typedef CardUiActionResult = ({
   Map<String, double> set,
   Map<String, String> say,
   Map<String, Object?>? state,
+  List<PanelOp> ops,
+  String? notice,
   String? error,
 });
 
@@ -493,6 +501,8 @@ CardUiActionResult parseCardUiActionResponse(String rawJson) {
         set: const {},
         say: const {},
         state: null,
+        ops: const [],
+        notice: null,
         error: 'Invalid card action',
       );
     }
@@ -501,12 +511,21 @@ CardUiActionResult parseCardUiActionResponse(String rawJson) {
         set: const {},
         say: const {},
         state: null,
+        ops: const [],
+        notice: null,
         error: decoded['error']?.toString() ?? 'Card action failed',
       );
     }
     final res = decoded['result'];
     if (res is! Map) {
-      return (set: const {}, say: const {}, state: null, error: null);
+      return (
+        set: const {},
+        say: const {},
+        state: null,
+        ops: const [],
+        notice: null,
+        error: null,
+      );
     }
     final setMap = <String, double>{};
     if (res['set'] is Map) {
@@ -529,12 +548,25 @@ CardUiActionResult parseCardUiActionResponse(String rawJson) {
           e.key.toString(): e.value,
       };
     }
-    return (set: setMap, say: sayMap, state: st, error: null);
+    final ops = <PanelOp>[
+      if (res['ops'] is List)
+        for (final item in res['ops'] as List) ?PanelOp.fromJson(item),
+    ];
+    return (
+      set: setMap,
+      say: sayMap,
+      state: st,
+      ops: ops,
+      notice: res['notice']?.toString(),
+      error: null,
+    );
   } catch (e) {
     return (
       set: const {},
       say: const {},
       state: null,
+      ops: const [],
+      notice: null,
       error: 'Card action JSON error: $e',
     );
   }

@@ -148,6 +148,14 @@ declare namespace MotoliiUi {
      * or empty array when no audio track is active.
      */
     audio: number[];
+    /** Current layer being inspected. */
+    layer?: PanelLayer;
+    /** All layers in the composition. */
+    layers?: PanelLayer[];
+    /** Saved user JSON presets for this card. */
+    presets?: Record<string, unknown>;
+    /** Composition size and scale. */
+    comp?: { width: number; height: number; point: number };
   }
 
   interface CardRenderResult {
@@ -171,6 +179,10 @@ declare namespace MotoliiUi {
     say?: Record<string, string>;
     /** Ephemeral UI state keys to merge into `ctx.state` (not persisted to document). */
     state?: Record<string, unknown>;
+    /** Optional document mutations (e.g. explode, add backplate, bake keyframes, preset_save). */
+    ops?: PanelOp[];
+    /** Status banner message. */
+    notice?: string;
   }
 
   interface PanelLayer {
@@ -178,10 +190,12 @@ declare namespace MotoliiUi {
     name: string;
     kind: string;
     selected: boolean;
+    parent: number;
     start: number;
     duration: number;
     x: number;
     y: number;
+    z: number;
     rotate: number;
     scale_x: number;
     scale_y: number;
@@ -189,6 +203,13 @@ declare namespace MotoliiUi {
     anchor_y: number;
     opacity: number;
     fill: string;
+    text: string;
+    split: string;
+    space: string;
+    font: string;
+    size: number;
+    width: number;
+    height: number;
   }
 
   /** Context passed to `render(ctx)` and `onAction(action, ctx)` in `shelves/panels/*.js`. */
@@ -197,19 +218,26 @@ declare namespace MotoliiUi {
     frame: number;
     fps: number;
     duration: number;
-    comp: { width: number; height: number };
+    comp: { width: number; height: number; point: number };
     selected: number[];
     layers: PanelLayer[];
     state: Record<string, unknown>;
+    presets: Record<string, unknown>;
     theme: ThemeColors;
     audio: number[];
   }
 
   type PanelOp =
-    | { op: "set"; layer: number; name: string; value: number }
+    | { op: "set"; layer: number; name: string; value?: number; word?: string }
     | { op: "say"; layer: number; name: string; word: string }
-    | { op: "key"; layer: number; name: string; at: number; value: number }
+    | { op: "key"; layer: number; name: string; at: number; value: number; ease?: string }
     | { op: "add"; kind?: string; file?: string }
+    | { op: "explode"; layer: number; mode?: "letters" | "strokes" }
+    | { op: "outline"; layer: number }
+    | { op: "remove"; layer: number }
+    | { op: "fx"; layer: number; file: string }
+    | { op: "preset_save"; name: string; word: string }
+    | { op: "preset_delete"; name: string }
     | { op: "select"; layers: number[] }
     | { op: "time"; at: number };
 

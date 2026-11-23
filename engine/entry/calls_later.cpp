@@ -189,9 +189,13 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         else if (c == "freehand")
           ok = m->later.last_added =
               changes(m, doc_freehand(doc(m), w.c_str()));
-        // Converts the shape to a path of its visible outline.
+        // Converts the shape or text to a path of its visible outline.
         else if (c == "outline")
           ok = changes(m, (int)doc_to_path(doc(m), layer));
+        // Explodes a text layer into individual letter or gg stroke-part layers.
+        else if (c == "text_explode")
+          ok = m->later.last_added =
+              changes(m, doc_text_explode(doc(m), layer, w.c_str()));
         // word: "tolerance x y x y ..."
         else if (c == "curve")
           ok = m->later.last_added = changes(m, doc_curve(doc(m), w.c_str()));

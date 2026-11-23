@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:motolii/widgets/custom_ui/panel_node.dart' show PanelOp;
 
 /// One layer entry offered as an Audio or Layer signal source in the Macros card.
 typedef MacroLayerChoice = ({int id, String name, bool hasAudio});
@@ -12,6 +13,8 @@ typedef CardCustomUi = ({
   String Function(String ctxJson) render,
   String Function(String actionJson, String ctxJson) action,
   CardLiveSignal Function()? liveSignal,
+  Map<String, Object?> Function()? contextExtra,
+  void Function(List<PanelOp> ops, String? notice)? applyOps,
 });
 
 /// What the buttons and menus on the Inspector's cards do. An action that is null is not offered.

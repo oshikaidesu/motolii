@@ -266,6 +266,8 @@ struct Params {
                         return '{"ok":true,"result":{}}';
                       },
                       liveSignal: null,
+                      contextExtra: null,
+                      applyOps: null,
                     )
                   : null,
             ),
@@ -532,6 +534,8 @@ struct Params {
                         fps: 60.0,
                         audio: const [0.1, 0.4, 0.8, 0.5],
                       ),
+                      contextExtra: null,
+                      applyOps: null,
                     )
                   : null,
             ),

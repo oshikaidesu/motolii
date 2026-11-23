@@ -103,6 +103,14 @@ int doc_brush(Doc& d, const char* said, int into = 0);
 // false, with d.error set, if the shape cannot be converted.
 bool doc_to_path(Doc& d, int layer);
 
+// Explodes a text layer into individual child layers under a parent Null group
+// in one undo step, hiding the original text layer non-destructively.
+// `mode` is "letters" (one editable text layer per glyph) or "strokes"
+// (gg-style contour-part decomposition: each outer outline paired with its
+// inner holes becomes its own centered path shape layer). Returns the group
+// layer ID, or 0 on failure.
+int doc_text_explode(Doc& d, int layer, const char* mode);
+
 // Brings an SVG in as editable path shapes, the way After Effects' "Create
 // Shapes from Vector Layer" does. ThorVG reads the file and its Accessor walks
 // the scene tree, so nothing here parses SVG; each shape it finds becomes a

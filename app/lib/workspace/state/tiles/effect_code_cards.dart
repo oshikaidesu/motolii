@@ -33,6 +33,8 @@ final _code = RegExp(r'\.(wgsl|fs|js)$');
   return word == null ? null : (word: word, slot: 'fx');
 }
 
+final _useId = RegExp(r'^[0-9a-f]{6}:');
+
 /// The file in a layer's [fx] that the card belongs to, or null if there is none or it is not code.
 String? codeFileOf(String fx, String title, List<String> names) {
   (String, int)? best;
@@ -47,14 +49,23 @@ String? codeFileOf(String fx, String title, List<String> names) {
     // itself (How many copies), which no file declares, so those do not decide.
     final own = [
       for (final n in names)
-        if (n.startsWith('js_')) n,
+        if (n.replaceFirst(_useId, '') case final base
+            when base.startsWith('js_'))
+          base,
     ];
     if (own.isEmpty) {
       if (titled) return w;
       continue;
     }
+    // Leva-format .js expressions declare `const knobs = {...}` rather than `// --track@` headers;
+    // fall back to stem prefix or title match when no header knobs exist.
+    final headKnobs = w.endsWith('.js') && file == w
+        ? _knobs(_head(file))
+        : const <String>[];
     final fits = w.endsWith('.js') && file == w
-        ? own.every({for (final k in _knobs(_head(file))) 'js_$k'}.contains)
+        ? (headKnobs.isNotEmpty
+              ? own.every({for (final k in headKnobs) 'js_$k'}.contains)
+              : (own.every((n) => n.startsWith('js_${stem}_')) || titled))
         : own.every((n) => n.startsWith('js_${stem}_'));
     if (!fits) continue;
     final score = (titled ? 1000 : 0) + stem.length;

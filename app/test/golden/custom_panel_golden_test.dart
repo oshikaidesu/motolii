@@ -457,6 +457,8 @@ void main() {
                             }),
                             action: (_, _) => '{"ok":true,"result":{}}',
                             liveSignal: null,
+                            contextExtra: null,
+                            applyOps: null,
                           )
                         : null,
                   ),

@@ -243,6 +243,12 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
       for (const ScriptParameter::Turned& t : sc->parameters[i].turns)
         numbers[t.name] += (t.high - t.low) * (v - sc->parameters[i].usual);
     }
+    // Expose the text layer's string and split mode so per-letter expressions
+    // can apply character-class rules (e.g. Kanji / Hiragana / Katakana).
+    if (doc_word(d, layer, "kind") == "text") {
+      words["text"] = doc_word(d, layer, "text");
+      words["split"] = doc_word(d, layer, "split");
+    }
     // How long the layer lasts. An Out ends it earlier, hence `gone`.
     numbers["duration"] =
         doc_literal(d, layer, "duration", 0, -1) +

@@ -88,7 +88,9 @@ String buildCardCustomUiContext(
     }
   }
   final sig = ui.liveSignal?.call();
+  final extra = ui.contextExtra?.call();
   return jsonEncode({
+    ...?extra,
     'card': card.name,
     'params': params,
     'ranges': ranges,
@@ -155,7 +157,6 @@ class _CustomCardBodyState extends State<CustomCardBody> {
   final Map<String, Object?> _uiState = {};
   String? _actionError;
   CardUiRenderResult? _overrideResult;
-  String? _overrideCtxJson;
 
   @override
   void initState() {
@@ -175,14 +176,12 @@ class _CustomCardBodyState extends State<CustomCardBody> {
       _uiState.clear();
       _actionError = null;
       _overrideResult = null;
-      _overrideCtxJson = null;
       _watchScript();
     } else if (_uiState.isNotEmpty) {
       // Re-evaluate with the latest doc values while preserving ephemeral drag state.
       _reRenderNow(notify: false);
     } else {
       _overrideResult = null;
-      _overrideCtxJson = null;
     }
   }
 
@@ -215,7 +214,6 @@ class _CustomCardBodyState extends State<CustomCardBody> {
       state: _uiState,
     );
     final res = parseCardUiRenderResponse(widget.ui.render(ctxJson));
-    _overrideCtxJson = ctxJson;
     _overrideResult = res;
     if (notify && mounted) setState(() {});
   }
@@ -229,15 +227,13 @@ class _CustomCardBodyState extends State<CustomCardBody> {
 
   void _onAction(String id, Object? value, {bool live = false}) {
     final doc = widget.doc;
-    final ctxJson = _uiState.isEmpty
-        ? (_overrideCtxJson ?? widget.ctxJson)
-        : buildCardCustomUiContext(
-            doc,
-            widget.card,
-            widget.ui,
-            widget.names,
-            state: _uiState,
-          );
+    final ctxJson = buildCardCustomUiContext(
+      doc,
+      widget.card,
+      widget.ui,
+      widget.names,
+      state: _uiState,
+    );
     final actionJson = jsonEncode({'id': id, 'value': value, 'live': live});
     final act = parseCardUiActionResponse(
       widget.ui.action(actionJson, ctxJson),
@@ -273,7 +269,10 @@ class _CustomCardBodyState extends State<CustomCardBody> {
 
     // Zero-boilerplate direct binding: if onCardAction returned nothing, bind
     // directly when control `id` matches a param (or "xParam,yParam" for xy).
-    if (numWrites.isEmpty && strWrites.isEmpty && act.state == null) {
+    if (numWrites.isEmpty &&
+        strWrites.isEmpty &&
+        act.state == null &&
+        act.ops.isEmpty) {
       if (value is num) {
         final full = widget.names.resolve(id);
         if (full != null) numWrites['v_$full'] = value.toDouble();
@@ -313,6 +312,11 @@ class _CustomCardBodyState extends State<CustomCardBody> {
     }
     for (final e in strWrites.entries) {
       doc.str(e.key, e.value);
+    }
+    if (act.ops.isNotEmpty || (act.notice != null && act.notice!.isNotEmpty)) {
+      widget.ui.applyOps?.call(act.ops, act.notice);
+      _reRenderNow(notify: true);
+      return;
     }
 
     if (stateChanged) {
