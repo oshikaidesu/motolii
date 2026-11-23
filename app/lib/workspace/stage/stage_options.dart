@@ -11,7 +11,11 @@ import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart'
     show layerPlacement;
 import 'package:motolii/workspace/stage/camera_gestures.dart'
-    show cameraReleaseTarget, cameraResetTilt, cameraTargetOf;
+    show
+        cameraAlignToView,
+        cameraReleaseTarget,
+        cameraResetTilt,
+        cameraTargetOf;
 import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/toggle.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
@@ -170,8 +174,20 @@ class OptionsStrip extends StatelessWidget {
         )
       else
         const _Field('Target', value: 'Click layer'),
+      if (ws.freeEye)
+        Chip(
+          key: const ValueKey('ws-camera-align-chip'),
+          label: 'Match View',
+          look: ChipLook.flat(WindowTokens.accent),
+          onTap: () => cameraAlignToView(ws, cam),
+        ),
       Chip(label: 'Flat 0°', onTap: () => cameraResetTilt(ws, cam)),
-      const _Field('Drag', value: 'Orbit / Shift Pan'),
+      _Field(
+        'Drag',
+        value: ws.freeEye
+            ? 'View Orbit · Frame Pan/Scale/Roll'
+            : 'Orbit / Shift Pan',
+      ),
       const _Field('Wheel', value: 'Distance'),
     ];
   }

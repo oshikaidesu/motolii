@@ -7,7 +7,7 @@ import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/glyphs.dart';
 
 /// The marks a header toggle of the stage can carry.
-enum StageIcon { safe, grid, snap, show, overview }
+enum StageIcon { safe, grid, snap, show, overview, align }
 
 /// An on/off chip: raised with an accent mark when on, a quiet well when off.
 class Toggle extends StatelessWidget {
@@ -88,27 +88,18 @@ class _IconPainter extends CustomPainter {
           Rect.fromLTRB(r.left, r.top, r.center.dx, r.bottom),
           p..style = PaintingStyle.fill,
         );
-      case StageIcon.overview: // A 3D frustum frame seen from outside.
-        final cx = r.center.dx;
-        cv.drawRect(
-          Rect.fromLTRB(
-            r.left + 1.5,
-            r.top,
-            r.right - 1.5,
-            r.top + r.height * .48,
-          ),
-          p,
-        );
-        cv.drawLine(
-          Offset(r.left + 1.5, r.top + r.height * .48),
-          Offset(cx, r.bottom),
-          p,
-        );
-        cv.drawLine(
-          Offset(r.right - 1.5, r.top + r.height * .48),
-          Offset(cx, r.bottom),
-          p,
-        );
+      case StageIcon.overview: // A tilted 3D frame seen from outside.
+        final path = Path()
+          ..moveTo(r.left + 2.2, r.top + .8)
+          ..lineTo(r.right - .4, r.top + 2.2)
+          ..lineTo(r.right - 2.2, r.bottom - .8)
+          ..lineTo(r.left + .4, r.bottom - 2.2)
+          ..close();
+        cv.drawPath(path, p);
+      case StageIcon
+          .align: // A squared-up frame with a centre dot (Match View).
+        cv.drawRect(r.deflate(.5), p);
+        cv.drawCircle(r.center, 1.4, p..style = PaintingStyle.fill);
     }
   }
 

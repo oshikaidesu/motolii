@@ -268,29 +268,38 @@ class ViewPainter extends CustomPainter {
     }
   }
 
-  /// Draws a camera in the custom view: its crossed frame DrawCameraFrames, lines from its
-  /// position to the frame corners, and its point of interest. The selected camera also gets
-  /// corner handles, because the frame size sets the lens.
+  /// Draws a camera in 3D View as a pure Boxcam frame: rectangular outline,
+  /// subtle rule-of-thirds guides, centre dot, and (when selected) corner resize
+  /// handles plus top roll knob. No frustum pyramid lines or rear eye handle.
   void _gizmo(Canvas c, int id) {
     final g = [
           for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p),
         ],
         picked = id == sel;
-    if (g.length < 6) return;
+    if (g.length < 5) return;
     final ink = picked ? WindowTokens.accent : Grey.g76,
-        frame = [g[0], g[1], g[2], g[3]].nonNulls.toList(),
-        eye = g[5];
+        frame = [g[0], g[1], g[2], g[3]].nonNulls.toList();
     if (frame.length == 4) {
-      _legible(c, Path()..addPolygon(frame, true), ink, picked ? 2 : 1);
-      c.drawLine(frame[0], frame[2], linePaint(ink.withValues(alpha: .35), 1));
-      c.drawLine(frame[1], frame[3], linePaint(ink.withValues(alpha: .35), 1));
-      if (eye != null) {
-        for (final p in frame) {
-          c.drawLine(eye, p, linePaint(ink.withValues(alpha: .35), 1));
-        }
+      _legible(c, Path()..addPolygon(frame, true), ink, picked ? 2 : 1.2);
+      final guide = linePaint(ink.withValues(alpha: .24), 1);
+      for (final t in const [1 / 3, 2 / 3]) {
+        c.drawLine(
+          Offset.lerp(frame[0], frame[1], t)!,
+          Offset.lerp(frame[3], frame[2], t)!,
+          guide,
+        );
+        c.drawLine(
+          Offset.lerp(frame[0], frame[3], t)!,
+          Offset.lerp(frame[1], frame[2], t)!,
+          guide,
+        );
       }
       if (picked) {
         for (final p in frame) {
+          c.drawRect(
+            Rect.fromCenter(center: p, width: 9, height: 9),
+            Paint()..color = Grey.g00,
+          );
           c.drawRect(
             Rect.fromCenter(center: p, width: 7, height: 7),
             Paint()..color = ink,
@@ -312,19 +321,8 @@ class ViewPainter extends CustomPainter {
       }
     }
     if (g[4] case final look?) {
-      c.drawCircle(look, 5, linePaint(Grey.g00, 3));
-      c.drawCircle(look, 5, linePaint(ink, 1.4));
-    }
-    if (eye != null) {
-      c.drawCircle(eye, 6, Paint()..color = Grey.g00);
-      c.drawCircle(
-        eye,
-        6,
-        Paint()
-          ..color = ink
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
-      );
+      c.drawCircle(look, 3.5, linePaint(Grey.g00, 2.8));
+      c.drawCircle(look, 3.5, linePaint(ink, 1.4));
     }
   }
 

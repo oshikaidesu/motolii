@@ -22,6 +22,10 @@ String stageWord(WorkspaceController ws, int layer, String name) =>
 double? stageValue(WorkspaceController ws, int layer, String name, double at) =>
     ws.inside?.value(layer, name, at);
 
+/// The times of a property's keyframes, or empty when none or not connected.
+List<double> stageKeyTimes(WorkspaceController ws, int layer, String name) =>
+    ws.inside?.keyTimes(layer, name) ?? const [];
+
 /// Layer duration in seconds. Negative = infinite.
 double stageLasts(WorkspaceController ws, int layer) =>
     ws.inside?.lasts(layer) ?? -1;
@@ -138,6 +142,21 @@ int stageSetValue(
   required String name,
   required double number,
 }) => ws.inside!.later('set', layer: layer, name: name, number: number);
+
+/// Writes a keyframe for [name] on [layer] at [seconds] regardless of Animate All.
+int stageKeyValue(
+  WorkspaceController ws, {
+  required int layer,
+  required String name,
+  required double seconds,
+  required double number,
+}) => ws.inside!.later(
+  'key',
+  layer: layer,
+  name: name,
+  word: '$seconds',
+  number: number,
+);
 
 int stageSetWord(
   WorkspaceController ws, {

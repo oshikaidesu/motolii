@@ -6,9 +6,13 @@
 import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
+import 'package:motolii/workspace/stage/camera_gestures.dart'
+    show cameraAlignToView;
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     show dragBarPart, endBarDrag, grabLayer, setLayerSwitch;
+import 'package:motolii/workspace/state/stage/stage_service.dart'
+    show stageCameraLayer;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The frame where playback started.
@@ -118,6 +122,11 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     'frame.forward10': () => step(Gestures.nudgeShift),
     'view.overview': () {
       if (ws.hasCamera) ws.setOverview(!ws.freeEye);
+    },
+    'camera.alignToView': () {
+      if (!ws.freeEye) return;
+      final cam = stageCameraLayer(ws, ws.selected);
+      if (cam != null) cameraAlignToView(ws, cam);
     },
   };
 }

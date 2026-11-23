@@ -95,6 +95,7 @@ const defaultKeys = <(String, String)>[
   ('b', 'tool.brush'),
   ('c', 'tool.camera'),
   ('shift+c', 'view.overview'),
+  ('alt+c', 'camera.alignToView'),
 ];
 
 /// The keys in use: the defaults with the user's keybindings.json applied over them.

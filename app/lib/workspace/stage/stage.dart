@@ -10,6 +10,8 @@ import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/glyphs.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
+import 'package:motolii/workspace/stage/camera_gestures.dart'
+    show cameraAlignToView;
 import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_options.dart';
 import 'package:motolii/workspace/stage/stage_tool.dart';
@@ -166,6 +168,19 @@ class _StageState extends State<_Stage> {
                       on: ws.freeEye,
                       onTap: () => ws.setOverview(!ws.freeEye),
                     ),
+                    if (ws.freeEye) ...[
+                      SizedBox(width: WindowTokens.gap),
+                      Toggle(
+                        key: const ValueKey('ws-stage-align-camera'),
+                        label: 'Match View',
+                        icon: StageIcon.align,
+                        on: false,
+                        onTap: () {
+                          final cam = stageCameraLayer(ws, ws.selected);
+                          if (cam != null) cameraAlignToView(ws, cam);
+                        },
+                      ),
+                    ],
                   ],
                   SizedBox(width: Shape.s(6)),
                   Toggle(

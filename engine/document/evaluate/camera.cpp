@@ -448,12 +448,12 @@ void lens_at(Doc& d, int camera, double now, math::double3 eye,
   s.film->setFocusDistance((float)(focus > 0.0 ? focus : length(eye - look)));
 }
 
-// In the working view the Stage's orbital camera orbits the world origin while
-// the project's own camera (film) keeps its own viewpoint unchanged. The
-// Stage view is always through `s.camera`; the Camera View is always through
-// `s.film`. Billboards and 2D layers face whichever camera the current view
-// uses, so they look correct in both views without any manual override.
-void working_view_shown(Evaluation& evaluation, int camera) {
+// In the working view the Stage's orbital camera orbits the active camera's
+// frame centre while the project's own camera (film) keeps its own viewpoint
+// unchanged. The Stage view is always through `s.camera`; the Camera View is
+// always through `s.film`. Billboards and 2D layers face whichever camera the
+// current view uses, so they look correct in both views without any override.
+void working_view_shown(Evaluation& evaluation, const math::double3& focus) {
   Doc& d = evaluation.d;
   Stage& s = evaluation.s;
   const math::mat4 about =
@@ -462,10 +462,11 @@ void working_view_shown(Evaluation& evaluation, int camera) {
       math::mat4::rotation(d.working_camera.position[1] * (double)TAU / 360.0,
                            math::double3{1, 0, 0});
   s.camera->lookAt(
-      (about *
-       math::double4{0, 0, kStageBack * d.working_camera.position[2], 0})
-          .xyz,
-      math::double3{0.0}, (about * math::double4{0, 1, 0, 0}).xyz);
+      focus +
+          (about *
+           math::double4{0, 0, kStageBack * d.working_camera.position[2], 0})
+              .xyz,
+      focus, (about * math::double4{0, 1, 0, 0}).xyz);
   s.camera->setProjection(30.0, double(s.w) / double(s.h), kStageNear,
                           60.0 * std::max(1.0, d.working_camera.position[2]));
 }
@@ -504,7 +505,7 @@ void evaluate_camera(Evaluation& evaluation) {
                        : math::double2{0.0});
   lens_at(d, camera, now, eye, look);
   // Set up the working camera first so its model matrix is ready.
-  working_view_shown(evaluation, camera);
+  working_view_shown(evaluation, look);
   // The stage view faces s.camera when the working camera is on; the camera
   // view always faces s.film. Billboards and 2D layers use the facing camera
   // so they look correct in whichever view is shown (Blender's behaviour).

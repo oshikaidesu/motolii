@@ -1,5 +1,5 @@
-// The camera on the stage: Boxcam frame gizmo (pan, resize distance, roll, orbit tilt),
-// Camera tool drag (orbit / Shift-pan), Z-target lock-on/release, and wheel dolly.
+// The camera on the stage: Boxcam frame gizmo (pan, resize distance, roll),
+// Camera tool drag (orbit / Shift-pan), Match View angle alignment, Z-target lock-on/release, and wheel dolly.
 import 'dart:async' show Timer;
 import 'dart:math' as math;
 import 'dart:ui' show Offset, Path;
@@ -73,6 +73,32 @@ void cameraResetTilt(WorkspaceController ws, int cam) {
   ws.after(stageEndUndoStep(ws));
 }
 
+/// Aligns camera [cam]'s look-in angle (`rotate_y`, `rotate_x`) to face the current
+/// 3D View angle squarely, keeping frame size and position/Z-target intact, and
+/// records keyframes at the playhead (preserving the initial value at t=0 if unkeyed).
+void cameraAlignToView(WorkspaceController ws, int cam) {
+  if (!stageConnected(ws) || !ws.freeEye) return;
+  final yaw = ws.eye[0];
+  final pitch = ws.eye[1].clamp(-89.0, 89.0);
+  final now = ws.frame / WorkspaceController.fps;
+  stageBeginUndoStep(ws);
+  for (final (prop, target) in [('rotate_y', yaw), ('rotate_x', pitch)]) {
+    // `doc_key` drops a static t=0 value on first keyframe at t>0, so anchor t=0 first.
+    if (now > 0 && stageKeyTimes(ws, cam, prop).isEmpty) {
+      stageKeyValue(
+        ws,
+        layer: cam,
+        name: prop,
+        seconds: 0,
+        number: stageValue(ws, cam, prop, 0) ?? 0,
+      );
+    }
+    stageKeyValue(ws, layer: cam, name: prop, seconds: now, number: target);
+  }
+  ws.after(stageEndUndoStep(ws));
+  ws.notice = 'Aligned frame to view (${yaw.round()}°, ${pitch.round()}°)';
+}
+
 /// The gestures that move a camera on the stage: the Camera tool's drag, a drag on a camera's gizmo, and the wheel.
 /// A camera drag is a drag on the stage like any other, so it is begun and carried on through the [StageDrag] given
 /// here. Listeners are told when a drag has changed what the stage draws.
@@ -88,7 +114,6 @@ class CameraGestures extends ChangeNotifier {
   double? _dollyAt; // Its distance while the wheel turns.
   Timer? _dollyRest;
 
-  double _orbitRate = .25; // Degrees of rotation per pixel dragged.
   ({double distance, double reach, Offset middle})? _frameFrom; // Boxcam frame distance, reach and centre when corner resize started.
   ({double rotate, double angle, Offset middle})?
   _rollFrom; // Boxcam frame roll angle and centre when roll knob drag started.
@@ -180,8 +205,7 @@ class CameraGestures extends ChangeNotifier {
     _drag.held = (from: local, moved: false, by: 'orbit');
   }
 
-  /// Starts a drag on a camera's Boxcam frame gizmo in the 3D overview and returns whether one was hit.
-  /// - The camera body handle (g[5]) orbits the look-in angle around the pinned frame.
+  /// Starts a drag on a camera's Boxcam frame gizmo in 3D View and returns whether one was hit.
   /// - The top roll knob rotates the frame (roll).
   /// - A corner of the frame resizes the frame (sets distance, like Boxcam).
   /// - The frame centre (g[4]) or interior pans the frame.
@@ -199,22 +223,13 @@ class CameraGestures extends ChangeNotifier {
             for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p),
           ],
           cam = id;
-      if (g.length < 6) continue;
+      if (g.length < 5) continue;
       final frame = [g[0], g[1], g[2], g[3]].nonNulls.toList();
       final rollKnob = cameraFrameRollKnob(frame);
       bool on(Offset? p, double reach) =>
           p != null && (p - local).distance <= reach;
       final String by;
-      if (on(g[5], 14)) {
-        by = 'gizmo orbit';
-        _orbitRate = g[4] == null
-            ? .25
-            : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60);
-        _orbitFrom = (
-          x: stageValue(ws, cam, 'rotate_x', at) ?? 0,
-          y: stageValue(ws, cam, 'rotate_y', at) ?? 0,
-        );
-      } else if (_stage.selected == id && on(rollKnob, 14) && g[4] != null) {
+      if (_stage.selected == id && on(rollKnob, 14) && g[4] != null) {
         by = 'gizmo roll';
         final delta = local - g[4]!;
         _rollFrom = (
@@ -231,7 +246,7 @@ class CameraGestures extends ChangeNotifier {
           reach: math.max((local - g[4]!).distance, 1.0),
           middle: g[4]!,
         );
-      } else if (on(g[4], 10) ||
+      } else if (on(g[4], 12) ||
           (wholeFrame &&
               frame.length == 4 &&
               (Path()..addPolygon(frame, true)).contains(local))) {
@@ -253,13 +268,6 @@ class CameraGestures extends ChangeNotifier {
   bool dragUpdate(Offset local) {
     final h = _drag.held, ws = _stage.workspace;
     if (h == null || !stageConnected(ws)) return false;
-    if (h.by == 'gizmo orbit' && _orbitFrom != null) {
-      final d = (local - h.from) * _orbitRate, o = _orbitFrom!;
-      stageUpdateDrag(ws, 'rotate_y', o.y + d.dx);
-      stageUpdateDrag(ws, 'rotate_x', (o.x + d.dy).clamp(-89.0, 89.0));
-      _drag.held = (from: h.from, moved: true, by: h.by);
-      return true;
-    }
     if (h.by == 'gizmo roll' && _rollFrom != null) {
       final r = _rollFrom!;
       final now = local - r.middle;
