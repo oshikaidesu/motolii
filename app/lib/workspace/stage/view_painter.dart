@@ -112,22 +112,27 @@ class ViewPainter extends CustomPainter {
     c.restore();
     _guides(c);
     if (trail case final w? when w.length > 1) {
-      // A thin line with an arrowhead at intervals along the direction of motion.
-      final line = linePaint(WindowTokens.accent.withValues(alpha: .75), 1.2),
-          pts = [for (final q in w) v.toScreen(q)];
-      c.drawPoints(PointMode.polygon, pts, line);
-      for (var i = 6; i + 1 < pts.length; i += 12) {
-        final d = pts[i + 1] - pts[i];
-        if (d.distance < .5) continue;
-        final u = d / d.distance, n = Offset(-u.dy, u.dx), tip = pts[i];
-        c.drawPath(
-          Path()
-            ..moveTo((tip - u * 6 + n * 4).dx, (tip - u * 6 + n * 4).dy)
-            ..lineTo(tip.dx, tip.dy)
-            ..lineTo((tip - u * 6 - n * 4).dx, (tip - u * 6 - n * 4).dy),
-          line,
-        );
+      // Hairline path + time-sampled velocity dots (dense = slow, spaced = fast), hollow start -> solid end.
+      final pts = [for (final q in w) v.toScreen(q)];
+      final accent = WindowTokens.accent;
+      c.drawPoints(
+        PointMode.polygon,
+        pts,
+        linePaint(accent.withValues(alpha: .28), 1.0),
+      );
+      final dot = Paint()..color = accent.withValues(alpha: .72);
+      Offset? prev;
+      for (var i = 1; i + 1 < pts.length; i += 2) {
+        final p = pts[i];
+        if (prev != null && (p - prev).distance < 5.0) continue;
+        c.drawCircle(p, 1.5, dot);
+        prev = p;
       }
+      final start = pts.first, end = pts.last;
+      c.drawCircle(start, 3.0, Paint()..color = Grey.g00);
+      c.drawCircle(start, 3.0, linePaint(accent.withValues(alpha: .85), 1.2));
+      c.drawCircle(end, 3.4, Paint()..color = Grey.g00);
+      c.drawCircle(end, 2.3, Paint()..color = accent.withValues(alpha: .9));
     }
     if (met.$1 case final x?) {
       c.drawLine(

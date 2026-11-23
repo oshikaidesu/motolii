@@ -25,7 +25,10 @@ class StageTrail {
           'behaviour',
           'camera',
           'light',
-        }.contains(stageWord(ws, t, 'kind'))) {
+        }.contains(stageWord(ws, t, 'kind')) ||
+        (stageWord(ws, t, 'kind') == 'text' &&
+            stageWord(ws, t, 'split').isNotEmpty &&
+            stageWord(ws, t, 'fx').isNotEmpty)) {
       return null;
     }
     final key = (ws.rev, t);
