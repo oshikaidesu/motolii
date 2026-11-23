@@ -47,6 +47,13 @@ Motolii は After Effects のプラグインやエクスプレッション、Sha
 - **BPM グリッド。** Timeline でテンポをタップするだけで拍グリッドが表示され、ビートにスナップしながら編集できます。
 - **スタック可能なイージング。** イージングをエフェクトのように重ねられます。プリセットは 1 行の数式ファイル（`.way`）です。
 - **カラーツール。** macOS 標準スポイト、画像からのパレット自動抽出、テキストの選択文字単位での着色に対応。
+- **Vism カスタムパネル＆カスタムカード。** WebView なしの 1 本の JavaScript で、フラットポップ外装・Flutter ネイティブ 3D（`ui.scene3d` / `.glb` / `.obj`）・リアルタイム GLSL シェーダー（`ui.shader`）・音声波形＆16 ステップシーケンサー・リグピッカー・ノブ／フェーダーを備えた専用 UI を作れます。Tools パネルの **`+ New Vism`** から IDE 型補完付きで即開発でき、`.vism` パックや 1 フォルダのドラッグ＆ドロップで配布可能です。
+
+<p>
+<img src="docs/pictures/vism_gallery.jpg" alt="Vism 8デザインベクトル・ギャラリー" width="100%">
+<img src="docs/pictures/vism_pro.jpg" alt="Vism Pro 機能ギャラリー（音声波形・16ステップシーケンサー・GLSLシェーダー・リグピッカー・カーブ＆フェーダー）" width="100%">
+</p>
+
 - **高いカスタマイズ性と透明性。** フォルダ単位のスキン、VS Code 形式の `~/.motolii/keybindings.json`、数行の Dart で追加できるパネル。書き出し時には使用エフェクトの作者・ライセンス一覧のクレジットファイルを自動出力します。
 
 ## 現在の開発状況
@@ -148,6 +155,7 @@ Cavalry スクリプトもそのまま動作します（`cavalry.Point`・`caval
 
 - [タブ・パネル一覧](docs/TABS.ja.md) — 全タブの機能紹介（スクリーンショット付き）
 - [After Effects 資産の持ち込みガイド](docs/AFTER_EFFECTS.ja.md) — 手持ちの AE プラグイン・エクスプレッション・Lottie の使い方
+- [Vism 開発クイックスタート](docs/VISM_QUICKSTART.ja.md) / [カスタムカード仕様](docs/CUSTOM_CARDS.ja.md) — JS だけで 3D・シェーダー・音声連動の独自 UI を作る
 - [コーディング・シェーダー開発リファレンス](docs/CODING.ja.md) — 各形式のベース仕様・互換性・WESL WGSL 属性・IDE 連携
 - [使い方ガイド](docs/GUIDE.md) — プロジェクト作成から書き出しまでの操作リファレンス
 - [アーキテクチャ](docs/ARCHITECTURE.md) — アプリ・エンジン・描画・棚の全体設計（英語）

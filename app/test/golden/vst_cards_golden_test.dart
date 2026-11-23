@@ -728,7 +728,7 @@ void main() {
             'children': [
               {
                 'type': 'text',
-                'text': 'GLITCH98.VST  [3D CRT]',
+                'text': 'GLITCH98.VISM  [3D CRT]',
                 'bold': true,
                 'style': {'fg': '#FFFFFF', 'fontSize': 9.5, 'mono': true},
               },
@@ -1408,7 +1408,7 @@ void main() {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'MOTOLII CUSTOM INSPECTOR CARDS · 8 VST DESIGN VECTORS (100% FLUTTER NATIVE · ZERO WEBVIEW)',
+                  'MOTOLII VISM CUSTOM CARDS · 8 DESIGN VECTORS (100% FLUTTER NATIVE · ZERO WEBVIEW)',
                   style: TextStyles.name(Grey.g91).copyWith(
                     fontSize: 11,
                     letterSpacing: 1.0,
@@ -1482,7 +1482,7 @@ void main() {
                     const SizedBox(width: 12),
                     _vstCardColumn(
                       cardTitle: 'Eurorack Mod',
-                      vectorTag: '08 · MODULAR PATCHBAY VST',
+                      vectorTag: '08 · MODULAR PATCHBAY VISM',
                       tone: InspectorSkin.tonePlace,
                       payload: eurorackMod,
                       live: live,

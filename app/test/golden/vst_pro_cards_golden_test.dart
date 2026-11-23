@@ -593,7 +593,7 @@ void main() {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'MOTOLII VST PRO CAPABILITIES · AUDIO WAVEFORM · 16-STEP SEQ · GLSL GPU SHADER · RIG PICKER · CURVE & FADERS',
+                    'MOTOLII VISM PRO CAPABILITIES · AUDIO WAVEFORM · 16-STEP SEQ · GLSL GPU SHADER · RIG PICKER · CURVE & FADERS',
                     style: TextStyles.name(Grey.g91).copyWith(
                       fontSize: 11,
                       letterSpacing: 0.9,

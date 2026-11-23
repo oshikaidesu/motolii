@@ -1,8 +1,12 @@
-# Custom Inspector Card Specification (`.ui.js`)
+# Vism Custom Inspector Card Specification (`.ui.js`)
 
-[日本語](CUSTOM_CARDS.ja.md)
+[日本語](CUSTOM_CARDS.ja.md) · [Vism 5-Minute Quickstart (Japanese)](VISM_QUICKSTART.ja.md)
 
-This specification describes how third-party authors attach dedicated, native Inspector card UIs to any Motolii effect (`.wgsl`, `.fs`, `.js`, TSL) or expression (`shelves/expressions/*.js`) with **no WebView and no build step**.
+This specification describes how third-party authors attach dedicated, native Inspector card UIs (**Vism**) to any Motolii effect (`.wgsl`, `.fs`, `.js`, TSL) or expression (`shelves/expressions/*.js`) with **no WebView and no build step**.
+
+![Vism 8 Design Vectors Gallery](pictures/vism_gallery.jpg)
+
+![Vism Pro Capabilities Gallery](pictures/vism_pro.jpg)
 
 > **Two extension points**
 > - **Custom Cards (this document)**: Per-effect / per-expression UI rendered at the top of an Inspector card, directly driving the effect's own parameters.

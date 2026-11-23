@@ -47,6 +47,13 @@ See [Tabs & Panels](docs/TABS.md) for a visual tour of every tab.
 - **BPM grid.** Tap tempo directly in the Timeline to generate a beat grid with snap-to-beat editing.
 - **Stackable easings.** Stack multiple easings like effects. Each preset is a one-line formula file.
 - **Color tools.** Native macOS eyedropper, automatic palettes extracted from images, and per-character text styling.
+- **Vism custom UI panels & cards.** Build synth-grade custom Inspector faceplates and dockable tool panels in plain JavaScript with Flutter-native 3D (`ui.scene3d` + `.glb`/`.obj`), live GLSL shaders (`ui.shader`), audio waveforms & 16-step sequencers, character rig pickers, and rotary knobs — zero WebView, ~80 ms hot reload, and 1-drop `.vism` sharing. Click **`+ New Vism`** in the Tools panel to scaffold a starter with IDE autocomplete.
+
+<p>
+<img src="docs/pictures/vism_gallery.jpg" alt="Vism 8 design vectors showcase" width="100%">
+<img src="docs/pictures/vism_pro.jpg" alt="Vism pro capabilities: waveform, 16-step sequencer, GLSL shader, rig picker, curve and faders" width="100%">
+</p>
+
 - **Customizable & transparent.** Folder-based skins, VS Code-style `~/.motolii/keybindings.json`, minimal Dart panels, and automatic export credit logs listing authors and licenses for every effect used.
 
 ## Current status
@@ -148,6 +155,7 @@ Cavalry scripts also run natively (`cavalry.Point`, `cavalry.PointCloud`, `caval
 
 - [Tabs & Panels](docs/TABS.md) — Visual overview of every tab and feature
 - [After Effects Migration Guide](docs/AFTER_EFFECTS.md) — Using your existing AE plugins, expressions, and Lottie assets
+- [Vism Custom Panel & Card Quickstart](docs/VISM_QUICKSTART.ja.md) / [Specification](docs/CUSTOM_CARDS.md) — Build custom 3D, shader, audio, and faceplate UIs in JS
 - [Coding & Shader Reference](docs/CODING.md) — Supported formats, WESL WGSL attributes, compatibility model, and IDE workflow
 - [User Guide](docs/GUIDE.md) — End-to-end guide from creating a project to exporting (Japanese)
 - [Architecture](docs/ARCHITECTURE.md) — System design: Flutter app, C++ engine, WebGPU rendering, and shelves

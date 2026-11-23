@@ -132,9 +132,13 @@ function onCardAction(action, ctx) {
 - **操作**: `ui.button`, `ui.toggle`, **`ui.knob`**, `ui.slider`, `ui.number`, `ui.select`, `ui.input`, `ui.color`, `ui.xy`
 - **自由描画 / 3D**: **`ui.scene3d`**（Flutter ネイティブ 3D・`.glb`/`.obj`/ウェーブテーブル対応）、**`ui.svg`**、`ui.canvas`
 
-### VST フェイスプレート（`surface` / `style`）と `ui.knob`・`ui.scene3d`
+### Vism フェイスプレート（`surface` / `style`）と `ui.knob`・`ui.scene3d`
 
-`renderCard(ctx)` の戻り値に `surface` を付けると、カード全体を VST プラグインのフェイスプレートのように独自デザイン化できます（省略時は従来の Motolii 統一スキン）。
+`renderCard(ctx)` の戻り値に `surface` を付けると、カード全体を独自のフェイスプレートデザインにできます（省略時は従来の Motolii 統一スキン）。
+
+![Vism 8デザインベクトル・ギャラリー](pictures/vism_gallery.jpg)
+
+![Vism Pro 機能ギャラリー](pictures/vism_pro.jpg)
 
 ```js
 return {
@@ -164,7 +168,7 @@ return {
 - **`ui.shader(height, preset, opts)`**: Flutter ネイティブ `FragmentShader`（`holo` / `metaball` / `vhs` / `scope` / `aurora` / `grid`）を 60fps で直接描画します。ドラッグ位置が `uMouse` に反映されます。
 - **`ui.waveform` / `ui.sequencer` / `ui.fader` / `ui.vu`**: `ctx.waveform`（波形ピーク）・`ctx.strikes`（ビート打点）・`ctx.bpm` と直結する音声波形（ドラッグしきい値ライン付き）、16 ステップシーケンサー、縦フェーダー、LED VU メーター。
 - **`ui.curve` / `ui.gradient` / `ui.picker`**: FabFilter 風の多点カーブエディタ、マルチストップ・グラデーションバー、Live2D／Rigify 風のキャラクターリグ・ボディピッカー。
-- **配布＆統一 UI トグル**: `effect.js` + `effect.ui.js` + `.glb` / `.png` を 1 フォルダ（または `.motoliipack` / `.motolii-card`）にしてウィンドウへドロップするだけで導入完了。Settings → Appearance の **Custom Card Faceplates** をオフにすると、機能を保ったまま Motolii 標準の統一スキンへ戻せます。
+- **配布＆統一 UI トグル**: `effect.js` + `effect.ui.js` + `.glb` / `.png` を 1 フォルダ（または `.vism` / `.motoliipack` / `.motolii-card`）にしてウィンドウへドロップするだけで導入完了。Settings → Appearance の **Vism Card Faceplates** をオフにすると、機能を保ったまま Motolii 標準の統一スキンへ戻せます。
 
 ### `ui.svg(height, svgMarkup, { id?, label?, fit? })`
 標準の SVG 文字列をネイティブ描画（`flutter_svg`）します。`<path>`・`<linearGradient>`・`<radialGradient>`・`stroke-dasharray`・`transform` など SVG 標準の表現がそのまま使えます。
