@@ -13,11 +13,9 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
-import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/inspector_feed/panel.dart' show LayerCards;
 
 /// The Depth tool: a top view of the camera lens with the layers as slabs.
 class DepthTool extends StatefulWidget {
@@ -29,7 +27,8 @@ class DepthTool extends StatefulWidget {
 class _DepthToolState extends State<DepthTool> {
   @override
   Widget build(BuildContext context) {
-    // Rebuild when the displayed snapshot changes, so the lens matches it.
+    // Rebuild on playhead frames and snapshot changes so the radar tracks live camera motion.
+    WorkspaceScope.frameOf(context);
     WorkspaceScope.pictureOf(context);
     final ws = WorkspaceScope.of(context, {
           WorkspaceAspect.document,
@@ -46,22 +45,27 @@ class _DepthToolState extends State<DepthTool> {
       }
     }
 
-    final cam = ws.layers.where((l) => l.kind == LayerKind.camera).firstOrNull;
+    final cam = activeDepthCamera(ws);
     if (joined != null) {
-      // With a document camera, the focused layer is the sharp layer nearest to the focus.
       final d = lens.dof,
           sharp =
-              depthSlabsOf(ws)
-                  .where((s) => s.z >= d.near && s.z <= d.far)
+              depthSlabsOf(ws, lens)
+                  .where(
+                    (s) =>
+                        s.depthPx > 0 &&
+                        s.depthPx >= d.near &&
+                        s.depthPx <= d.far,
+                  )
                   .toList()
                 ..sort(
-                  (a, b) => (a.z - lens.focus).abs().compareTo(
-                    (b.z - lens.focus).abs(),
+                  (a, b) => (a.depthPx - lens.focus).abs().compareTo(
+                    (b.depthPx - lens.focus).abs(),
                   ),
                 );
       lens.target = sharp.firstOrNull?.id;
     }
     final target = ws.layers.where((l) => l.id == lens.target).firstOrNull;
+    final locked = ws.layers.where((l) => l.id == lens.lockTarget).firstOrNull;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -85,9 +89,29 @@ class _DepthToolState extends State<DepthTool> {
             ),
           ],
           right: [
+            if (locked != null) ...[
+              Chip(label: 'Lock ${locked.name}', dot: WindowTokens.toneCamera),
+              SizedBox(width: Shape.s(6)),
+            ],
             Chip(
-              label: target == null ? 'Focus free' : 'On ${target.name}',
+              label: lens.autoFocus
+                  ? (target == null ? 'Auto focus' : 'Auto · ${target.name}')
+                  : (target == null ? 'Manual ×' : 'On ${target.name} ×'),
               dot: target == null ? Grey.g56 : layerKindColor(target.kind),
+              onTap: !lens.autoFocus && joined != null
+                  ? () {
+                      // Reset manual focus back to 0 (auto-focus on the Boxcam frame).
+                      edit(
+                        () {
+                          lens.autoFocus = true;
+                          lens.focus = joined.eye;
+                        },
+                        'focus',
+                        0,
+                      );
+                      ws.live.letGo();
+                    }
+                  : null,
             ),
           ],
         ),
@@ -103,17 +127,18 @@ class _DepthToolState extends State<DepthTool> {
                     lens: lens,
                     onFocus: (z, id) => edit(
                       () {
-                        lens.focus = z.clamp(100.0, depthZMax);
+                        lens.autoFocus = false;
+                        lens.focus = z.clamp(50.0, depthZMax * 3);
                         lens.target = id;
                       },
                       'focus',
-                      z.clamp(100.0, depthZMax) / (documentPoint(ws) ?? 1),
+                      z.clamp(50.0, depthZMax * 3) / (joined?.point ?? 1),
                     ),
                     // A narrower view is a longer lens.
                     onFocal: (f) => edit(
-                      () => lens.focal = f.clamp(8.0, 600.0),
+                      () => lens.focal = f.clamp(8.0, 400.0),
                       'focal_length',
-                      f.clamp(8.0, 600.0),
+                      f.clamp(8.0, 400.0),
                     ),
                     onDone: () {
                       if (joined != null) ws.live.letGo();
@@ -129,11 +154,8 @@ class _DepthToolState extends State<DepthTool> {
               ),
               const SizedBox(width: WindowTokens.gutter),
               SizedBox(
-                width: Shape.z(128),
-                child: _LensNumbers(
-                  lens: lens,
-                  camera: joined == null ? null : cam?.id,
-                ),
+                width: Shape.z(108),
+                child: _LensNumbers(lens: lens),
               ),
             ],
           ),
@@ -143,11 +165,10 @@ class _DepthToolState extends State<DepthTool> {
   }
 }
 
-/// The side column with the depth of field and its near and far limits. With a camera it also shows the Camera Options card.
+/// Compact optical readout beside the radar: depth of field, near/far limits, focus mode, and Boxcam distance.
 class _LensNumbers extends StatelessWidget {
-  const _LensNumbers({required this.lens, required this.camera});
+  const _LensNumbers({required this.lens});
   final DepthLens lens;
-  final int? camera;
   @override
   Widget build(BuildContext context) {
     final d = lens.dof;
@@ -164,30 +185,26 @@ class _LensNumbers extends StatelessWidget {
     );
     return ColoredBox(
       color: WindowTokens.card,
-      child: ListView(
-        padding: EdgeInsets.only(top: Shape.s(7), bottom: WindowTokens.inset),
-        children: [
-          if (camera case final id?)
-            LayerCards(layer: id, only: const ['Camera Options']),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: Shape.s(6)),
-                ToolReadout(
-                  value: far(d.far - d.near),
-                  unit: 'px',
-                  sub: 'depth of field',
-                ),
-                SizedBox(height: Shape.s(7)),
-                pair('Near', far(d.near)),
-                SizedBox(height: Shape.s(4)),
-                pair('Far', far(d.far)),
-              ],
+      child: Padding(
+        padding: EdgeInsets.all(WindowTokens.inset),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ToolReadout(
+              value: far(d.far - d.near),
+              unit: 'px',
+              sub: 'depth of field',
             ),
-          ),
-        ],
+            SizedBox(height: Shape.s(8)),
+            pair('Near', far(d.near)),
+            SizedBox(height: Shape.s(4)),
+            pair('Far', far(d.far)),
+            SizedBox(height: Shape.s(8)),
+            pair('Focus', lens.autoFocus ? 'Auto' : '${lens.focus.round()}'),
+            SizedBox(height: Shape.s(4)),
+            pair('Dist', '${lens.distance.toStringAsFixed(2)}×'),
+          ],
+        ),
       ),
     );
   }

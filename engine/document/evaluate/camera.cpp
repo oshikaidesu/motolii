@@ -49,6 +49,7 @@
 #include "stage/effects/screen_fx.h"
 #include "stage/effects/viewer_settings.h"
 #include "stage/render/render_draw.h"
+#include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
@@ -504,8 +505,9 @@ void evaluate_camera(Evaluation& evaluation) {
                                        doc_number(d, camera, "shift_y", now, 0)}
                        : math::double2{0.0});
   lens_at(d, camera, now, eye, look);
-  // Set up the working camera first so its model matrix is ready.
-  working_view_shown(evaluation, look);
+  // Switch Stage views between the orbital 3D View (`s.god`) and `s.film`.
+  god_view(s, d.working_camera.on);
+  if (d.working_camera.on) working_view_shown(evaluation, look);
   // The stage view faces s.camera when the working camera is on; the camera
   // view always faces s.film. Billboards and 2D layers use the facing camera
   // so they look correct in whichever view is shown (Blender's behaviour).

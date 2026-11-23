@@ -76,15 +76,12 @@ Stage open_stage(int w, int h) {
   s.scene = s.engine->createScene();
   s.view = s.engine->createView();
   s.swap = s.engine->createSwapChain((uint32_t)w, (uint32_t)h, 0);
-  s.camera = s.engine->createCamera(utils::EntityManager::get().create());
-  s.camera->setExposure(16.0f, 1.0f / 125.0f, 100.0f);
-  // The project's own camera is a separate Filament camera from the Stage's
-  // orbital working camera. 2D layers follow `film`; the Stage view looks
-  // through `camera`. The two share the same scene so the same objects appear
-  // in both views.
+  // The project's own camera (`film`) is the default Stage camera. When 3D View
+  // is toggled on, `god_view` swaps `s.camera` to the separate orbital `s.god`.
   s.filmEntity = utils::EntityManager::get().create();
   s.film = s.engine->createCamera(s.filmEntity);
   s.film->setExposure(16.0f, 1.0f / 125.0f, 100.0f);
+  s.camera = s.film;
   s.view->setScene(s.scene);
   s.view->setCamera(s.camera);
   s.view->setViewport({0, 0, (uint32_t)w, (uint32_t)h});
