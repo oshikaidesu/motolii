@@ -15,6 +15,7 @@ class CreateTile {
     this.file,
     this.made = false,
     this.pasted = false,
+    this.customUi = false,
   });
   final String name, key, what;
   final AppGlyphs g;
@@ -33,6 +34,9 @@ class CreateTile {
   /// True for code that came from outside by paste or drop, kept as written in [file] (code_file.dart). It makes a
   /// layer of its own through the adapter of what it was written for.
   final bool pasted;
+
+  /// True when the expression has a custom `.ui.js` / `renderCard` VST Inspector card.
+  final bool customUi;
   String get id => file ?? (recipe ? 'recipe:$name' : name);
 
   /// True if the tile goes on the picked layer, or on a new layer when none is picked.

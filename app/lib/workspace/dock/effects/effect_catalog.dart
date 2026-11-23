@@ -5,6 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show hasCustomCardUi;
 import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/engine_access.dart' show ownFolder;
 import 'package:motolii/workspace/state/media/shelf_reads.dart';
@@ -89,8 +91,13 @@ EffectListing effectListing({
   // Search matches the name, or what the effect does in its author's words
   // It also matches the tags read from the effect (ShelfTags), each word on its own.
   // When nothing matches, as for a misspelt or partial word, the nearest five by RapidFuzz are shown, like "Did you mean".
-  Set<String> tagsOf(String id) =>
-      tags.of('Effects', id, seen[id]?.tags ?? const {});
+  Set<String> tagsOf(String id) => {
+    ...tags.of('Effects', id, seen[id]?.tags ?? const {}),
+    if (seen[id]?.from == 'screen' && hasCustomCardUi(ws, id)) ...const [
+      'vst',
+      'custom-ui',
+    ],
+  };
   bool found(String q, EffectEntry e) =>
       q.isEmpty ||
       e.name.toLowerCase().contains(q.toLowerCase()) ||

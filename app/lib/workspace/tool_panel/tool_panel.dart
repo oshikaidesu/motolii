@@ -6,9 +6,12 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, Pressable, IconPress;
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/reveal_in_finder.dart' show revealFile;
+import 'package:motolii/storage/shelf_disk.dart' show makeFolder;
 import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/workspace/state/engine_access.dart' show ownFolder;
 import 'package:motolii/workspace/state/pack_service.dart'
-    show exportPackFromWorkspace;
+    show exportPackFromWorkspace, importPackFromDialog;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/tool_panel/tool_sticker.dart';
 import 'package:motolii/widgets/grid_columns.dart';
@@ -66,6 +69,26 @@ class _ToolHeader extends StatelessWidget {
           name,
           leading: ToolSticker(name),
           trailing: [
+            if (name == 'Tools') ...[
+              Chip(
+                key: const ValueKey('tool:import'),
+                label: 'Import',
+                dot: WindowTokens.accent,
+                onTap: () => importPackFromDialog(ws),
+              ),
+              SizedBox(width: WindowTokens.gap),
+              Chip(
+                key: const ValueKey('tool:folder'),
+                label: 'Folder',
+                dot: Grey.g76,
+                onTap: () {
+                  final dir = '${ownFolder()}/panels';
+                  makeFolder(dir);
+                  revealFile(dir);
+                },
+              ),
+              SizedBox(width: WindowTokens.gap),
+            ],
             if (name != 'Tools')
               if (panelTool(ws, name) case final tool?) ...[
                 if (jsPanelDescriptor(ws, name) case final jsPanel?) ...[
@@ -167,49 +190,131 @@ class _ToolTile extends StatelessWidget {
   final Pane tool;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Pressable(
-    onTap: onTap,
-    builder: (_, h) => Container(
-      padding: EdgeInsets.fromLTRB(
-        Shape.s(7),
-        Shape.s(7),
-        Shape.s(6),
-        Shape.s(7),
-      ),
-      decoration: BoxDecoration(
-        color: h ? WindowTokens.raised : WindowTokens.card,
-        borderRadius: Shape.round(WindowTokens.radius),
-      ),
-      child: LayoutBuilder(
-        builder: (context, box) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [ToolSticker(tool.name, size: Shape.z(26))],
-            ),
-            const Spacer(),
-            Text(
-              tool.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyles.name(h ? Grey.g100 : Grey.g95).copyWith(
-                fontSize: TextStyles.px(12),
-                fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) {
+    final ws = WorkspaceScope.read(context);
+    final isCustom = jsPanelDescriptor(ws, tool.name) != null;
+    final tile = Pressable(
+      onTap: onTap,
+      builder: (_, h) => Container(
+        padding: EdgeInsets.fromLTRB(
+          Shape.s(7),
+          Shape.s(7),
+          Shape.s(6),
+          Shape.s(7),
+        ),
+        decoration: BoxDecoration(
+          color: h ? WindowTokens.raised : WindowTokens.card,
+          borderRadius: Shape.round(WindowTokens.radius),
+        ),
+        child: LayoutBuilder(
+          builder: (context, box) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ToolSticker(tool.name, size: Shape.z(26)),
+                  const Spacer(),
+                  if (isCustom)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Shape.s(4),
+                        vertical: Shape.s(1),
+                      ),
+                      decoration: BoxDecoration(
+                        color: WindowTokens.accent.withValues(alpha: 0.18),
+                        borderRadius: Shape.round(3),
+                        border: Border.all(
+                          color: WindowTokens.accent.withValues(alpha: 0.55),
+                        ),
+                      ),
+                      child: Text(
+                        'VST',
+                        style: TextStyles.micro(WindowTokens.accent).copyWith(
+                          fontSize: TextStyles.px(8),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  if (h) ...[
+                    SizedBox(width: Shape.s(3)),
+                    Pressable(
+                      key: ValueKey('tool:popout:${tool.name}'),
+                      onTap: () => ws.openDockTab(tool),
+                      builder: (_, popHot) => Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Shape.s(4),
+                          vertical: Shape.s(1),
+                        ),
+                        decoration: BoxDecoration(
+                          color: popHot
+                              ? WindowTokens.accent
+                              : WindowTokens.well,
+                          borderRadius: Shape.round(3),
+                        ),
+                        child: Text(
+                          'Tab ↗',
+                          style: TextStyles.micro(
+                            popHot ? WindowTokens.onAccent : Grey.g91,
+                          ).copyWith(fontSize: TextStyles.px(8)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ),
-            if (box.maxHeight >= 54) ...[
-              SizedBox(height: Shape.s(3)),
+              const Spacer(),
               Text(
-                tool.acts,
+                tool.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyles.label(Grey.g56),
+                style: TextStyles.name(h ? Grey.g100 : Grey.g95).copyWith(
+                  fontSize: TextStyles.px(12),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
+              if (box.maxHeight >= 54) ...[
+                SizedBox(height: Shape.s(3)),
+                Text(
+                  tool.acts,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyles.label(Grey.g56),
+                ),
+              ],
             ],
+          ),
+        ),
+      ),
+    );
+    return Draggable<Pane>(
+      data: tool,
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      feedback: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(9),
+          vertical: Shape.s(5),
+        ),
+        decoration: BoxDecoration(
+          color: WindowTokens.raised,
+          borderRadius: Shape.round(6),
+          border: Border.all(color: WindowTokens.accent, width: 1.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ToolSticker(tool.name, size: Shape.z(16)),
+            SizedBox(width: Shape.s(6)),
+            Text(
+              '${tool.name} · Drop to dock as tab',
+              style: TextStyles.micro(Grey.g95)
+                  .copyWith(fontWeight: FontWeight.w700),
+            ),
           ],
         ),
       ),
-    ),
-  );
+      childWhenDragging: Opacity(opacity: 0.35, child: tile),
+      child: tile,
+    );
+  }
 }

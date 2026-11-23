@@ -6,6 +6,8 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/create/create_tile.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/shelf_add.dart';
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show hasCustomCardUi;
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:motolii/workspace/state/media/shelf_reads.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -57,6 +59,7 @@ List<CreateTile> expressionsOf(WorkspaceController ws) => [
       'On the picked thing, a card of its own (nothing picked: makes its own thing)',
       file: file,
       made: true,
+      customUi: hasCustomCardUi(ws, file),
     ),
   for (final (name, file) in animatorsOf(ws))
     // A motion the user added is also in expressions/, the engine's motions folder. Its tile is the one below, with its own name.
@@ -68,6 +71,7 @@ List<CreateTile> expressionsOf(WorkspaceController ws) => [
         '',
         'A motion, on the picked thing, a card of its own (nothing picked: on a new board)',
         file: file,
+        customUi: hasCustomCardUi(ws, file),
       ),
   for (final (name, file) in relationsOf(ws))
     CreateTile(
@@ -77,6 +81,7 @@ List<CreateTile> expressionsOf(WorkspaceController ws) => [
       '',
       'On a group, or on layers picked together, moves them as one (one picked layer: its copies or letters)',
       file: file,
+      customUi: hasCustomCardUi(ws, file),
     ),
   for (final (name, file) in shelfExpressions())
     CreateTile(
@@ -86,5 +91,6 @@ List<CreateTile> expressionsOf(WorkspaceController ws) => [
       '',
       'Your expression, on the picked thing (nothing picked: on a new board); its knobs are on its card',
       file: file,
+      customUi: hasCustomCardUi(ws, file),
     ),
 ];

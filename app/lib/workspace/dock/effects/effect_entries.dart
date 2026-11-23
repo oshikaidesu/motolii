@@ -7,6 +7,7 @@ import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart' show AppGlyphs;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/media.dart' show Draw;
@@ -18,6 +19,8 @@ import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show hasCustomCardUi;
 import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/layers/layer_edits.dart';
 import 'package:motolii/workspace/state/media/shelf_reads.dart';
@@ -47,8 +50,35 @@ EffectEntries effectEntries({
   final look = shelfLooks['Effects']!;
   // Overlays on a tile's image, none on a small tile.
   // A small icon badge for the reason the sample is unchanged; the star when starred or hovered.
-  List<Widget> Function(bool) marks(String id, bool small, {String? same}) =>
+  List<Widget> Function(bool) marks(
+    String id,
+    bool small, {
+    String? same,
+    bool customUi = false,
+  }) =>
       (h) => [
+        if (customUi && !small)
+          Positioned(
+            left: 3,
+            top: 3,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: Shape.s(4),
+                vertical: Shape.s(1),
+              ),
+              decoration: BoxDecoration(
+                color: WindowTokens.accent,
+                borderRadius: Shape.round(3),
+              ),
+              child: Text(
+                'VST',
+                style: TextStyles.micro(WindowTokens.onAccent).copyWith(
+                  fontSize: TextStyles.px(7.5),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
         if (same != null && !small)
           Positioned(left: 2, bottom: 2, child: _sameBadge(same)),
         if (!small && (c.starred(id) || h))
@@ -123,6 +153,7 @@ EffectEntries effectEntries({
           id,
           small,
           same: screened && i.same ? TileReview.sameTag(id) : null,
+          customUi: screened && hasCustomCardUi(ws, id),
         ),
       ),
     );

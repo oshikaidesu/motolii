@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:docking/docking.dart' show DockingRow;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -23,6 +24,11 @@ import 'package:motolii/widgets/custom_ui/panel_node.dart';
 import 'package:motolii/widgets/custom_ui/panel_renderer.dart';
 import 'package:motolii/widgets/custom_ui/scene3d_view.dart'
     show parseGlbMesh, parseObjMesh;
+import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel.dart';
+import 'package:motolii/workspace/window/panes.dart';
 
 void main() {
   test('parses panel list, render tree, and action ops cleanly', () {
@@ -983,6 +989,84 @@ f 2 4 3
         File('${own.path}/expressions/faceplate.png').existsSync(),
         isTrue,
       );
+    },
+  );
+
+  testWidgets(
+    'Dragging a tool tile out of ToolPanel onto another pane docks it as a real tab',
+    (tester) async {
+      final ws = WorkspaceController();
+      addTearDown(ws.dispose);
+      final demoPane = Pane(
+        'Demo VST',
+        null,
+        () => const Center(child: Text('DEMO_VST_BODY')),
+        at: PaneStrip.catalog,
+        acts: 'Panel',
+      );
+      ws.panes = [
+        Pane(
+          'Stage',
+          null,
+          () => const Center(child: Text('STAGE_BODY')),
+          at: PaneStrip.stage,
+        ),
+        Pane(
+          'Inspector',
+          null,
+          () => const Center(child: Text('INSPECTOR_BODY')),
+          at: PaneStrip.inspector,
+        ),
+        Pane('Tool Panel', null, () => const ToolPanel(), at: PaneStrip.tools),
+        demoPane,
+      ];
+
+      tester.view.physicalSize = const Size(1200, 760);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        WidgetsApp(
+          color: Grey.g07,
+          debugShowCheckedModeBanner: false,
+          pageRouteBuilder: <T>(settings, builder) =>
+              PageRouteBuilder<T>(pageBuilder: (c, _, _) => builder(c)),
+          home: WorkspaceScope(
+            ws: ws,
+            child: Panes(
+              panes: ws.panes,
+              workspaces: {
+                'Test': (
+                  (strip) => DockingRow([
+                    strip(PaneStrip.stage),
+                    strip(PaneStrip.inspector),
+                    strip(PaneStrip.tools),
+                  ]),
+                  const [],
+                ),
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('tool:import')), findsOneWidget);
+      expect(find.byKey(const ValueKey('tool:folder')), findsOneWidget);
+      expect(find.text('Demo VST'), findsOneWidget);
+      expect(find.text('DEMO_VST_BODY'), findsNothing);
+
+      final from = tester.getCenter(find.text('Demo VST'));
+      final to = tester.getCenter(find.text('INSPECTOR_BODY'));
+      final gesture = await tester.startGesture(from);
+      await tester.pump();
+      await gesture.moveTo(to);
+      await tester.pump();
+      expect(find.text('Drop to dock "Demo VST" here'), findsOneWidget);
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(find.text('DEMO_VST_BODY'), findsOneWidget);
     },
   );
 }

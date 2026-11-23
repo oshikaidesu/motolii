@@ -179,6 +179,20 @@ String customPanelAction(
     ws.inside?.panelAction(path, actionJson, ctxJson) ??
     '{"ok":false,"error":"No open project"}';
 
+final _cardUiCache = <String, bool>{};
+
+/// Clears cached `.ui.js` detection results (called when packs are imported or folders reload).
+void clearCustomCardUiCache() => _cardUiCache.clear();
+
+/// True when [effectPath] has a sidecar `<stem>.ui.js` or co-located `renderCard(ctx)`.
+bool hasCustomCardUi(WorkspaceController ws, String effectPath) {
+  if (effectPath.isEmpty || ws.inside == null) return false;
+  return _cardUiCache.putIfAbsent(
+    effectPath,
+    () => ws.inside!.cardUiFile(effectPath).isNotEmpty,
+  );
+}
+
 /// Resolves a custom Inspector card UI (`<effect>.ui.js` sidecar or co-located `renderCard`)
 /// for card [title] on layer [thing], or returns null when the card uses the default grid.
 CardCustomUi? cardCustomUiOf(

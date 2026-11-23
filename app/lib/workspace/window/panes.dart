@@ -83,7 +83,7 @@ class _PanesState extends State<Panes> {
   }
 
   (String, int)? _fronted;
-  (Pane, int)? _dockOpened;
+  (Pane, String?, int)? _dockOpened;
   final _dynamicPanes = <String, Pane>{};
 
   void _follow() {
@@ -94,17 +94,35 @@ class _PanesState extends State<Panes> {
     }
     if (_ws!.dockOpened case final d? when d != _dockOpened) {
       _dockOpened = d;
-      _openDynamicTab(d.$1);
+      _openDynamicTab(d.$1, onPane: d.$2);
     }
   }
 
-  void _openDynamicTab(Pane pane) {
+  void _openDynamicTab(Pane pane, {String? onPane}) {
     _dynamicPanes[pane.name] = pane;
-    if (_layout.findDockingItem(pane.name) != null) {
+    if (_layout.findDockingItem(pane.name) case final existing?) {
+      if (onPane != null && onPane != pane.name) {
+        final DropArea? target =
+            _layout.findDockingTabsWithItem(onPane) ??
+            _layout.findDockingItem(onPane);
+        if (target != null && target != existing) {
+          _preservingWeights(() {
+            _layout.moveItem(
+              draggedItem: existing,
+              targetArea: target,
+              dropIndex: target is DockingTabs ? target.childrenCount : 1,
+            );
+          });
+        }
+      }
       _toFront(pane.name);
       return;
     }
     final DropArea? target =
+        (onPane != null
+            ? (_layout.findDockingTabsWithItem(onPane) ??
+                  _layout.findDockingItem(onPane))
+            : null) ??
         _layout.findDockingTabsWithItem('Tool Panel') ??
         _layout.findDockingItem('Tool Panel') ??
         _layout.findDockingTabsWithItem('Inspector');
@@ -225,7 +243,42 @@ class _PanesState extends State<Panes> {
           ),
         ),
       ),
-      widget: Panel(child: p.build()),
+      widget: DragTarget<Pane>(
+        onWillAcceptWithDetails: (d) =>
+            d.data.name != name && name != 'Tool Panel',
+        onAcceptWithDetails: (d) => _ws?.openDockTab(d.data, onPane: name),
+        builder: (context, incoming, _) => Stack(
+          fit: StackFit.expand,
+          children: [
+            Panel(child: p.build()),
+            if (incoming.isNotEmpty)
+              IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: WindowTokens.accent.withValues(alpha: 0.10),
+                    border: Border.all(color: WindowTokens.accent, width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Shape.s(10),
+                      vertical: Shape.s(5),
+                    ),
+                    decoration: BoxDecoration(
+                      color: WindowTokens.card,
+                      borderRadius: Shape.round(6),
+                      border: Border.all(color: WindowTokens.accent),
+                    ),
+                    child: Text(
+                      'Drop to dock "${incoming.first!.name}" here',
+                      style: TextStyles.name(Grey.g95),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
       size: size,
       weight: weight,
       minimalSize: p.minSize,

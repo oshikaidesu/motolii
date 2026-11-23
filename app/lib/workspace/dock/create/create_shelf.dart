@@ -59,10 +59,29 @@ class CreateShelf extends StatelessWidget {
       for (final m in makes.last.$2)
         if (m.pasted) m.file!,
     ], () => codeTilesDrawn.value++);
+    bool matchesTile(CreateTile m) {
+      if (c.hit(m.name)) return true;
+      final q = c.query.trim().toLowerCase();
+      if (q.isEmpty || !m.customUi) return false;
+      return q == 'vst' ||
+          q == '#vst' ||
+          q == 'custom' ||
+          q == 'custom-ui' ||
+          q == '#custom-ui';
+    }
+
+    final vstCount = makes.expand((e) => e.$2).where((m) => m.customUi).length;
     var groups = [
       for (final (g, items) in makes)
-        if (c.chip == 'All' || c.chip == g)
-          (g, items.where((m) => c.hit(m.name)).toList()),
+        if (c.chip == 'All' || c.chip == g || c.chip == '#vst')
+          (
+            g,
+            items
+                .where(
+                  (m) => (c.chip != '#vst' || m.customUi) && matchesTile(m),
+                )
+                .toList(),
+          ),
     ].where((e) => e.$2.isNotEmpty).toList();
     if (groups.isEmpty && c.query.trim().isNotEmpty) {
       // Nothing matches the query as typed, so show the nearest five, each in its own group.
@@ -89,6 +108,7 @@ class CreateShelf extends StatelessWidget {
         FilterChips(
           [
             ('All', makes.fold<int>(0, (s, e) => s + e.$2.length)),
+            if (vstCount > 0) ('#vst', vstCount),
             for (final (g, items) in makes) (g, items.length),
           ],
           active: c.chip,
@@ -202,7 +222,28 @@ Widget _makeTile(
     onApply: makes ? () => CreateCommands(c).make(m) : null,
     art: (_) => _makeArt(m, c, sel),
     over: (_) => [
-      if (m.key.isNotEmpty)
+      if (m.customUi)
+        Align(
+          alignment: Alignment.topRight,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: Shape.s(4),
+              vertical: Shape.s(1),
+            ),
+            decoration: BoxDecoration(
+              color: WindowTokens.accent,
+              borderRadius: Shape.round(3),
+            ),
+            child: Text(
+              'VST',
+              style: TextStyles.micro(WindowTokens.onAccent).copyWith(
+                fontSize: TextStyles.px(7.5),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        )
+      else if (m.key.isNotEmpty)
         Align(
           alignment: Alignment.topRight,
           child: Text(m.key, style: TextStyles.micro(dockInk(sel, Grey.g56))),

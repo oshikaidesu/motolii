@@ -9,6 +9,8 @@ import 'package:motolii/workspace/dock/effects/effect_map_pane.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart' show DockHover;
 import 'package:motolii/workspace/shelf/tile_moving.dart';
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show hasCustomCardUi;
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -77,11 +79,13 @@ class _EffectsShelfState extends State<EffectsShelf> {
     String activeChip,
     ShelfContext c,
   ) {
-    final effectTags = widget.effects.tags.of(
-      'Effects',
-      id,
-      seen[id]?.tags ?? const {},
-    );
+    final effectTags = {
+      ...widget.effects.tags.of('Effects', id, seen[id]?.tags ?? const {}),
+      if (seen[id]?.from == 'screen' && hasCustomCardUi(c.ws, id)) ...const [
+        'vst',
+        'custom-ui',
+      ],
+    };
     if (effectTags.isEmpty) return null;
     return Wrap(
       spacing: Shape.s(4),
