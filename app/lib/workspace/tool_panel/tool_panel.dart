@@ -6,12 +6,13 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, Pressable, IconPress;
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/open_in_host.dart' show openInEditor;
 import 'package:motolii/storage/reveal_in_finder.dart' show revealFile;
 import 'package:motolii/storage/shelf_disk.dart' show makeFolder;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/state/engine_access.dart' show ownFolder;
 import 'package:motolii/workspace/state/pack_service.dart'
-    show exportPackFromWorkspace, importPackFromDialog;
+    show createNewVismPanel, exportPackFromWorkspace, importPackFromDialog;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/tool_panel/tool_sticker.dart';
 import 'package:motolii/widgets/grid_columns.dart';
@@ -64,34 +65,47 @@ class _ToolHeader extends StatelessWidget {
         pinned = ws.toolPanelManual != null;
     return LayoutBuilder(
       builder: (context, box) {
-        final wide = box.maxWidth >= 340;
+        final wide = box.maxWidth >= 420;
         return PanelHeader(
           name,
           leading: ToolSticker(name),
           trailing: [
             if (name == 'Tools') ...[
               Chip(
+                key: const ValueKey('tool:new-vism'),
+                label: '+ New Vism',
+                dot: WindowTokens.accent,
+                onTap: () => createNewVismPanel(ws),
+              ),
+              SizedBox(width: WindowTokens.gap),
+              Chip(
                 key: const ValueKey('tool:import'),
                 label: 'Import',
-                dot: WindowTokens.accent,
+                dot: Grey.g76,
                 onTap: () => importPackFromDialog(ws),
               ),
               SizedBox(width: WindowTokens.gap),
               Chip(
                 key: const ValueKey('tool:folder'),
                 label: 'Folder',
-                dot: Grey.g76,
+                dot: Grey.g56,
                 onTap: () {
                   final dir = '${ownFolder()}/panels';
                   makeFolder(dir);
                   revealFile(dir);
                 },
               ),
-              SizedBox(width: WindowTokens.gap),
             ],
-            if (name != 'Tools')
+            if (name != 'Tools') ...[
               if (panelTool(ws, name) case final tool?) ...[
                 if (jsPanelDescriptor(ws, name) case final jsPanel?) ...[
+                  Chip(
+                    key: ValueKey('tool:edit:$name'),
+                    label: 'Edit',
+                    dot: WindowTokens.accent,
+                    onTap: () => openInEditor(jsPanel.path),
+                  ),
+                  SizedBox(width: WindowTokens.gap),
                   Chip(
                     key: ValueKey('tool:export:$name'),
                     label: 'Pack',
@@ -113,17 +127,18 @@ class _ToolHeader extends StatelessWidget {
                 ),
                 SizedBox(width: WindowTokens.gap),
               ],
-            if (pinned)
-              Chip(
-                label: wide ? 'Pinned · Follow' : 'Pinned',
-                dot: Grey.g76,
-                onTap: () => ws.openToolPanel(null),
-              )
-            else
-              Chip(
-                label: wide ? 'Follows selection' : 'Follows',
-                dot: WindowTokens.accent,
-              ),
+              if (pinned)
+                Chip(
+                  label: wide ? 'Pinned · Follow' : 'Pinned',
+                  dot: Grey.g76,
+                  onTap: () => ws.openToolPanel(null),
+                )
+              else
+                Chip(
+                  label: wide ? 'Follows selection' : 'Follows',
+                  dot: WindowTokens.accent,
+                ),
+            ],
             SizedBox(width: WindowTokens.gap),
             IconPress(
               (ink) => Glyph(AppGlyphs.tools, size: 20, color: ink),
@@ -147,15 +162,16 @@ class _ToolHeader extends StatelessWidget {
 /// A tile never grows beyond [_maxTile].
 class _Catalog extends StatelessWidget {
   const _Catalog();
-  static const _cell = 104.0, _minTile = 62.0, _maxTile = 92.0;
+  static const _cell = 104.0, _minTile = 62.0, _maxTile = 84.0;
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.read(context);
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.fronted});
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth - WindowTokens.gap * 2,
             h = box.maxHeight - WindowTokens.gap * 2;
-        final tools = allPanelTools(ws);
+        final tools = allDockablePanels(ws);
+        final openTabs = ws.openTabs;
         final cols = gridColumns(w, _cell, gap: WindowTokens.gap, min: 2),
             rows = (tools.length / cols).ceil().clamp(1, 999);
         final tile = ((h - WindowTokens.gap * (rows - 1)) / rows).clamp(
@@ -174,7 +190,19 @@ class _Catalog extends StatelessWidget {
                   SizedBox(
                     width: cw,
                     height: tile,
-                    child: _ToolTile(t, onTap: () => ws.openToolPanel(t.name)),
+                    child: _ToolTile(
+                      t,
+                      isOpen: openTabs.contains(t.name),
+                      onTap: () {
+                        if (openTabs.contains(t.name)) {
+                          ws.front(t.name);
+                        } else if (t.at == PaneStrip.catalog) {
+                          ws.openToolPanel(t.name);
+                        } else {
+                          ws.openDockTab(t);
+                        }
+                      },
+                    ),
                   ),
               ],
             ),
@@ -186,13 +214,17 @@ class _Catalog extends StatelessWidget {
 }
 
 class _ToolTile extends StatelessWidget {
-  const _ToolTile(this.tool, {required this.onTap});
+  const _ToolTile(this.tool, {required this.onTap, this.isOpen = false});
   final Pane tool;
   final VoidCallback onTap;
+  final bool isOpen;
   @override
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.read(context);
     final isCustom = jsPanelDescriptor(ws, tool.name) != null;
+    final subtitle = tool.acts.isNotEmpty
+        ? tool.acts
+        : (isOpen ? 'Open tab' : 'Panel');
     final tile = Pressable(
       onTap: onTap,
       builder: (_, h) => Container(
@@ -215,6 +247,16 @@ class _ToolTile extends StatelessWidget {
                 children: [
                   ToolSticker(tool.name, size: Shape.z(26)),
                   const Spacer(),
+                  if (isOpen && !h)
+                    Container(
+                      width: 6,
+                      height: 6,
+                      margin: EdgeInsets.only(right: Shape.s(3)),
+                      decoration: BoxDecoration(
+                        color: WindowTokens.accent,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
                   if (isCustom)
                     Container(
                       padding: EdgeInsets.symmetric(
@@ -229,7 +271,7 @@ class _ToolTile extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'VST',
+                        'VISM',
                         style: TextStyles.micro(WindowTokens.accent).copyWith(
                           fontSize: TextStyles.px(8),
                           fontWeight: FontWeight.w800,
@@ -276,7 +318,7 @@ class _ToolTile extends StatelessWidget {
               if (box.maxHeight >= 54) ...[
                 SizedBox(height: Shape.s(3)),
                 Text(
-                  tool.acts,
+                  subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyles.label(Grey.g56),

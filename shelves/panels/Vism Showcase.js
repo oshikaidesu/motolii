@@ -1,5 +1,5 @@
-// --title: VST Showcase
-// --about: 6 design vectors for VST-style custom cards (Flat-Pop, Synth 3D, Hardware, Studio, Retro 98, Kawaii)
+// --title: Vism Showcase
+// --about: Design vectors for Vism custom panels (Flat-Pop, Synth 3D, Hardware, Beat Sync, GPU Shader, Rig Picker, Pro Curve, Kawaii)
 // --acts: Panel
 // --tone: accent
 

@@ -82,7 +82,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     final effectTags = {
       ...widget.effects.tags.of('Effects', id, seen[id]?.tags ?? const {}),
       if (seen[id]?.from == 'screen' && hasCustomCardUi(c.ws, id)) ...const [
-        'vst',
+        'vism',
         'custom-ui',
       ],
     };

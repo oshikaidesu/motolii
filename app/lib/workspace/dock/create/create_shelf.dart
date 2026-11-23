@@ -63,22 +63,22 @@ class CreateShelf extends StatelessWidget {
       if (c.hit(m.name)) return true;
       final q = c.query.trim().toLowerCase();
       if (q.isEmpty || !m.customUi) return false;
-      return q == 'vst' ||
-          q == '#vst' ||
+      return q == 'vism' ||
+          q == '#vism' ||
           q == 'custom' ||
           q == 'custom-ui' ||
           q == '#custom-ui';
     }
 
-    final vstCount = makes.expand((e) => e.$2).where((m) => m.customUi).length;
+    final vismCount = makes.expand((e) => e.$2).where((m) => m.customUi).length;
     var groups = [
       for (final (g, items) in makes)
-        if (c.chip == 'All' || c.chip == g || c.chip == '#vst')
+        if (c.chip == 'All' || c.chip == g || c.chip == '#vism')
           (
             g,
             items
                 .where(
-                  (m) => (c.chip != '#vst' || m.customUi) && matchesTile(m),
+                  (m) => (c.chip != '#vism' || m.customUi) && matchesTile(m),
                 )
                 .toList(),
           ),
@@ -108,7 +108,7 @@ class CreateShelf extends StatelessWidget {
         FilterChips(
           [
             ('All', makes.fold<int>(0, (s, e) => s + e.$2.length)),
-            if (vstCount > 0) ('#vst', vstCount),
+            if (vismCount > 0) ('#vism', vismCount),
             for (final (g, items) in makes) (g, items.length),
           ],
           active: c.chip,
@@ -235,7 +235,7 @@ Widget _makeTile(
               borderRadius: Shape.round(3),
             ),
             child: Text(
-              'VST',
+              'VISM',
               style: TextStyles.micro(WindowTokens.onAccent).copyWith(
                 fontSize: TextStyles.px(7.5),
                 fontWeight: FontWeight.w800,

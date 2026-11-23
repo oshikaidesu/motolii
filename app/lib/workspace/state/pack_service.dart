@@ -2,13 +2,15 @@
 // with automatic shelf hot-reload and immediate open/apply.
 // 詳細: docs/design/motoliipack.md
 import 'package:motolii/storage/motolii_pack.dart';
-import 'package:motolii/storage/open_in_host.dart' show pickFile, saveFile;
+import 'package:motolii/storage/open_in_host.dart'
+    show openInEditor, pickFile, saveFile;
 import 'package:motolii/storage/shelf_meta.dart' show clearShelfMetaCache;
 import 'package:motolii/widgets/custom_ui/panel_node.dart'
     show panelToneColor, parsePanelList;
 import 'package:motolii/workspace/state/custom_panel_service.dart'
     show clearCustomCardUiCache, customPanelListRaw;
-import 'package:motolii/workspace/state/engine_access.dart' show ownFolder;
+import 'package:motolii/workspace/state/engine_access.dart'
+    show ownFolder, shelvesFolder;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/tiles/effect_put.dart'
     show putEffectFile;
@@ -16,7 +18,7 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/tool_panel/custom_panel/js_panel_tool.dart'
     show JsPanelTool;
 
-/// Exports an effect, expression, or custom panel [sourceFile] as a `.motoliipack` via save dialog (or [outPath]).
+/// Exports an effect, expression, or custom Vism panel [sourceFile] as a `.vism` archive via save dialog (or [outPath]).
 Future<PackExportResult?> exportPackFromWorkspace(
   WorkspaceController ws, {
   required String sourceFile,
@@ -25,10 +27,10 @@ Future<PackExportResult?> exportPackFromWorkspace(
   String? outPath,
 }) async {
   final suggested =
-      '${(name ?? 'pack').replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')}.motoliipack';
+      '${(name ?? 'pack').replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')}.vism';
   final dest =
       outPath ??
-      await saveFile(prompt: 'Export Motolii Pack', defaultName: suggested);
+      await saveFile(prompt: 'Export Vism Pack', defaultName: suggested);
   if (dest == null || dest.isEmpty) return null;
   try {
     final res = exportMotoliiPack(
@@ -38,12 +40,44 @@ Future<PackExportResult?> exportPackFromWorkspace(
       name: name,
     );
     ws.notice =
-        'Exported ${res.name}.motoliipack (${res.fileCount} ${res.fileCount == 1 ? 'file' : 'files'})';
+        'Exported ${res.name}.vism (${res.fileCount} ${res.fileCount == 1 ? 'file' : 'files'})';
     return res;
   } catch (e) {
     ws.notice = 'Not exported: $e';
     return null;
   }
+}
+
+/// Scaffolds a new ready-to-edit Vism panel in the user's `panels/` folder (with `motolii-ui.d.ts`
+/// IntelliSense), opens it immediately as a live docking tab, and launches the external IDE.
+void createNewVismPanel(WorkspaceController ws, {bool launchEditor = true}) {
+  final made = createVismPanelStarter(
+    ownFolder: ownFolder(),
+    shelvesFolder: shelvesFolder(),
+  );
+  clearShelfMetaCache();
+  clearCustomCardUiCache();
+  ws.inside?.forgetFolders();
+  ws.reread();
+  final desc = (
+    name: made.name,
+    path: made.path,
+    about: 'Custom Vism panel starter',
+    acts: 'Selection',
+    tone: 'accent',
+  );
+  ws.openDockTab(
+    Pane(
+      desc.name,
+      null,
+      () => JsPanelTool(desc),
+      at: PaneStrip.catalog,
+      tone: panelToneColor(desc.tone),
+      acts: desc.acts,
+    ),
+  );
+  if (launchEditor) openInEditor(made.path);
+  ws.notice = 'Created Vism "${made.name}" — save in your editor to hot-reload';
 }
 
 /// Imports one or more `.motoliipack` files into the user's shelf folder and hot-reloads the engine & shelves.
@@ -125,11 +159,11 @@ void _activateInstalledBundle(WorkspaceController ws, PackImportResult res) {
   }
 }
 
-/// Prompts the user for a `.motoliipack` / `.motolii-card` file and installs it with hot-reload.
+/// Prompts the user for a `.vism` / `.motoliipack` file and installs it with hot-reload.
 Future<void> importPackFromDialog(WorkspaceController ws) async {
   final picked = await pickFile(
-    prompt: 'Import Motolii Pack (.motoliipack / .motolii-card)',
-    extensions: const ['motoliipack', 'motolii-card', 'zip'],
+    prompt: 'Import Vism Pack (.vism / .motoliipack)',
+    extensions: const ['vism', 'motoliipack', 'motolii-card', 'zip'],
   );
   if (picked == null || picked.isEmpty) return;
   importPacksIntoWorkspace(ws, [picked]);

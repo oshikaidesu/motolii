@@ -19,7 +19,7 @@ import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/motolii_pack.dart'
-    show importMotoliiPack, isMotoliiPackPath;
+    show createVismPanelStarter, importMotoliiPack, isMotoliiPackPath;
 import 'package:motolii/widgets/custom_ui/panel_node.dart';
 import 'package:motolii/widgets/custom_ui/panel_renderer.dart';
 import 'package:motolii/widgets/custom_ui/scene3d_view.dart'
@@ -1051,9 +1051,12 @@ f 2 4 3
       );
       await tester.pumpAndSettle();
 
+      expect(find.byKey(const ValueKey('tool:new-vism')), findsOneWidget);
       expect(find.byKey(const ValueKey('tool:import')), findsOneWidget);
       expect(find.byKey(const ValueKey('tool:folder')), findsOneWidget);
+      // Equalized ToolPanel lists BOTH custom Vism panels and default tabs (Inspector, Stage).
       expect(find.text('Demo VST'), findsOneWidget);
+      expect(find.text('Inspector'), findsAtLeastNWidgets(1));
       expect(find.text('DEMO_VST_BODY'), findsNothing);
 
       final from = tester.getCenter(find.text('Demo VST'));
@@ -1069,4 +1072,18 @@ f 2 4 3
       expect(find.text('DEMO_VST_BODY'), findsOneWidget);
     },
   );
+
+  test('createVismPanelStarter scaffolds runnable Vism panel + IDE IntelliSense and recognizes .vism', () {
+    final tmp = Directory.systemTemp.createTempSync('motolii_vism_starter_');
+    addTearDown(() => tmp.deleteSync(recursive: true));
+    final own = '${tmp.path}/own';
+    final made1 = createVismPanelStarter(ownFolder: own);
+    final made2 = createVismPanelStarter(ownFolder: own);
+    expect(made1.name, 'My Vism');
+    expect(made2.name, 'My Vism 2');
+    expect(File(made1.path).existsSync(), isTrue);
+    expect(File(made1.path).readAsStringSync(), contains('ui.scene3d'));
+    expect(File('$own/jsconfig.json').existsSync(), isTrue);
+    expect(isMotoliiPackPath('/tmp/my_cool_fx.vism'), isTrue);
+  });
 }

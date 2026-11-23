@@ -11,7 +11,7 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/tool_panel/custom_panel/js_panel_tool.dart';
 import 'package:motolii/workspace/tool_panel/custom_panel/panel_node.dart';
 
-/// All tools in the Tool Panel catalog: built-in tools followed by `.js` custom panels.
+/// All tools in the Tool Panel catalog: built-in tools followed by `.js` Vism custom panels.
 List<Pane> allPanelTools(WorkspaceController ws) => [
   ...ws.tools,
   for (final d in discoverJsPanels(ws))
@@ -25,9 +25,21 @@ List<Pane> allPanelTools(WorkspaceController ws) => [
     ),
 ];
 
-/// The tool named [name], or null if there is none.
+/// Every panel in the workspace on equal footing: Vism custom panels, built-in catalog tools,
+/// and all default dockable panels (except `Tool Panel` itself).
+List<Pane> allDockablePanels(WorkspaceController ws) {
+  final custom = allPanelTools(ws);
+  final seen = {for (final p in custom) p.name, 'Tool Panel'};
+  return [
+    ...custom,
+    for (final p in ws.panes)
+      if (!seen.contains(p.name)) p,
+  ];
+}
+
+/// The tool or panel named [name], or null if there is none.
 Pane? panelTool(WorkspaceController ws, String name) =>
-    allPanelTools(ws).where((t) => t.name == name).firstOrNull;
+    allDockablePanels(ws).where((t) => t.name == name).firstOrNull;
 
 /// The JS custom panel descriptor for [name], or null if [name] is a built-in tool.
 PanelDescriptor? jsPanelDescriptor(WorkspaceController ws, String name) =>

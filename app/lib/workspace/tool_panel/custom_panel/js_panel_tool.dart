@@ -7,10 +7,13 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/open_in_host.dart' show openInEditor;
 import 'package:motolii/storage/panel_presets_file.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/custom_ui/script_watch.dart';
 import 'package:motolii/workspace/state/custom_panel_service.dart';
+import 'package:motolii/workspace/state/pack_service.dart'
+    show exportPackFromWorkspace;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -188,6 +191,29 @@ class _JsPanelToolState extends State<JsPanelTool> {
             else
               const Spacer(),
             SizedBox(width: Shape.s(6)),
+            Pressable(
+              key: ValueKey('panel:edit:${widget.panel.name}'),
+              onTap: () => openInEditor(widget.panel.path),
+              builder: (_, hot) => Text(
+                'Edit',
+                style: TextStyles.micro(hot ? Grey.g95 : Grey.g56),
+              ),
+            ),
+            SizedBox(width: Shape.s(8)),
+            Pressable(
+              key: ValueKey('panel:pack:${widget.panel.name}'),
+              onTap: () => exportPackFromWorkspace(
+                ws,
+                sourceFile: widget.panel.path,
+                kind: 'panel',
+                name: widget.panel.name,
+              ),
+              builder: (_, hot) => Text(
+                'Pack',
+                style: TextStyles.micro(hot ? Grey.g95 : Grey.g56),
+              ),
+            ),
+            SizedBox(width: Shape.s(8)),
             Pressable(
               key: ValueKey('panel:reload:${widget.panel.name}'),
               onTap: () => setState(() {

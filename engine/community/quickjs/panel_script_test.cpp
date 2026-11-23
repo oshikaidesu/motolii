@@ -149,11 +149,11 @@ TEST(PanelScript, ExpressionSidecarsExcludeFromShelfAndRenderCleanly) {
   EXPECT_NE(grabLo.find("\"drag\":\"lo\""), std::string::npos) << grabLo;
 }
 
-TEST(PanelScript, EvaluatesVstShowcaseAndNewUiPreludeHelpers) {
+TEST(PanelScript, EvaluatesVismShowcaseAndNewUiPreludeHelpers) {
   const std::string listed = panel_list();
-  EXPECT_NE(listed.find("VST Showcase\t"), std::string::npos) << listed;
+  EXPECT_NE(listed.find("Vism Showcase\t"), std::string::npos) << listed;
 
-  const auto panelPath = doc_folders("panels").front() / "VST Showcase.js";
+  const auto panelPath = doc_folders("panels").front() / "Vism Showcase.js";
   std::string err;
   for (const char* skin :
        {"Pop 3D", "Wavetable", "Hardware", "Beat Sync", "GPU Shader",

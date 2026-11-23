@@ -8,6 +8,7 @@ import 'package:motolii/storage/shelf_meta.dart' show shelfMetaOfFile;
 
 const _packVersion = 1;
 const _packExtension = '.motoliipack';
+const _vismExtension = '.vism';
 const _cardExtension = '.motolii-card';
 const _allowedRoots = {'effects', 'expressions', 'panels', 'create'};
 const _companionSuffixes = [
@@ -21,21 +22,23 @@ const _companionSuffixes = [
   '.frag',
 ];
 
-/// Result of exporting a `.motoliipack` archive.
+/// Result of exporting a `.vism` / `.motoliipack` archive.
 typedef PackExportResult = ({String path, String name, int fileCount});
 
-/// Result of importing a `.motoliipack` archive or 1-folder VST bundle into the user's shelf folder.
+/// Result of importing a `.vism` / `.motoliipack` archive or 1-folder Vism bundle into the user's shelf folder.
 typedef PackImportResult = ({
   String name,
   String kind,
   List<String> installedPaths,
 });
 
-/// True if [path] is a `.motoliipack` / `.motolii-card` archive, OR a dropped
-/// 1-folder VST card bundle containing `motoliipack.json` or a `*.ui.js` file.
+/// True if [path] is a `.vism` / `.motoliipack` / `.motolii-card` archive, OR a dropped
+/// 1-folder Vism bundle containing `motoliipack.json` or a `*.ui.js` file.
 bool isMotoliiPackPath(String path) {
   final lower = path.toLowerCase();
-  if (lower.endsWith(_packExtension) || lower.endsWith(_cardExtension)) {
+  if (lower.endsWith(_vismExtension) ||
+      lower.endsWith(_packExtension) ||
+      lower.endsWith(_cardExtension)) {
     return true;
   }
   try {
@@ -48,6 +51,171 @@ bool isMotoliiPackPath(String path) {
   } catch (_) {}
   return false;
 }
+
+/// Ensures IDE TypeScript IntelliSense (`motolii-ui.d.ts` + `jsconfig.json`) exists in [ownFolder]
+/// and scaffolds a ready-to-run starter Vism panel under `ownFolder/panels/`.
+/// Returns `(name, path)` of the newly created `.js` file.
+({String name, String path}) createVismPanelStarter({
+  required String ownFolder,
+  String shelvesFolder = '',
+}) {
+  final panelsDir = Directory('$ownFolder/panels')..createSync(recursive: true);
+  // Copy `motolii-ui.d.ts` and write `jsconfig.json` once so VS Code / Cursor autocomplete works immediately.
+  if (shelvesFolder.isNotEmpty) {
+    final srcDts = File('$shelvesFolder/motolii-ui.d.ts');
+    final dstDts = File('$ownFolder/motolii-ui.d.ts');
+    if (srcDts.existsSync()) {
+      try {
+        srcDts.copySync(dstDts.path);
+      } catch (_) {}
+    }
+  }
+  final jsconfig = File('$ownFolder/jsconfig.json');
+  if (!jsconfig.existsSync()) {
+    jsconfig.writeAsStringSync(
+      '{\n  "compilerOptions": { "checkJs": false },\n  "include": ["**/*.js", "motolii-ui.d.ts"]\n}\n',
+    );
+  }
+
+  var index = 1;
+  var name = 'My Vism';
+  var target = File('${panelsDir.path}/$name.js');
+  while (target.existsSync()) {
+    index++;
+    name = 'My Vism $index';
+    target = File('${panelsDir.path}/$name.js');
+  }
+  target.writeAsStringSync(_vismStarterTemplate(name));
+  return (name: name, path: slashed(target.path));
+}
+
+String _vismStarterTemplate(String title) =>
+    '''
+// --title: $title
+// --about: Custom Vism panel starter — edit & save for instant hot reload!
+// --acts: Selection
+// --tone: accent
+
+// Full API & IntelliSense: see motolii-ui.d.ts (or docs/VISM_QUICKSTART.ja.md).
+function render(ctx) {
+  const s = ctx.state || {};
+  const yaw = Number(s.yaw ?? 0.6);
+  const pitch = Number(s.pitch ?? 0.35);
+  const amount = Number(s.amount ?? 0.65);
+  const pulse = Number(s.pulse ?? 0.45);
+  const selected = (ctx.selected || []).length;
+
+  return ui.box([
+    ui.row([
+      ui.badge("VISM STARTER", {
+        style: {
+          bg: "#FF3B7F",
+          fg: "#FFFFFF",
+          border: "#141414",
+          borderWidth: 2,
+          radius: 99,
+          shadow: { x: 2, y: 2, blur: 0, color: "#141414" },
+        },
+      }),
+      ui.spacer(),
+      ui.text(selected + " selected", {
+        bold: true,
+        style: { fg: "#141414", fontSize: 9.5 },
+      }),
+    ]),
+    ui.scene3d(118, {
+      id: "orbit",
+      shape: "cube",
+      look: "toon",
+      yaw: yaw,
+      pitch: pitch,
+      color: "#00D4FF",
+      color2: "#B8FF2C",
+      outline: "#141414",
+      outlineWidth: 2.2,
+      bg: "#FFFFFF",
+      grid: true,
+      style: {
+        border: "#141414",
+        borderWidth: 2.2,
+        radius: 10,
+        shadow: { x: 3, y: 3, blur: 0, color: "#141414" },
+      },
+    }),
+    ui.row([
+      ui.knob("AMOUNT", amount, {
+        id: "amount",
+        min: 0,
+        max: 1,
+        def: 0.65,
+        look: "pop",
+        size: 44,
+        color: "#FF3B7F",
+        capColor: "#FFFFFF",
+        borderColor: "#141414",
+      }),
+      ui.knob("PULSE", pulse, {
+        id: "pulse",
+        min: 0,
+        max: 1,
+        def: 0.45,
+        look: "pop",
+        size: 44,
+        color: "#00D4FF",
+        capColor: "#FFFFFF",
+        borderColor: "#141414",
+      }),
+    ]),
+    ui.button("Apply Scale to Selection", "apply", {
+      accent: true,
+      style: {
+        bg: "#FFE600",
+        fg: "#141414",
+        border: "#141414",
+        borderWidth: 2,
+        radius: 8,
+        height: 26,
+        shadow: { x: 2, y: 2, blur: 0, color: "#141414" },
+      },
+    }),
+  ], {
+    bg: "#FFF4C4",
+    fg: "#141414",
+    muted: "#473F22",
+    accent: "#FF3B7F",
+    border: "#141414",
+    borderWidth: 2.4,
+    radius: 14,
+    pad: 12,
+    gap: 8,
+    shadow: { x: 4, y: 4, blur: 0, color: "#141414" },
+  });
+}
+
+function onAction(action, ctx) {
+  if (action.id === "orbit" && action.value) {
+    return {
+      state: { yaw: Number(action.value.yaw), pitch: Number(action.value.pitch) },
+    };
+  }
+  if (action.id === "amount" || action.id === "pulse") {
+    return { state: { [action.id]: Number(action.value) } };
+  }
+  if (action.id === "apply") {
+    const scale = 0.5 + Number((ctx.state && ctx.state.amount) ?? 0.65);
+    const ops = [];
+    for (const id of ctx.selected || []) {
+      ops.push({ op: "set", layer: id, name: "scale_x", value: scale });
+      ops.push({ op: "set", layer: id, name: "scale_y", value: scale });
+    }
+    return {
+      ops: ops,
+      notice: ops.length ? "Applied scale " + scale.toFixed(2) : "Select a layer first",
+    };
+  }
+  return {};
+}
+''';
 
 /// Target shelf subfolder for a pack [kind].
 String _rootForKind(String kind) => switch (kind) {

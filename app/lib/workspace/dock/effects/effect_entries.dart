@@ -71,7 +71,7 @@ EffectEntries effectEntries({
                 borderRadius: Shape.round(3),
               ),
               child: Text(
-                'VST',
+                'VISM',
                 style: TextStyles.micro(WindowTokens.onAccent).copyWith(
                   fontSize: TextStyles.px(7.5),
                   fontWeight: FontWeight.w800,

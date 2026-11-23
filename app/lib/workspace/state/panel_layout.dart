@@ -84,6 +84,16 @@ class PanelLayout {
   /// The panel last brought to the front, with a count that goes up every time, so that fronting the same panel again is heard.
   (String, int)? fronted;
 
+  /// Set of pane names currently open in the docking layout (kept in sync by `Panes`).
+  Set<String> openTabs = const {};
+
+  /// Records the set of pane names currently mounted in the docking layout.
+  void syncOpenTabs(Set<String> ids) {
+    if (openTabs.length == ids.length && openTabs.containsAll(ids)) return;
+    openTabs = Set.unmodifiable(ids);
+    _onFronted();
+  }
+
   /// A custom tool pane requested to open as an independent closable docking tab
   /// (optionally docked onto a specific target pane [onPane]).
   (Pane, String?, int)? dockOpened;

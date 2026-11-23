@@ -65,9 +65,9 @@ List<AbstractSettingsSection> settingsSections({
             },
           ),
           SettingsTile.switchTile(
-            title: const Text('Custom Card Faceplates'),
+            title: const Text('Vism Card Faceplates'),
             description: const Text(
-              'Allow VST-style custom card skins (off = uniform Motolii UI)',
+              'Allow Vism custom card skins (off = uniform Motolii UI)',
             ),
             initialValue: ColorTheme.customCardSkins.value,
             activeSwitchColor: WindowTokens.accent,

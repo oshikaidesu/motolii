@@ -260,7 +260,11 @@ class WorkspaceController extends ChangeNotifier {
       layout.openDockTab(pane, onPane: onPane);
   void front(String pane) => layout.front(pane);
   (String, int)? get fronted => layout.fronted;
+
+  /// The last custom tab requested to open via [openDockTab].
   (Pane, String?, int)? get dockOpened => layout.dockOpened;
+  Set<String> get openTabs => layout.openTabs;
+  void syncOpenTabs(Set<String> ids) => layout.syncOpenTabs(ids);
   String get toolPanel => layout.toolPanel;
   void route(String to) => layout.route(to);
 

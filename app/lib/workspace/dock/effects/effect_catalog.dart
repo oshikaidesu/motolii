@@ -94,7 +94,7 @@ EffectListing effectListing({
   Set<String> tagsOf(String id) => {
     ...tags.of('Effects', id, seen[id]?.tags ?? const {}),
     if (seen[id]?.from == 'screen' && hasCustomCardUi(ws, id)) ...const [
-      'vst',
+      'vism',
       'custom-ui',
     ],
   };

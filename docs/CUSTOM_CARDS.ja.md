@@ -1,6 +1,6 @@
-# カスタムカード仕様（`.ui.js`）
+# Vism カスタムカード仕様（`.ui.js`）
 
-[English](CUSTOM_CARDS.md)
+[English](CUSTOM_CARDS.md) · [5 分開発クイックスタート（Vism）](VISM_QUICKSTART.ja.md)
 
 エフェクト（`.wgsl` / `.fs` / `.js` / TSL）やエクスプレッション（`shelves/expressions/*.js`）に、**WebView なし・ビルド不要**で専用の Inspector カード UI を付けるための開発者向け仕様書です。
 

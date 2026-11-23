@@ -73,6 +73,9 @@ class _PanesState extends State<Panes> {
     _ws = ws
       ..on[WorkspaceAspect.fronted]!.addListener(_follow)
       ..on[WorkspaceAspect.view]!.addListener(_switch);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncOpenTabs();
+    });
   }
 
   @override
@@ -98,6 +101,23 @@ class _PanesState extends State<Panes> {
     }
   }
 
+  void _syncOpenTabs() {
+    final ids = <String>{};
+    void walk(DockingArea? area) {
+      if (area == null) return;
+      if (area is DockingItem && area.id is String) {
+        ids.add(area.id as String);
+      } else if (area is DockingParentArea) {
+        for (var i = 0; i < area.childrenCount; i++) {
+          walk(area.childAt(i));
+        }
+      }
+    }
+
+    walk(_layout.root);
+    _ws?.syncOpenTabs(ids);
+  }
+
   void _openDynamicTab(Pane pane, {String? onPane}) {
     _dynamicPanes[pane.name] = pane;
     if (_layout.findDockingItem(pane.name) case final existing?) {
@@ -116,6 +136,7 @@ class _PanesState extends State<Panes> {
         }
       }
       _toFront(pane.name);
+      _syncOpenTabs();
       return;
     }
     final DropArea? target =
@@ -125,7 +146,8 @@ class _PanesState extends State<Panes> {
             : null) ??
         _layout.findDockingTabsWithItem('Tool Panel') ??
         _layout.findDockingItem('Tool Panel') ??
-        _layout.findDockingTabsWithItem('Inspector');
+        _layout.findDockingTabsWithItem('Inspector') ??
+        _layout.findDockingItem('Stage');
     if (target == null) return;
     _preservingWeights(() {
       _layout.addItemOn(
@@ -135,6 +157,7 @@ class _PanesState extends State<Panes> {
       );
     });
     _toFront(pane.name);
+    _syncOpenTabs();
   }
 
   // docking 1.16.2's AddItem/RemoveItem drops weight on every rebuilt
@@ -143,6 +166,7 @@ class _PanesState extends State<Panes> {
   bool _interceptClose(DockingItem item) {
     _dynamicPanes.remove(item.id);
     _preservingWeights(() => _layout.removeItem(item: item));
+    _syncOpenTabs();
     return false;
   }
 
@@ -283,8 +307,9 @@ class _PanesState extends State<Panes> {
       weight: weight,
       minimalSize: p.minSize,
       keepAlive: true,
-      // Built-in panes cannot be closed; user custom tabs can be closed and reopened from Tool Panel.
-      closable: closable,
+      // Stage and Tool Panel stay anchored as the workspace backbone; every other default tab
+      // and Vism panel can be closed freely and restored anytime via Tools.
+      closable: closable || (name != 'Stage' && name != 'Tool Panel'),
       maximizable: false,
     );
   }
