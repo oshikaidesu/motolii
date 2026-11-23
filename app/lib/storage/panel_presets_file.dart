@@ -22,6 +22,14 @@ Map<String, Object?> readPanelPresets(String panelName) {
   return const {};
 }
 
+/// Merges [incoming] preset entries into the saved presets for [panelName].
+void mergePanelPresets(String panelName, Map<String, Object?> incoming) {
+  if (incoming.isEmpty) return;
+  final current = Map<String, Object?>.of(readPanelPresets(panelName));
+  current.addAll(incoming);
+  writePanelPresets(panelName, current);
+}
+
 /// Writes [presets] for [panelName] atomically to ~/.motolii/panel_presets/.
 void writePanelPresets(String panelName, Map<String, Object?> presets) {
   try {

@@ -165,6 +165,28 @@ TEST(PanelScript, EvaluatesVismShowcaseAndNewUiPreludeHelpers) {
     ASSERT_TRUE(err.empty()) << skin << ": " << err;
     EXPECT_NE(tree.find("\"type\":\"box\""), std::string::npos) << skin;
   }
+
+  // Flagship bundled Vism effect sidecars resolve, render surface + controls, and handle presets.
+  const auto fxDir = doc_folders("effects").front();
+  for (const auto& [rel, actionId, expectedParam] :
+       std::initializer_list<std::tuple<const char*, const char*, const char*>>{
+           {"glitch/VHS Glitch.fs", "p:track", "\"analogDistort\":3.5"},
+           {"stylize/Bloom.fs", "p:dreamy", "\"intensity\":0.58"},
+           {"color/Chroma Zoom.fs", "p:punch", "\"master_zoom\":1.18"},
+       }) {
+    const std::string uiFile = panel_card_ui_file((fxDir / rel).generic_string());
+    ASSERT_FALSE(uiFile.empty()) << rel;
+    const std::string tree =
+        panel_eval_card_render(uiFile, R"JSON({"params":{}})JSON", &err);
+    ASSERT_TRUE(err.empty()) << rel << ": " << err;
+    EXPECT_NE(tree.find("\"surface\""), std::string::npos) << rel;
+    const std::string act = panel_eval_card_action(
+        uiFile,
+        std::string(R"JSON({"id":")JSON") + actionId + R"JSON("})JSON",
+        R"JSON({"params":{}})JSON", &err);
+    ASSERT_TRUE(err.empty()) << rel << ": " << err;
+    EXPECT_NE(act.find(expectedParam), std::string::npos) << rel << ": " << act;
+  }
 }
 
 }  // namespace

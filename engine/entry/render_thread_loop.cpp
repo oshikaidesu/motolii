@@ -380,7 +380,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       breadcrumb("draw");
       // During playback, use a cached frame if one exists.
       if (!m->playback.playing || m->d->working_camera.asked ||
-          m->window.second ||
+          m->window.second || m->s->transparentStage ||
           !stage_cache_show(m->playback.cache, *m->s, m->live, m->playback.now,
                             RATE))
         live_camera(m);

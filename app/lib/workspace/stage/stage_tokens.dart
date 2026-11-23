@@ -15,6 +15,8 @@ abstract final class StageTokens {
   static double get stem => Shape.z(18.0);
   static double get tagH => Shape.z(16.0);
   static Color get surround => Grey.g10;
+  static Color get checkerA => Grey.g20;
+  static Color get checkerB => Grey.g26;
   static Color get rulerGround => Grey.g13;
   static Color get rulerSpan => Grey.g15;
   static Color get tick => Grey.g38;

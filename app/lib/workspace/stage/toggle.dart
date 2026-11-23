@@ -7,7 +7,7 @@ import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/glyphs.dart';
 
 /// The marks a header toggle of the stage can carry.
-enum StageIcon { safe, grid, snap, show, overview, align }
+enum StageIcon { safe, grid, alpha, snap, show, overview, align }
 
 /// An on/off chip: raised with an accent mark when on, a quiet well when off.
 class Toggle extends StatelessWidget {
@@ -73,6 +73,12 @@ class _IconPainter extends CustomPainter {
             p,
           );
         }
+      case StageIcon.alpha: // 2x2 transparency checkerboard.
+        cv.drawRect(r, p);
+        final fill = Paint()..color = c;
+        final hw = r.width / 2, hh = r.height / 2;
+        cv.drawRect(Rect.fromLTWH(r.left, r.top, hw, hh), fill);
+        cv.drawRect(Rect.fromLTWH(r.left + hw, r.top + hh, hw, hh), fill);
       case StageIcon.snap: // A camera body and its lens.
         cv.drawRRect(
           RRect.fromRectAndRadius(

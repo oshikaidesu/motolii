@@ -481,9 +481,9 @@ class ProjectReader {
     ],
   ];
 
-  Map<double, int> get markColors => _inside!.markColors;
+  Map<double, int> get markColors => _inside?.markColors ?? const {};
 
-  List<(String, double)> get guides => _inside!.guides;
+  List<(String, double)> get guides => _inside?.guides ?? const [];
 
   final _byId = <int, Layer>{};
 

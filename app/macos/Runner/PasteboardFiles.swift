@@ -16,6 +16,19 @@ import UniformTypeIdentifiers
 enum PasteboardFiles {
   private static var dropChannel: FlutterMethodChannel?
   private static var dropTarget: DropTarget?
+  private static var pendingOpened: [String] = []
+  private static var dartReady = false
+
+  static func deliverOpenedFiles(_ paths: [String]) {
+    guard !paths.isEmpty else { return }
+    if dartReady, let ch = dropChannel {
+      DispatchQueue.main.async {
+        ch.invokeMethod("paths", arguments: ["paths": paths])
+      }
+    } else {
+      pendingOpened.append(contentsOf: paths)
+    }
+  }
 
   static func attach(to controller: FlutterViewController) {
     let r = controller.registrar(forPlugin: "MotoliiPasteboard")
@@ -24,6 +37,11 @@ enum PasteboardFiles {
       switch call.method {
       case "read":
         result(readClipboardPaths())
+      case "drainOpened":
+        dartReady = true
+        let queued = pendingOpened
+        pendingOpened.removeAll()
+        result(queued)
       default:
         result(FlutterMethodNotImplemented)
       }

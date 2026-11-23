@@ -279,6 +279,8 @@ void live_draw(Stage& s, Live* l) {
   if (!s.over) {
     s.view->setRenderTarget(s.out);
   }
+  s.view->setBlendMode(s.transparentStage ? filament::View::BlendMode::TRANSLUCENT
+                                          : filament::View::BlendMode::OPAQUE);
   draw(s, nullptr, false);
   s.lastly = nullptr;
   s.drawTarget = wasInto;

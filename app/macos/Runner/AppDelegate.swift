@@ -10,4 +10,11 @@ class AppDelegate: FlutterAppDelegate {
   override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true
   }
+
+  override func application(_ application: NSApplication, open urls: [URL]) {
+    let paths = urls.filter { $0.isFileURL }.map { $0.path }
+    if !paths.isEmpty {
+      PasteboardFiles.deliverOpenedFiles(paths)
+    }
+  }
 }

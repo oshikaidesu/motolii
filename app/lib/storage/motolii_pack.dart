@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:motolii/storage/host_platform.dart' show hostIsWindows, slashed;
+import 'package:motolii/storage/panel_presets_file.dart'
+    show mergePanelPresets, readPanelPresets;
 import 'package:motolii/storage/shelf_meta.dart' show shelfMetaOfFile;
 
 const _packVersion = 1;
@@ -293,6 +295,12 @@ PackExportResult exportMotoliiPack({
       f.copySync('${targetDir.path}/$fname');
       relFiles.add('$root/$fname');
     }
+    final presets = readPanelPresets(packName);
+    if (presets.isNotEmpty) {
+      File(
+        '${stage.path}/presets.json',
+      ).writeAsStringSync(const JsonEncoder.withIndent('  ').convert(presets));
+    }
     final manifest = <String, Object?>{
       'version': _packVersion,
       'kind': kind,
@@ -301,6 +309,7 @@ PackExportResult exportMotoliiPack({
       'license': license ?? meta?.license ?? '',
       'source': source ?? meta?.source ?? '',
       'files': relFiles,
+      if (presets.isNotEmpty) 'hasPresets': true,
     };
     File(
       '${stage.path}/motoliipack.json',
@@ -430,13 +439,21 @@ PackImportResult _importFolderBundle(
       source: source,
     );
   }
-  return (
-    name: name.isEmpty
-        ? slashed(fallbackName ?? stage.path).split('/').last
-        : name,
-    kind: kind,
-    installedPaths: installed,
-  );
+  final presetsFile = File('${stage.path}/presets.json');
+  final resolvedName = name.isEmpty
+      ? slashed(fallbackName ?? stage.path).split('/').last
+      : name;
+  if (presetsFile.existsSync()) {
+    try {
+      final rawPresets = jsonDecode(presetsFile.readAsStringSync());
+      if (rawPresets is Map) {
+        mergePanelPresets(resolvedName, {
+          for (final e in rawPresets.entries) e.key.toString(): e.value,
+        });
+      }
+    } catch (_) {}
+  }
+  return (name: resolvedName, kind: kind, installedPaths: installed);
 }
 
 void _appendMetaCredit(

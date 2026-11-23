@@ -261,3 +261,17 @@ class ViewCameraLink {
     m.later('view_camera', word: word);
   }
 }
+
+/// Tracks transparent stage preview mode so each change is told once.
+class StageAlphaLink {
+  Motolii? _engine;
+  bool _on = false;
+
+  void tell(WorkspaceController ws, bool on) {
+    final m = ws.inside;
+    if (m == null || (m == _engine && on == _on)) return;
+    _engine = m;
+    _on = on;
+    m.later('stage_alpha', number: on ? 1.0 : 0.0);
+  }
+}

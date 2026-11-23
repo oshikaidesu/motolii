@@ -10,6 +10,9 @@ import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/panel_presets_file.dart'
+    show readPanelPresets, writePanelPresets;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/custom_ui/panel_node.dart';
 import 'package:motolii/widgets/custom_ui/panel_renderer.dart';
 import 'package:motolii/widgets/custom_ui/script_watch.dart';
@@ -129,6 +132,38 @@ evaluateCardCustomUi(
   );
 }
 
+/// Notifies open Vism cards when a card preset is saved or deleted.
+final ValueNotifier<int> vismPresetsTick = ValueNotifier<int>(0);
+
+/// Saves the current parameter values of [card] as a new Vism preset and returns its label.
+String saveVismCardPreset(
+  InspectorValues doc,
+  CardDeclaration card,
+  CardParamNames names,
+) {
+  final current = Map<String, Object?>.of(readPanelPresets(card.name));
+  final snapshot = <String, Object?>{};
+  for (final p in card.params) {
+    final short = names.fullToShort[p.id] ?? p.id;
+    final vid = 'v_${p.id}';
+    if (doc.numbers.containsKey(vid)) {
+      snapshot[short] = doc.numbers[vid];
+    } else if (doc.strings.containsKey(vid)) {
+      snapshot[short] = doc.strings[vid];
+    }
+  }
+  var n = current.length + 1;
+  var label = 'Preset $n';
+  while (current.containsKey(label)) {
+    n++;
+    label = 'Preset $n';
+  }
+  current[label] = snapshot;
+  writePanelPresets(card.name, current);
+  vismPresetsTick.value++;
+  return label;
+}
+
 /// Renders the custom JS UI body inside a [ValuesCard] and routes interactions
 /// directly back to the card's document parameters (single source of truth).
 /// Keeps ephemeral UI [state] for multi-handle drags and hot-reloads `.ui.js` on save.
@@ -164,6 +199,7 @@ class _CustomCardBodyState extends State<CustomCardBody> {
   void initState() {
     super.initState();
     widget.doc.addListener(_onDocChanged);
+    vismPresetsTick.addListener(_onPresetsChanged);
     _watchScript();
   }
 
@@ -190,8 +226,13 @@ class _CustomCardBodyState extends State<CustomCardBody> {
   @override
   void dispose() {
     widget.doc.removeListener(_onDocChanged);
+    vismPresetsTick.removeListener(_onPresetsChanged);
     _watcher.dispose();
     super.dispose();
+  }
+
+  void _onPresetsChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onDocChanged() {
@@ -326,6 +367,109 @@ class _CustomCardBodyState extends State<CustomCardBody> {
     }
   }
 
+  void _savePreset() {
+    saveVismCardPreset(widget.doc, widget.card, widget.names);
+  }
+
+  void _applyPreset(Object? payload) {
+    if (payload is! Map) return;
+    final doc = widget.doc;
+    final numWrites = <String, double>{};
+    final strWrites = <String, String>{};
+    for (final e in payload.entries) {
+      final full = widget.names.resolve(e.key.toString());
+      if (full == null) continue;
+      if (e.value is num) {
+        numWrites['v_$full'] = (e.value as num).toDouble();
+      } else if (e.value is String) {
+        strWrites['v_$full'] = e.value as String;
+      }
+    }
+    if (numWrites.isNotEmpty) doc.setMany(numWrites);
+    for (final e in strWrites.entries) {
+      doc.str(e.key, e.value);
+    }
+    _reRenderNow(notify: true);
+  }
+
+  void _deletePreset(String label) {
+    final current = Map<String, Object?>.of(readPanelPresets(widget.card.name));
+    if (current.remove(label) != null) {
+      writePanelPresets(widget.card.name, current);
+      vismPresetsTick.value++;
+    }
+  }
+
+  Widget? _presetStrip() {
+    final presets = readPanelPresets(widget.card.name);
+    if (presets.isEmpty) return null;
+    return Padding(
+      padding: EdgeInsets.only(top: Shape.s(6)),
+      child: Wrap(
+        spacing: Shape.s(4),
+        runSpacing: Shape.s(4),
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          for (final e in presets.entries)
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: Shape.s(6),
+                vertical: Shape.s(2),
+              ),
+              decoration: BoxDecoration(
+                color: InspectorSkin.well,
+                borderRadius: Shape.round(4),
+                border: Border.all(color: Grey.g26),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Pressable(
+                    key: ValueKey('vism-preset:${widget.card.name}:${e.key}'),
+                    onTap: () => _applyPreset(e.value),
+                    builder: (_, hot) => Text(
+                      e.key,
+                      style: TextStyles.micro(hot ? Grey.g95 : Grey.g76),
+                    ),
+                  ),
+                  SizedBox(width: Shape.s(4)),
+                  Pressable(
+                    key: ValueKey(
+                      'vism-preset-del:${widget.card.name}:${e.key}',
+                    ),
+                    onTap: () => _deletePreset(e.key),
+                    builder: (_, hot) => Text(
+                      '×',
+                      style: TextStyles.micro(hot ? Grey.g95 : Grey.g44),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Pressable(
+            key: ValueKey('vism-preset-save:${widget.card.name}'),
+            onTap: _savePreset,
+            builder: (_, hot) => Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: Shape.s(6),
+                vertical: Shape.s(2),
+              ),
+              decoration: BoxDecoration(
+                color: hot ? Grey.g20 : InspectorSkin.well,
+                borderRadius: Shape.round(4),
+                border: Border.all(color: Grey.g26),
+              ),
+              child: Text(
+                '+',
+                style: TextStyles.micro(hot ? Grey.g95 : Grey.g56),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final active = _overrideResult ?? widget.result;
@@ -358,6 +502,7 @@ class _CustomCardBodyState extends State<CustomCardBody> {
               baseFile: widget.ui.uiFile,
               onAction: _onAction,
             ),
+          if (widget.card.params.isNotEmpty) ?_presetStrip(),
         ],
       ),
     );

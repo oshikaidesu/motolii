@@ -42,6 +42,25 @@
 				<string>motolii</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Motolii Vism Package</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>dev.lab.labBook.vism</string>
+				<string>dev.lab.labBook.motoliipack</string>
+			</array>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>vism</string>
+				<string>motoliipack</string>
+				<string>motolii-card</string>
+			</array>
+		</dict>
 	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
@@ -59,6 +78,41 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>motolii</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>dev.lab.labBook.vism</string>
+			<key>UTTypeDescription</key>
+			<string>Motolii Vism Custom UI Package</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.zip-archive</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>vism</string>
+					<string>motolii-card</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>dev.lab.labBook.motoliipack</string>
+			<key>UTTypeDescription</key>
+			<string>Motolii Shelf Pack</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.zip-archive</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>motoliipack</string>
 				</array>
 			</dict>
 		</dict>

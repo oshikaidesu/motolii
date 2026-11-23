@@ -240,7 +240,9 @@ bool film(Stage& s, const char* path, int frameCount,
             pic[j + c] = (uint8_t)std::min(255, (pic[j + c] * 255 + a / 2) / a);
     if (std::fwrite(pic.data(), 1, pic.size(), to) != pic.size()) break;
   }
-  if (said.alpha) s.view->setBlendMode(View::BlendMode::OPAQUE);
+  if (said.alpha)
+    s.view->setBlendMode(s.transparentStage ? View::BlendMode::TRANSLUCENT
+                                            : View::BlendMode::OPAQUE);
   const bool ok = pclose(to) == 0 && !cancelled;
   // Cancellation: the partial file on disk is not useful, so it is removed.
   if (cancelled) std::remove(path);

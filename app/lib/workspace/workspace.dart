@@ -12,7 +12,8 @@ import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/motolii_pack.dart' show isMotoliiPackPath;
-import 'package:motolii/storage/pasteboard_files.dart' show onDroppedFiles;
+import 'package:motolii/storage/pasteboard_files.dart'
+    show drainOpenedFiles, onDroppedFiles;
 import 'package:motolii/workspace/state/pack_service.dart'
     show importPacksIntoWorkspace;
 import 'package:motolii/storage/project_files.dart' show projectFilesIn;
@@ -79,19 +80,31 @@ class WorkspaceState extends State<Workspace> {
     final doc = widget.document ?? untitledProjectPath();
     _join(doc);
     home = true;
+    drainOpenedFiles().then((paths) {
+      if (mounted && paths.isNotEmpty) _addDroppedPaths(paths);
+    });
   }
 
   void _addDroppedPaths(List<String> paths) {
     if (paths.isEmpty) return;
+    final projects = [
+      for (final p in paths)
+        if (p.toLowerCase().endsWith('.motolii')) p,
+    ];
     final packs = [
       for (final p in paths)
-        if (isMotoliiPackPath(p)) p,
+        if (!p.toLowerCase().endsWith('.motolii') && isMotoliiPackPath(p)) p,
     ];
     final media = [
       for (final p in paths)
-        if (!isMotoliiPackPath(p)) p,
+        if (!p.toLowerCase().endsWith('.motolii') && !isMotoliiPackPath(p)) p,
     ];
+    if (projects.isNotEmpty) {
+      setState(() => home = false);
+      open(projects.first);
+    }
     if (packs.isNotEmpty) {
+      if (home) setState(() => home = false);
       importPacksIntoWorkspace(ws, packs);
       if (mounted) setState(() {});
     }

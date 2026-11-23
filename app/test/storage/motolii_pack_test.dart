@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/storage/motolii_pack.dart';
+import 'package:motolii/storage/panel_presets_file.dart';
 
 void main() {
   test('exports effect with .ui.js companion and imports cleanly into fresh ownFolder', () {
@@ -113,5 +114,36 @@ void main() {
       () => importMotoliiPack(evilZip, ownFolder: '${tmp.path}/own'),
       throwsA(isA<FormatException>()),
     );
+  });
+
+  test('bundles and restores Vism presets in .vism packages', () {
+    final tmp = Directory.systemTemp.createTempSync('vism_preset_pack_');
+    addTearDown(() => tmp.deleteSync(recursive: true));
+
+    const testName = 'VismPresetBundleTest_Unique';
+    writePanelPresets(testName, {
+      'Punchy': {'amount': 0.88, 'mode': 'POP'},
+    });
+    addTearDown(() => writePanelPresets(testName, const {}));
+
+    final panelJs = File('${tmp.path}/vism_test.js')
+      ..writeAsStringSync(
+        '// --title: $testName\nfunction render(){return ui.text("ok");}',
+      );
+    final exported = exportMotoliiPack(
+      sourceFile: panelJs.path,
+      kind: 'panel',
+      outPath: '${tmp.path}/$testName.vism',
+      name: testName,
+    );
+    expect(exported.path, endsWith('.vism'));
+
+    // Clear local presets before importing to verify restore from archive.
+    writePanelPresets(testName, const {});
+    expect(readPanelPresets(testName), isEmpty);
+
+    importMotoliiPack(exported.path, ownFolder: '${tmp.path}/own');
+    final restored = readPanelPresets(testName);
+    expect(restored['Punchy'], {'amount': 0.88, 'mode': 'POP'});
   });
 }

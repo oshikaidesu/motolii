@@ -43,6 +43,7 @@ class ViewPainter extends CustomPainter {
     this.hover, {
     required this.grid,
     required this.safe,
+    this.alpha = false,
     this.part = ViewPart.all,
     this.pivots = false,
     this.met = (null, null),
@@ -87,7 +88,7 @@ class ViewPainter extends CustomPainter {
   final ArtScene scene;
   final StageViewport v;
   final int? sel, hover;
-  final bool grid, safe;
+  final bool grid, safe, alpha;
 
   Path _boxPath(ArtBox b) =>
       Path()..addPolygon([for (final p in b.corners) v.toScreen(p)], true);
@@ -100,7 +101,10 @@ class ViewPainter extends CustomPainter {
     }
     c.save();
     c.clipRect(v.area);
-    if (part != ViewPart.over) _captions(c, comp);
+    if (part != ViewPart.over) {
+      if (alpha) _checkerboard(c, comp);
+      _captions(c, comp);
+    }
     if (part == ViewPart.under) {
       c.restore();
       return;
@@ -511,6 +515,29 @@ class ViewPainter extends CustomPainter {
     tp.paint(c, Offset(x, o.dy + (StageTokens.tagH - tp.height) / 2));
   }
 
+  /// Draws an 8 px transparency checkerboard inside the composition rect.
+  void _checkerboard(Canvas c, Rect comp) {
+    final visible = comp.intersect(v.area);
+    if (visible.isEmpty) return;
+    c.save();
+    c.clipRect(visible);
+    c.drawRect(visible, Paint()..color = StageTokens.checkerA);
+    const tile = 8.0;
+    final light = Paint()..color = StageTokens.checkerB;
+    final col0 = ((visible.left - comp.left) / tile).floor();
+    final col1 = ((visible.right - comp.left) / tile).ceil();
+    final row0 = ((visible.top - comp.top) / tile).floor();
+    final row1 = ((visible.bottom - comp.top) / tile).ceil();
+    for (var row = row0; row < row1; row++) {
+      final y = comp.top + row * tile;
+      for (var col = col0; col < col1; col++) {
+        if (((row + col) & 1) == 0) continue;
+        c.drawRect(Rect.fromLTWH(comp.left + col * tile, y, tile, tile), light);
+      }
+    }
+    c.restore();
+  }
+
   @override
   bool shouldRepaint(ViewPainter o) =>
       o.scene != scene ||
@@ -519,6 +546,7 @@ class ViewPainter extends CustomPainter {
       o.hover != hover ||
       o.grid != grid ||
       o.safe != safe ||
+      o.alpha != alpha ||
       o.part != part ||
       o.pivots != pivots ||
       o.met != met ||

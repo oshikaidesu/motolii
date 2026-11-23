@@ -339,8 +339,9 @@ void doc_look(Doc& d) {
   // The background color.
   const std::string behind = doc_word(d, 0, "background");
   // The room itself is shown behind everything, as bright as it lights the
-  // canvas. Its sky image is made once for each room.
-  if (doc_word(d, 0, "behind") == "room") {
+  // canvas. Its sky image is made once for each room. Hidden while transparent
+  // stage preview is on so alpha areas show the viewport checkerboard.
+  if (!s.transparentStage && doc_word(d, 0, "behind") == "room") {
     auto& shown = d.look.skies;
     Skybox*& sky = shown[d.look.roomIs];
     if (!sky) {
@@ -373,7 +374,8 @@ void doc_look(Doc& d) {
   // them. The rectangle is opaque, because Filament draws blended sheets after
   // all solid layers whatever their priority, so a blended backdrop was painted
   // over the solids. There is no color when the room is the background.
-  const std::string colour = doc_word(d, 0, "behind") == "room" ? "" : behind;
+  const std::string colour =
+      (s.transparentStage || doc_word(d, 0, "behind") == "room") ? "" : behind;
   if (colour != d.look.backdropIs) {
     if (d.look.backdrop)
       canvas_off(s, d.look.backdrop), d.look.backdrop = nullptr;

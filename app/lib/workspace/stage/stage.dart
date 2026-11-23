@@ -58,7 +58,10 @@ class _StageState extends State<_Stage> {
   set _safe(bool v) => _ws.setView('stage.safe', v);
   bool get _grid => _ws.viewOf('stage.grid', false);
   set _grid(bool v) => _ws.setView('stage.grid', v);
+  bool get _alpha => _ws.viewOf('stage.alpha', false);
+  set _alpha(bool v) => _ws.setView('stage.alpha', v);
   final _eyeTold = ViewCameraLink();
+  final _alphaTold = StageAlphaLink();
 
   /// Tells the engine which view camera the stage is seen through, when that has changed.
   void _tellEye(WorkspaceController ws) =>
@@ -171,6 +174,14 @@ class _StageState extends State<_Stage> {
                     on: _grid,
                     onTap: () => setState(() => _grid = !_grid),
                   ),
+                  SizedBox(width: WindowTokens.gap),
+                  Toggle(
+                    key: const ValueKey('ws-stage-alpha'),
+                    label: 'Alpha',
+                    icon: StageIcon.alpha,
+                    on: _alpha,
+                    onTap: () => setState(() => _alpha = !_alpha),
+                  ),
                   if (ws.hasCamera) ...[
                     SizedBox(width: WindowTokens.gap),
                     Toggle(
@@ -243,6 +254,7 @@ class _StageState extends State<_Stage> {
                             child: _AtFrame(
                               builder: (context, scene) {
                                 _tellEye(ws);
+                                _alphaTold.tell(ws, _alpha);
                                 return StageView(
                                   key: _view,
                                   scene: scene,
@@ -250,6 +262,7 @@ class _StageState extends State<_Stage> {
                                   zoom: _zoom,
                                   grid: _grid,
                                   safe: _safe,
+                                  alpha: _alpha,
                                   cursor: _cursor,
                                   onPoke: _focus.requestFocus,
                                   texture: ws.stageTexture,

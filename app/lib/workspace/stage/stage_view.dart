@@ -48,6 +48,7 @@ class StageView extends StatefulWidget {
     required this.zoom,
     required this.grid,
     required this.safe,
+    this.alpha = false,
     required this.cursor,
     this.onPoke,
     this.texture,
@@ -66,7 +67,7 @@ class StageView extends StatefulWidget {
   final ArtScene scene;
   final int? selected;
   final int zoom;
-  final bool grid, safe;
+  final bool grid, safe, alpha;
 
   /// The pointer in composition px while it is over the viewport; the HUD and the rulers read it.
   final ValueNotifier<Offset?> cursor;
@@ -284,6 +285,7 @@ class _StageViewState extends State<StageView>
         _hover == widget.selected ? null : _hover,
         grid: widget.grid,
         safe: widget.safe,
+        alpha: widget.alpha,
         part: part,
         pivots: widget.tool.pivots,
         met: _drag.met,

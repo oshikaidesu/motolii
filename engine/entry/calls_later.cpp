@@ -514,6 +514,17 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         // Empty word selects the project's camera.
         else if (c == "view_camera")
           ok = view_camera_is(m, w.c_str());
+        // Toggle transparent stage background preview (checkerboard in Flutter).
+        else if (c == "stage_alpha") {
+          const bool on = number != 0.0;
+          if (m->s) {
+            m->s->transparentStage = on;
+            m->s->view->setBlendMode(on ? filament::View::BlendMode::TRANSLUCENT
+                                        : filament::View::BlendMode::OPAQUE);
+            doc_evaluate(*m->d, m->s->now);
+          }
+          ok = 1, m->render_thread.changed = true;
+        }
         // Begins a drag on this layer.
         else if (c == "drag_start")
           ok = (int)doc_hold(doc(m), layer);

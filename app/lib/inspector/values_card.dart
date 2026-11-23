@@ -164,6 +164,12 @@ class ValuesCard extends StatelessWidget {
                         ),
                       if (doc.actions.onCardPaste case final paste?)
                         ('paste', 'Paste Effect Values', paste),
+                      if (customEval != null)
+                        (
+                          'vism_preset',
+                          'Save Vism Preset',
+                          () => saveVismCardPreset(doc, card, customEval.names),
+                        ),
                       if (doc.actions.onCardSave case final save?)
                         (
                           'save',

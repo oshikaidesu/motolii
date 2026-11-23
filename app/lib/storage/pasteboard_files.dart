@@ -17,6 +17,20 @@ Future<List<String>> clipboardFilePaths() async {
   ];
 }
 
+/// Drains file paths opened via Finder double-click (`.motolii` / `.vism`)
+/// before Dart listeners attached, and marks Dart ready for live open events.
+Future<List<String>> drainOpenedFiles() async {
+  try {
+    final raw = await _read.invokeMethod<List<Object?>>('drainOpened');
+    return [
+      for (final e in raw ?? const [])
+        if (e is String) e,
+    ];
+  } catch (_) {
+    return const [];
+  }
+}
+
 /// Calls [onPaths] with each drop's file paths (one call per drop event).
 /// The handler is set once at app startup; the native side keeps pushing
 /// drops until the app exits.

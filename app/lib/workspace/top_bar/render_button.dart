@@ -84,11 +84,11 @@ class _RenderState extends State<RenderButton> {
   static final _formats = [
     ('MP4', '.mp4', "H.264, with the films' sound"),
     (
-      'HEVC',
+      'MOV',
       '.mov',
       hostIsWindows
-          ? "HEVC by Windows' own encoder, with the films' sound"
-          : "HEVC by the Mac's own encoder, with the films' sound",
+          ? 'HEVC (Solid) or ProRes 4444 alpha (Clear), with sound'
+          : 'HEVC (Solid) or ProRes 4444 alpha (Clear), with sound',
     ),
     ('GIF', '.gif', '15 frames a second, no sound'),
     ('PNG', '.png', 'a picture each, name_0001.png on'),

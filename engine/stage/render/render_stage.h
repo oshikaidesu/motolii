@@ -245,6 +245,8 @@ struct Stage {
   // Set when a bend overflows its texture. The render loop rebuilds once to
   // grow the sheet.
   bool bentOverflow = false;
+  // True when the Stage viewport shows transparency (checkerboard underneath).
+  bool transparentStage = false;
 };
 
 // Creates the engine, scene, views and camera of a stage w by h pixels.
