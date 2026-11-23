@@ -307,9 +307,10 @@ class _PanesState extends State<Panes> {
       weight: weight,
       minimalSize: p.minSize,
       keepAlive: true,
-      // Stage and Tool Panel stay anchored as the workspace backbone; every other default tab
-      // and Vism panel can be closed freely and restored anytime via Tools.
-      closable: closable || (name != 'Stage' && name != 'Tool Panel'),
+      // Stage, Tool Panel, and compact icon-only shelf tabs stay clean without inline close icons;
+      // every named pane and Vism tab can be closed freely and restored anytime via Tools.
+      closable:
+          closable || (!p.iconOnly && name != 'Stage' && name != 'Tool Panel'),
       maximizable: false,
     );
   }
@@ -373,6 +374,8 @@ TabbedViewThemeData _tabs() {
     )
     ..normalButtonColor = Grey.g56
     ..hoverButtonColor = Grey.g91
+    ..buttonIconSize = Shape.z(11)
+    ..buttonsOffset = Shape.s(4)
     ..selectedStatus = (TabStatusThemeData()
       ..decoration = plain
           ? const BoxDecoration()

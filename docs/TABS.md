@@ -97,7 +97,7 @@ Color picker, palettes, and gradients for the selected layer's fill and stroke.
 
 Creation tiles for adding layers, presets, and code snippets.
 
-- **Layers:** Text, Camera, Adjustment. **Shapes.** **3D Solids:** Ring, Gem, Cube, Floor. **Lights:** Sun, Point, Spot.
+- **Layers:** Text, Camera, Adjustment. **Shapes.** **3D Solids:** Ring, Gem, Cube, Floor. **Lights:** Sun, Point, Spot, and **Environment** (timeline-animated HDR room lighting, rotation, and skybox).
 - **Materials:** Lit, Cloth, Glass, Lacquer, Bubble, etc., previewed on spheres.
 - **Recipes:** Multi-layer templates created with preconfigured values in one click.
 - **Expressions:** Applying an expression tile to multiple selected layers creates a **relation** between them.
@@ -124,8 +124,8 @@ Reusable presets combining a layer's effects and parameter values. Double-click 
 Direct viewport manipulation for the current frame.
 
 - **Tools:** Select (`V`), Move (`M`), Rectangle (`R`), Ellipse (`E`), Pen (`P`), Text (`T`), Brush (`B`), Camera (`C`). Dragging empty space starts a marquee selection.
-- **Brush** supports pen pressure with Brush, Pen, Fill, and Eraser modes.
-- Fit / 50% / 100% zoom, Safe Areas, Grid, and **Snapshot** (hold to compare against a saved reference frame).
+- **Brush** supports pen pressure with Brush, Pen, Fill, and Eraser modes, plus adjustable stroke smoothing (`Smooth: Off / Low / Med / High`).
+- Fit / 50% / 100% zoom, Safe Areas, Grid, **Alpha** (live checkerboard transparency preview), and **Snapshot** (hold to compare against a saved reference frame).
 - Rulers with draggable guides and edge/guide snapping.
 - Motion paths for the selected layer, mini navigator, and 3D camera gizmo (orbit, dolly, frame resize).
 - Context options strip beneath the canvas for fill, stroke, corner radius, font, and position.
@@ -243,7 +243,7 @@ Top-down view of the camera frustum with each layer rendered as a slab at its Z 
 
 <img src="pictures/tabs/tool_panel.jpg" width="280" align="right">
 
-Dockable utility tools. Custom panels can be added in a few lines of Dart (see [`app/lib/workspace/README.md`](../app/lib/workspace/README.md)).
+Dockable launcher for built-in panels, utility tools, and **Vism custom panels**. Click **`+ New Vism`** to scaffold and open a JS-authored panel in seconds, **`Import`** to install `.vism` packages, or **`Folder`** to open the panels directory (see [Vism Specification](CUSTOM_CARDS.md)).
 
 <br clear="right">
 

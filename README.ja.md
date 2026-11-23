@@ -37,7 +37,10 @@ Motolii は WebGPU ネイティブの軽量エンジンとプレーンファイ�
 
 1,300 以上のエフェクトやフォントを、**見た目の近さで自動配置された 2D マップ（カテゴリ島ラベル・ズーム・拡大ルーペ付き）** から直感的に探せます。タイルにカーソルを乗せるだけで Stage 上に仮適用される **ホバープレビュー** にも対応しています。
 
-![Effects 2D 類似度マップ：カテゴリごとの島ラベル・ズームバー・類似リスト付き](docs/pictures/map_showcase.jpg)
+<p>
+<img src="docs/pictures/tabs/effects_map.jpg" alt="Effects 2D 類似度マップ：カテゴリごとの島ラベル・ズームバー付き" width="49%">
+<img src="docs/pictures/tabs/fonts_map.jpg" alt="Fonts 2D 類似度マップ：書体クラスタの島ラベル付き" width="49%">
+</p>
 
 <p>
 <img src="docs/pictures/tabs/effects_wide.jpg" alt="Effects 棚のタイル表示とタグ絞り込み" width="49%">

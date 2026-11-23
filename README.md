@@ -37,7 +37,10 @@ Switching or adding a new tool shouldn't mean leaving behind the plugins, script
 
 Browse 1,300+ bundled effects and your font library on an interactive **2D similarity map** with category islands, zoom controls, and an enlarged hover loupe — or hover any tile to preview it live on the Stage without applying it first.
 
-![Effects 2D similarity map with cluster island labels, zoom controls, and similarity strip](docs/pictures/map_showcase.jpg)
+<p>
+<img src="docs/pictures/tabs/effects_map.jpg" alt="Effects 2D similarity map with cluster island labels and zoom controls" width="49%">
+<img src="docs/pictures/tabs/fonts_map.jpg" alt="Fonts 2D similarity map with typeface cluster islands" width="49%">
+</p>
 
 <p>
 <img src="docs/pictures/tabs/effects_wide.jpg" alt="Effects shelf tile grid and tag filters" width="49%">
