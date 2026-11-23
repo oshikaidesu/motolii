@@ -266,6 +266,7 @@ int doc_add(Doc& d, const char* kind, const char* file) {
            0;
   if (!strcmp(kind, "light") && !doc_among("sun point spot", file))
     return d.error = "a light is a sun, a point or a spot", 0;
+  if (!strcmp(kind, "environment") && (!file || !*file)) file = "small_studio";
   // The layer comes on at the stage's present time, the playhead, as in
   // AbsentMotion's addAudio and addText: startTime is frameStart(frame).
   if (!doc_change(
@@ -305,7 +306,13 @@ int doc_add(Doc& d, const char* kind, const char* file) {
                     ? "; insert into keyframe(layer, name, at, value) select "
                       "id, 'space', 0.0, '2.5d' from layer order by id desc "
                       "limit 1"
-                    : "") +
+                    : !strcmp(kind, "environment")
+                          ? std::string(
+                                "; insert into keyframe(layer, name, at, "
+                                "value) select id, 'room', 0.0, '") +
+                                file +
+                                "' from layer order by id desc limit 1"
+                          : "") +
                // The layer lasts as long as the project's layer_length
                // setting says, if it is set: AbsentMotion's New Layer
                // Length, see its StructureActions.kt and TextActions.kt

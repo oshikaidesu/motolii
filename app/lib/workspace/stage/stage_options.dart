@@ -17,6 +17,8 @@ import 'package:motolii/workspace/stage/camera_gestures.dart'
         cameraResetTilt,
         cameraTargetOf;
 import 'package:motolii/workspace/stage/stage_tool.dart';
+import 'package:motolii/workspace/stage/stroke_smooth.dart'
+    show strokeSmoothLabels;
 import 'package:motolii/workspace/stage/toggle.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
@@ -231,6 +233,8 @@ class OptionsStrip extends StatelessWidget {
     ],
     4 => [
       _seg(c, 'pen.mode', const ['Path', 'Mask']),
+      const _Field('Smooth', value: ''),
+      _seg(c, 'draw.smooth', strokeSmoothLabels, initial: 2),
     ],
     // Camera tool strip: active Z-target status/release, tilt reset to flat Boxcam, and gesture hint.
     7 => _cameraStrip(ws),
@@ -238,6 +242,8 @@ class OptionsStrip extends StatelessWidget {
       _Field('Fill', swatch: p.fill ?? WindowTokens.body),
       _seg(c, 'brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),
       _seg(c, 'brush.size', const ['Thin', 'Medium', 'Thick'], initial: 1),
+      const _Field('Smooth', value: ''),
+      _seg(c, 'draw.smooth', strokeSmoothLabels, initial: 2),
     ], // Alight Motion's drawing tools: pen (width follows pressure), brush (constant width), fill, and eraser.
     _ => [
       _Field('Font', value: p.font),

@@ -10,13 +10,23 @@ import 'package:motolii/skin/window_tokens.dart';
 const relationKinds = ['relate'];
 
 /// The kinds of layer the timeline distinguishes.
-enum LayerKind { shape, text, image, camera, group, particles, audio }
+enum LayerKind {
+  shape,
+  text,
+  image,
+  camera,
+  environment,
+  group,
+  particles,
+  audio,
+}
 
 Color layerKindColor(LayerKind k) => switch (k) {
   LayerKind.shape => WindowTokens.toneShape,
   LayerKind.text => WindowTokens.toneText,
   LayerKind.image => WindowTokens.toneImage,
   LayerKind.camera => WindowTokens.toneCamera,
+  LayerKind.environment => WindowTokens.toneText,
   LayerKind.group => WindowTokens.toneGroup,
   LayerKind.particles => WindowTokens.toneParticles,
   LayerKind.audio => WindowTokens.toneAudio,

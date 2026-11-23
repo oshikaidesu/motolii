@@ -92,6 +92,7 @@ class EffectMapPane extends StatelessWidget {
         press: press,
         peek: (id) => TileMoving(pic(id), playing: true),
         names: {for (final e in every) e.id: e.name},
+        groups: {for (final e in every) e.id: e.label},
       );
     },
   );

@@ -295,6 +295,7 @@ class ProjectReader {
       switch (kind) {
         'text' => LayerKind.text,
         'camera' => LayerKind.camera,
+        'environment' => LayerKind.environment,
         'film' when isSound(m, t) => LayerKind.audio,
         'film' || 'picture' => LayerKind.image,
         'shape' when m.word(t, 'shape') == 'null' && _holding.contains(t) =>

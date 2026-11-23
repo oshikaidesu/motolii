@@ -442,6 +442,7 @@ Kind _kindOf(Layer? l) => switch (l?.kind) {
   null => Kind.none,
   LayerKind.text => Kind.text,
   LayerKind.camera => Kind.camera,
+  LayerKind.environment => Kind.camera,
   LayerKind.group => Kind.group,
   _ => Kind.shape,
 };

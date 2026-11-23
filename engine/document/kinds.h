@@ -6,7 +6,7 @@
 namespace motolii {
 
 inline const char* const doc_kinds =
-    "video image text solid shape camera light";
+    "video image text solid shape camera light environment";
 inline const char* const doc_visible_kinds = "video image text solid shape";
 inline const char* const doc_placed_kinds =
     "video image text solid shape camera light behaviour";
@@ -375,13 +375,13 @@ inline const DocValue doc_values[] = {
     {"render_mbps", "stage", 0, 500, false, nullptr},
     {"render_blur", "stage", 0, 64, false, nullptr},
     {"render_alpha", "stage", 0, 1, false, nullptr},
-    {"room", "stage", 0, 0, false,
+    {"room", "stage environment", 0, 0, false,
      "small_studio studio_small_02_2k lightroom venetian_crossroads_2k "
      "graffiti_shelter_2k parking_garage_2k pillars_2k"},
-    {"environment", "stage", 0, 10, false, nullptr},
-    {"environment_rotate", "stage", -1e6, 1e6, false, nullptr},
-    {"background", "stage", 0, 0, false, ""},
-    {"behind", "stage", 0, 0, false, "colour room"}};
+    {"environment", "stage environment", 0, 10, true, nullptr},
+    {"environment_rotate", "stage environment", -1e6, 1e6, true, nullptr},
+    {"background", "stage environment", 0, 0, false, ""},
+    {"behind", "stage environment", 0, 0, false, "colour room"}};
 
 }  // namespace motolii
 

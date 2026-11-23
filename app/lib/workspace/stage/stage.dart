@@ -289,6 +289,7 @@ class _StageState extends State<_Stage> {
                                       2,
                                       3,
                                     ][_opts['brush.kind'] ?? 0],
+                                    smooth: _opts['draw.smooth'] ?? 2,
                                     axis: _tool == 1
                                         ? _opts['move.axis'] ?? 0
                                         : 0,

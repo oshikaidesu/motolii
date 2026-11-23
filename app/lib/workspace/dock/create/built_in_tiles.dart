@@ -140,6 +140,13 @@ final lightGroup = (
       '',
       'A cone of light',
     ),
+    CreateTile(
+      'Environment',
+      AppGlyphs.radial,
+      WindowTokens.toneText,
+      '',
+      'HDR room lighting, skybox & background on the timeline — trim, keyframe intensity/rotation, or stack multiple rooms',
+    ),
   ],
 );
 
@@ -236,6 +243,7 @@ final layerOfTile = {
   'Sun': ('light', 'sun'),
   'Point': ('light', 'point'),
   'Spot': ('light', 'spot'),
+  'Environment': ('environment', 'small_studio'),
 };
 
 /// Transform values set on a layer right after its tile creates it, in the same undo step.

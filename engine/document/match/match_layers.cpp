@@ -163,6 +163,8 @@ void build_by_kind(LayerBuild& build) {
     made.behaviour = true;
   else if (kind == "camera")
     made.camera = true;
+  else if (kind == "environment")
+    made.environment = true;
   else if (kind == "light")
     match_light(build);
   else if (shape.empty() && !std::filesystem::is_regular_file(file))

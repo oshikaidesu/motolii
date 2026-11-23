@@ -293,5 +293,26 @@ TEST(Cards, CameraFrameCenteredAndZTargetInterpolation) {
   EXPECT_NEAR(at2.look.y, -1.0, 1e-6);
 }
 
+TEST(Cards, EnvironmentLayerExposesRoomCardAndAnimatedIntensityRotation) {
+  Layer env("environment");
+  const std::string cards = env.Cards();
+  EXPECT_TRUE(Has(cards, "Room")) << cards;
+  EXPECT_NE(cards.find("room"), std::string::npos) << cards;
+  EXPECT_NE(cards.find("environment_rotate"), std::string::npos) << cards;
+  EXPECT_NE(cards.find("background"), std::string::npos) << cards;
+
+  // Timeline environment object allows keyframing intensity & HDR rotation.
+  sqlite3_exec(env.d->file,
+               "insert or replace into keyframe(layer, name, at, value, easing) "
+               "values(1, 'environment', 0.0, 0.5, 'Linear'), "
+               "(1, 'environment', 2.0, 2.5, 'Linear'), "
+               "(1, 'environment_rotate', 0.0, 0.0, 'Linear'), "
+               "(1, 'environment_rotate', 2.0, 180.0, 'Linear')",
+               nullptr, nullptr, nullptr);
+  doc_forget(*env.d);
+  EXPECT_NEAR(doc_number(*env.d, 1, "environment", 1.0, 1.0), 1.5, 1e-5);
+  EXPECT_NEAR(doc_number(*env.d, 1, "environment_rotate", 1.0, 0.0), 90.0, 1e-5);
+}
+
 }  // namespace
 }  // namespace motolii

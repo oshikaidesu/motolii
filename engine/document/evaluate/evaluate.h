@@ -41,7 +41,7 @@ struct DocShownLayer {
   Solid* solid = nullptr;
   Mesh* shape = nullptr;
   bool in = true, clipped = false, camera = false, behaviour = false,
-       grains = false;
+       environment = false, grains = false;
   // A photo bakes its crop into the rectangle its file fills (edged_photo), so
   // evaluate_clipping does not cut it again with a scissor.
   bool cropPath = false;

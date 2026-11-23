@@ -400,6 +400,14 @@ class _KindPainter extends CustomPainter {
             ..close(),
           f,
         );
+      case LayerKind.environment:
+        // Globe / HDR sphere icon for timeline environment objects.
+        c.drawCircle(o(.5, .5), w * .34, st);
+        c.drawOval(
+          Rect.fromCenter(center: o(.5, .5), width: w * .32, height: w * .68),
+          st,
+        );
+        c.drawLine(o(.18, .5), o(.82, .5), st);
       case LayerKind.group:
         c.drawRect(Rect.fromLTRB(w * .2, w * .2, w * .62, w * .62), st);
         c.drawRect(Rect.fromLTRB(w * .4, w * .4, w * .8, w * .8), f);

@@ -7,7 +7,7 @@ import 'package:force_graph/force_graph.dart'
     show CollideForce, Force, ForceNode, ForceSimulation;
 
 /// A tile's collision radius on the map, in canvas pixels.
-const mapTileRadius = 13.0;
+const mapTileRadius = 15.5;
 
 /// Pushes [at] apart until no two are within two [mapTileRadius] of each other, keeping each near where it was.
 /// [at] holds positions from 0 to 1 on each axis. [aspect] is the viewport's width to height. The canvas has the area of

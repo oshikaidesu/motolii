@@ -4,17 +4,93 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
-**Where creative coding and motion design meet.**
+**A WebGPU-native motion graphics & video editor built to end sluggish previews, locked-in plugin ecosystems, and the wall between creative code and video.**
 
-React to audio with a Shadertoy shader. Combine CSS `@keyframes` and After Effects expressions on the same text layer. Composite a p5.js sketch behind a Lottie animation. Paste code from the web and run it as published.
+![Motolii workspace: shelves on the left, Stage preview in the center, Timeline at the bottom, and Inspector on the right](docs/pictures/tabs/window.jpg)
 
-Motolii is an open-source video editor supporting [20+ creative formats](#supported-formats) — After Effects plugins and expressions, Shadertoy, Cavalry, p5.js, CSS, Lottie, AviUtl2 scripts, and more.
+---
 
-![Motolii UI: media and asset shelves on the left, Stage preview in the center, Timeline at the bottom, and Inspector on the right](docs/pictures/window.jpg)
+## Why Motolii?
 
-- **GPU-native.** Shaders and expressions run on WebGPU, keeping thousands of copies smooth at 60 fps.
-- **Effects are plain files.** `.wgsl`, `.fs`, and `.js` effects live right on disk — inspect them, edit them directly, or co-edit them with an AI agent over [ACP](https://github.com/anthropics/agent-client-protocol) (the same protocol used by Zed and JetBrains).
-- **Mix languages on one layer.** Stack CSS animations, After Effects expressions, GPU shaders, and native plugins on the same layer in any order.
+Motion design tools have forced the same trade-offs for decades:
+
+- **Lagging previews** — Stack a few shaders or clones and playback grinds to a halt.
+- **Rebuilding web art from scratch** — Amazing Shadertoy, p5.js, CSS, Lottie, or Cavalry pieces can't just be dropped into a video timeline.
+- **Cluttered UI & locked ecosystems** — Endless vertical parameter lists, painful scripting UX, and fear of losing paid plugins if you ever switch.
+
+Motolii is built on a **WebGPU-native C++ engine** and **plain-file shelves**. Thousands of copies and stacked shaders stay smooth at 60 fps, and code from the web runs directly when you press `⌘V`.
+
+---
+
+## "If I switch from After Effects, do I lose my paid plugins and expressions?"
+
+**No — bring them straight in.**  
+Motolii is designed so you don't have to throw away years of plugins, scripts, or muscle memory:
+
+- **Your native After Effects plugins (`.plugin` / `.aex`) work out of the box**  
+  Drop or symlink third-party AE plugins (Deep Glow, Quick Chromatic Aberration, Zink Tools, Satori, etc.) into `ae_plugins/`. They appear with parameter cards, `#ae` tags, and live previews, running in an isolated worker via [aexlo](https://github.com/potistudio/aexlo) so a crashing plugin never takes down the editor.
+- **After Effects expressions run natively**  
+  Powered by `lottie-web`'s `ExpressionManager` compiled to QuickJS-ng — `thisComp`, `thisLayer`, `wiggle`, `linear`, `ease`, `sampleImage`, and keyframe queries work directly without reimplementation.
+- **Lottie, PSD layers, Cavalry, AviUtl2, Shadertoy, p5.js & CSS in one timeline**  
+  Import multi-layer PSDs ready for rigging, run 26 bundled Cavalry scripts, and mix 20+ creative formats on the same layer in any order.
+- **Alpha Stage preview & ProRes 4444 alpha export**  
+  Toggle the real-time checkerboard (`Alpha`) on the Stage and export straight-alpha ProRes 4444 `.mov` clips to slot smoothly into existing Premiere, DaVinci, or AE pipelines.
+
+> See the [After Effects Migration Guide](docs/AFTER_EFFECTS.md) for full details.
+
+---
+
+## How Does It Feel to Use? (UI / UX)
+
+### 1. Find Effects & Fonts Visually — No Memorizing Names
+
+Browse 1,300+ bundled effects and your entire font library on an interactive **2D similarity map** with category islands, zoom controls, and an enlarged hover loupe — or hover any tile to preview it live on the Stage.
+
+![Effects 2D similarity map with cluster island labels, zoom controls, and similarity strip](docs/pictures/map_showcase.jpg)
+
+<p>
+<img src="docs/pictures/tabs/effects_wide.jpg" alt="Effects shelf tile grid and tag filters" width="49%">
+<img src="docs/pictures/tabs/fonts_wide.jpg" alt="Fonts shelf specimen grid and roles" width="49%">
+</p>
+
+### 2. Compact, Tactile Controls Instead of Endless Rows
+
+- **Tile-based Inspector**: Parameters sit in dense multi-column cards that expand cleanly as you widen the pane, color-coded by visual impact.
+- **Timeline + HDR Environment Objects**: Audio waveforms, tap-tempo BPM beat grids, stackable easings, and **timeline `Environment` layers** so you can trim, toggle, and keyframe HDR room lighting, rotation, fog, and skyboxes directly on the timeline.
+- **Adjustable Freehand Smoothing & 3D Boxcam**: Dial Brush/Pen stroke stabilization (`Off`–`High`) with corner preservation, and steer 3D cameras alongside the live Depth radar panel.
+
+<p>
+<img src="docs/pictures/tabs/inspector.jpg" alt="Tile-based Inspector with 2.5D/3D Transform card" width="32%">
+<img src="docs/pictures/tabs/timeline.jpg" alt="Timeline with audio waveform, keyframes, and easing curves" width="66%">
+</p>
+<p>
+<img src="docs/pictures/tabs/ease.jpg" alt="Stackable easing curve editor and presets" width="49%">
+<img src="docs/pictures/tabs/depth.jpg" alt="Depth radar panel for camera focus and DOF" width="49%">
+</p>
+
+### 3. Code & AI Side-by-Side (Code Workspace & ACP Agent)
+
+Switch to the **CODE** workspace to keep **ACP AI Agents**, stacked **Code notebook cells**, **Stage**, and **Timeline** open together. Connect Claude Agent, Codex, Gemini CLI, or Cursor with live context of the selected layer's cards, values, and scripts.
+
+![Code workspace: ACP Agent on the left, Code notebook in the center, Stage on the right, Timeline at the bottom](docs/pictures/tabs/code_workspace.jpg)
+
+---
+
+## Vism — Next-Gen Custom UI Panels & Cards
+
+Instead of waiting on closed plugin vendors, **Vism** lets anyone build synth-grade custom Inspector faceplates and dockable tool panels in **a single JavaScript file** — zero WebView, rendered 100% natively in Flutter with 3D scenes (`.glb`/`.obj`/wavetables), 60 fps GLSL shaders, audio waveforms, 16-step sequencers, rig pickers, and rotary knobs.
+
+![Vism 8 design vectors live demo: 3D toon, wavetable synth, hardware OLED, studio light rig, retro CRT, comic](docs/pictures/vism_3d_live.gif)
+
+![Vism pro capabilities live demo: audio waveform, 16-step sequencer, GLSL shader, Live2D rig picker, curve and faders](docs/pictures/vism_live.gif)
+
+- **Start building in 10 seconds**: Click **`+ New Vism`** in the Tools panel to scaffold a runnable starter with IDE autocomplete (`motolii-ui.d.ts`), open it as a live docking tab, and launch your editor — every save hot-reloads in ~80 ms.
+- **Presets & 1-click `.vism` sharing**: Save parameter presets on any Vism card, export a `.vism` package (presets & assets bundled), and double-click or drop onto Motolii to install instantly.
+- **Prefer a uniform UI?**: Toggle `Settings → Appearance → Vism Card Faceplates` off at any time to keep full functionality in Motolii's standard skin.
+
+👉 [Vism 5-Minute Quickstart (Japanese)](docs/VISM_QUICKSTART.ja.md) · [Vism Custom Card Specification](docs/CUSTOM_CARDS.md)
+
+---
 
 ## Download (Beta)
 
@@ -25,60 +101,17 @@ Prebuilt **macOS Apple Silicon (`.app`)** beta builds are published on [GitHub R
    ```bash
    xattr -cr /Applications/Motolii.app
    ```
-3. Launch Motolii and pick one of the bundled **SAMPLES** in the Home sidebar to try it right away.
+3. Launch Motolii and click any bundled project under **SAMPLES** in the Home sidebar to explore right away.
 
-> Windows (`x64`) and Linux builds are in progress. To build from source, see [Build and run](#build-and-run).
+> Windows (`x64`) and Linux builds are in progress. To build from source, see below.
 
-## Interface overview
-
-See [Tabs & Panels](docs/TABS.md) for a visual tour of every tab.
-
-<p>
-<img src="docs/pictures/tabs/effects_map.jpg" width="49%">
-<img src="docs/pictures/tabs/fonts_map.jpg" width="49%">
-</p>
-
-- **Visual Maps.** Switch the Effects and Fonts shelves to a 2D t-SNE similarity map to browse 1,300+ effects visually without remembering names.
-- **Tile-based Inspector.** Parameters render as compact multi-column blocks rather than long rows, scaling cleanly when you widen the panel. Bundled effects are scored by visual impact (0–10) and color-coded (pale yellow, pink, celadon) so high-impact controls stand out immediately.
-- **Hover to preview.** Hover an effect tile to preview it live on the Stage, or hover an easing preset to preview its motion curve.
-- **Code tab & Code workspace.** Edit every effect or expression on a layer as stacked notebook cells with AE expression autocompletion, live evaluated values, and inline error reporting. Switch to the **CODE** workspace in the top bar to keep Code, Stage, and Timeline visible side by side.
-- **Agent tab.** Connect any ACP-compatible AI agent (Claude Agent, Codex, Gemini CLI, Cursor, etc.) with full context of the selected layer's cards, parameter values, and code. New effects arrive as new cards, and existing code is modified only when requested.
-- **Relations.** Drive multiple layers together (`Follow`, `Gravity`, `flock`, `spring`, `collide`, etc.) using small JavaScript files in `shelves/relations/`.
-- **BPM grid.** Tap tempo directly in the Timeline to generate a beat grid with snap-to-beat editing.
-- **Stackable easings.** Stack multiple easings like effects. Each preset is a one-line formula file.
-- **Color tools.** Native macOS eyedropper, automatic palettes extracted from images, and per-character text styling.
-- **Vism custom UI panels & cards.** Build synth-grade custom Inspector faceplates and dockable tool panels in plain JavaScript with Flutter-native 3D (`ui.scene3d` + `.glb`/`.obj`), live GLSL shaders (`ui.shader`), audio waveforms & 16-step sequencers, character rig pickers, and rotary knobs — zero WebView, ~80 ms hot reload, and 1-drop `.vism` sharing. Click **`+ New Vism`** in the Tools panel to scaffold a starter with IDE autocomplete.
-
-<p>
-<img src="docs/pictures/vism_gallery.jpg" alt="Vism 8 design vectors showcase" width="100%">
-<img src="docs/pictures/vism_pro.jpg" alt="Vism pro capabilities: waveform, 16-step sequencer, GLSL shader, rig picker, curve and faders" width="100%">
-</p>
-
-- **Customizable & transparent.** Folder-based skins, VS Code-style `~/.motolii/keybindings.json`, minimal Dart panels, and automatic export credit logs listing authors and licenses for every effect used.
-
-## Current status
-
-Motolii is in **early beta** on Apple Silicon macOS (M4, macOS 15.5). Self-contained macOS `.app` beta builds are available on [GitHub Releases](https://github.com/oshikaidesu/motolii/releases); Windows and Linux builds are not yet verified.
-
-- **Working:** Video, images, text, vector shapes, 3D models (`.glb`/`.gltf`), point clouds, and Lottie animations in one scene; keyframes and stackable easings; autosave and undo/redo; audio/video playback; MP4/MOV/GIF/image-sequence export; `.motoliipack` sharing bundles.
-- **Working:** External creative formats — drop `.fs`/`.wgsl` shaders in `effects/` or native After Effects plugins in `ae_plugins/` to load them without restarting, or paste Shadertoy/p5.js/CSS/TSL code directly with ⌘V. (Not every third-party file or script is guaranteed to run cleanly.)
-- **Partial:** AviUtl2 scripts; Alight Motion compatibility features.
-- **Not yet ready:** Verified Windows/Linux builds, Apple Developer ID notarization, and MIDI audio playback.
-
-For per-format details and known limitations, see [Specifications](docs/archive/using/specifications.md).
-
-## Build and run
+## Build and Run
 
 ### Requirements
 
 - Apple Silicon Mac (tested on M4, macOS 15.5)
-- Xcode from the App Store (Command Line Tools alone are not sufficient; launch Xcode once to install components, then run `sudo xcodebuild -license accept`)
-- [Homebrew](https://brew.sh/)
-- [Flutter](https://docs.flutter.dev/get-started/install) 3.50.0 (stable) on your `PATH`
-- Python 3 (bundled with macOS / Xcode)
-- ~10 GB of free disk space (excluding Xcode and Flutter)
-
-### Commands
+- Xcode from the App Store (launch once, then run `sudo xcodebuild -license accept`)
+- [Homebrew](https://brew.sh/), [Flutter](https://docs.flutter.dev/get-started/install) 3.50.0 (stable), Python 3, ~10 GB free disk space
 
 ```bash
 git clone https://github.com/oshikaidesu/motolii.git
@@ -88,88 +121,45 @@ engine/build.sh
 app/tool/live.sh
 ```
 
-- `brew bundle` installs dependencies listed in `Brewfile` (GStreamer, SQLite, FFmpeg, CMake, etc.).
-- `engine/build.sh` fetches third-party libraries and builds the C++ engine. The first run compiles Filament from source (~5 minutes on an M4) and produces `engine/out/libmotolii.dylib`.
-- `app/tool/live.sh` builds and launches the Flutter app (the first build takes ~1–3 minutes).
+Run tests with `engine/build.sh test` (C++) and `cd app && flutter test` (Flutter). See [Testing](docs/TESTING.md).
 
-Projects are auto-saved under `~/Movies/Motolii/Untitled.motolii`, and exported videos are written beside the project file.
+---
 
-To run tests: `engine/build.sh test` for C++ tests (`ctest`) and `cd app && flutter test` for Flutter tests. See [Testing](docs/TESTING.md) for details.
-
-For troubleshooting, see the [Build Guide](docs/archive/using/guide.md).
-
-## Supported formats
+## Supported Formats (20+)
 
 Paste code (`⌘V`) or drop files into your shelf folders — formats are detected automatically.
 
 | Format | How to add | Runtime |
 |---|---|---|
-| **Shadertoy** | Paste (`⌘V`) | ISF → WGSL (glslang + Tint) |
-| **GLSL Sandbox** | Paste (`⌘V`) | Same |
-| **twigl** | Paste (`⌘V`) | Same |
-| **Bonzomatic** | Paste (`⌘V`) | Same |
-| **ISF (`.fs`)** | Place in `effects/` | glslang → SPIR-V → WGSL |
-| **WGSL (`.wgsl`)** | Place in `effects/` | Native WebGPU |
-| **p5.js / Processing** | Paste (`⌘V`) | QuickJS-ng |
-| **Paper.js** | Paste (`⌘V`) | QuickJS-ng |
-| **Two.js** | Paste (`⌘V`) | QuickJS-ng |
-| **Canvas 2D** | Paste (`⌘V`) | QuickJS-ng |
-| **Dwitter** | Paste (`⌘V`) | QuickJS-ng |
-| **tixy.land** | Paste (`⌘V`) | QuickJS-ng |
-| **Turtletoy** | Paste (`⌘V`) | QuickJS-ng |
-| **Hydra** | Paste (`⌘V`) | QuickJS-ng → WGSL |
-| **After Effects expressions** | Paste (`⌘V`) or Expression card | lottie-web in QuickJS-ng |
 | **After Effects plugins (`.plugin`, `.aex`)** | Place or symlink in `ae_plugins/` | [aexlo](https://github.com/potistudio/aexlo) (isolated worker) |
+| **After Effects expressions** | Paste (`⌘V`) or Expression card | lottie-web in QuickJS-ng |
+| **Lottie (`.json`)** | Drag & drop | ThorVG (with runtime expressions) |
+| **Photoshop (`.psd` / `.psb`)** | Drag & drop | Multi-layer group import |
+| **Shadertoy / GLSL Sandbox / twigl / Bonzomatic** | Paste (`⌘V`) | ISF → WGSL (glslang + Tint) |
+| **ISF (`.fs`) / WGSL (`.wgsl`)** | Place in `effects/` | Native WebGPU |
+| **p5.js / Paper.js / Two.js / Canvas 2D / Dwitter / tixy / Turtletoy** | Paste (`⌘V`) | QuickJS-ng |
+| **Hydra / three.js TSL** | Paste (`⌘V`) | QuickJS-ng → WGSL |
 | **Cavalry scripts** | Expression card | QuickJS-ng |
-| **CSS `@keyframes`** | Paste (`⌘V`) on a text layer | Stylo (Firefox CSS engine) |
-| **Animated SVG** | Paste (`⌘V`) or drag & drop | ThorVG + Stylo |
-| **three.js TSL** | Paste (`⌘V`) | WGSLNodeBuilder in QuickJS-ng |
+| **CSS `@keyframes` / Animated SVG** | Paste (`⌘V`) or D&D | Stylo (Firefox CSS engine) + ThorVG |
 | **AviUtl2 (`.anm2`, `.obj2`)** | Place in `aviutl_scripts/` | LuaJIT |
-| **Lottie (`.json`)** | Drag & drop | ThorVG |
+| **3D models (`.glb`, `.gltf`) / Point clouds (`.ply`)** | Drag & drop | Filament WebGPU |
 | **Subtitles (`ASS`/`SRT`/`LRC`/`VTT`)** | Drag & drop | libass via FFmpeg |
 
-See [`shelves/README.md`](shelves/README.md) for where each file type belongs.
-
-### After Effects compatibility
-
-Bring your existing After Effects assets directly into Motolii:
-
-- **Native plugins (`.plugin` / `.aex`)** — Drop or symlink third-party After Effects plugins (Deep Glow, Quick Chromatic Aberration, Zink Tools, Satori, etc.) into your user `ae_plugins/` folder. They appear in the Effects shelf with auto-generated parameter cards, `#ae` / `#cpu` (or `#gpu`) tags, and live preview tiles. Plugins execute inside an isolated worker process via [aexlo](https://github.com/potistudio/aexlo) so a crashing or hanging plugin cannot bring down the editor.
-- **Expressions** — After Effects expressions run directly without reimplementation, using lottie-web's `ExpressionManager` compiled to QuickJS-ng bytecode. `thisComp`, `thisLayer`, `thisProperty`, `sampleImage`, `fromWorld`, `wiggle`, `linear`, `ease`, keyframe access, and cross-layer references all work out of the box.
-- **Lottie (`.json`)** — Bodymovin exports play via ThorVG, which evaluates embedded expressions at runtime with JerryScript rather than baking them. Keyframes, easings, paths, parenting, precomps, time remapping, loops, mattes, and blend modes are supported, plus 3D layer and camera support via `thorvg_z.patch`.
-
-Cavalry scripts also run natively (`cavalry.Point`, `cavalry.PointCloud`, `cavalry.random`), and bare `{ }` expressions are automatically wrapped into `each()`. Twenty-six Cavalry community distribution scripts ship in `shelves/create/cavalry/`.
-
-**Not covered:** Adobe's private built-in effects, plugins requiring unimplemented AEGP host suites (such as comp cameras or text documents), and audio-reactive properties tied to AE's internal audio graph. Motolii covers those with its own GPU shader effects and Web Audio-compatible sound analysis.
-
-## Repository layout
-
-| Directory | Description |
-|---|---|
-| [`app/`](app/README.md) | Flutter desktop UI (presentation and input handling) |
-| [`engine/`](engine/README.md) | C++ rendering and project engine (`libmotolii.dylib`) |
-| [`shelves/`](shelves/README.md) | Bundled community effects, scripts, easings, and skins |
-| [`docs/`](docs/README.md) | Guides, architecture notes, and testing docs |
+---
 
 ## Documentation
 
 - [Tabs & Panels](docs/TABS.md) — Visual overview of every tab and feature
 - [After Effects Migration Guide](docs/AFTER_EFFECTS.md) — Using your existing AE plugins, expressions, and Lottie assets
-- [Vism Custom Panel & Card Quickstart](docs/VISM_QUICKSTART.ja.md) / [Specification](docs/CUSTOM_CARDS.md) — Build custom 3D, shader, audio, and faceplate UIs in JS
-- [Coding & Shader Reference](docs/CODING.md) — Supported formats, WESL WGSL attributes, compatibility model, and IDE workflow
-- [User Guide](docs/GUIDE.md) — End-to-end guide from creating a project to exporting (Japanese)
-- [Architecture](docs/ARCHITECTURE.md) — System design: Flutter app, C++ engine, WebGPU rendering, and shelves
-- [Effect Licenses](docs/design/effect_licences.md) — Attribution, export credit files, and bundling boundaries
-- [Testing](docs/TESTING.md) — C++, Flutter, golden, and mutation test suites
-- [Bridge Contract](docs/app/BRIDGE.md) — FFI contract between Flutter and the C++ engine
-- [Gestures](docs/app/GESTURES.md) — Pointer, drag, wheel, and keyboard interaction specs
-- [Contributing](.github/CONTRIBUTING.md) — Setup, design principles, and contribution guidelines
-- [Archive](docs/archive/) — Historical design notes and older documentation
+- [Vism Custom Panel & Card Quickstart (Japanese)](docs/VISM_QUICKSTART.ja.md) / [Specification](docs/CUSTOM_CARDS.md)
+- [ACP Agent Tutorial (Japanese)](docs/ACP_TUTORIAL.ja.md) — PSD auto-rigging, Group Focus, and `ops.json` workflows
+- [Camera Guide (Japanese)](docs/CAMERA.ja.md) — Boxcam 3D camera, Z-target lock-on, and Depth radar
+- [Coding & Shader Reference](docs/CODING.md) — Supported formats, WESL WGSL attributes, and IDE workflow
+- [User Guide (Japanese)](docs/GUIDE.md) — End-to-end guide from project creation to export
+- [Architecture](docs/ARCHITECTURE.md) / [Bridge Contract](docs/app/BRIDGE.md) / [Testing](docs/TESTING.md)
+- [Contributing](.github/CONTRIBUTING.md)
 
-## Contributing
+## Contributing & License
 
-Questions are welcome in [Discussions](https://github.com/oshikaidesu/motolii/discussions) and bug reports in [Issues](https://github.com/oshikaidesu/motolii/issues) (English or Japanese). For pull requests, please see [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md), and [`SECURITY.md`](.github/SECURITY.md).
-
-## License
-
-Dual-licensed under [Apache License 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at your option. Unless explicitly stated otherwise, any contribution intentionally submitted for inclusion in Motolii is dual-licensed as above without additional terms or conditions. Bundled third-party works retain their own licenses (see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)).
+Questions are welcome in [Discussions](https://github.com/oshikaidesu/motolii/discussions) and bug reports in [Issues](https://github.com/oshikaidesu/motolii/issues) (English or Japanese).  
+Dual-licensed under [Apache License 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at your option (see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for bundled third-party works).

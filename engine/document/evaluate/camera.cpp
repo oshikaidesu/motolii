@@ -181,7 +181,15 @@ void doc_look(Doc& d) {
            [&](sqlite3_stmt* row) {
              holders.push_back(sqlite3_column_int(row, 0));
            });
-  for (const int h : holders)
+  for (const int h : holders) {
+    // Non-stage layers (such as timeline environment objects) only apply their
+    // viewer settings (fog, bloom, grading, etc.) while visible and in range.
+    if (h > 0) {
+      const double since = s.now - doc_number(d, h, "start", 0, 0),
+                   lasts = doc_number(d, h, "duration", 0, -1);
+      if (since < 0.0 || (lasts >= 0.0 && since >= lasts) || !doc_visible(d, h))
+        continue;
+    }
     for (const std::string& file : h == 0
                                        ? script_files(doc_word(d, 0, "script"))
                                        : doc_fx_list(d, h, true))
@@ -190,6 +198,7 @@ void doc_look(Doc& d) {
           return doc_number(d, h, sc->names[k].c_str(), s.now,
                             sc->parameters[k].usual);
         }));
+  }
   // True when a settings file sets color grading.
   const bool theirs =
       std::any_of(told.begin(), told.end(), [](const std::string& t) {
@@ -266,10 +275,23 @@ void doc_look(Doc& d) {
         s.view->setScreenSpaceReflectionsOptions(
             in.view.screenSpaceReflections);
   }
+  // Resolve the active timeline `environment` object (last visible in-range
+  // environment layer in stacking order), falling back to stage layer 0.
+  int envLayer = 0;
+  for (int layer : doc_layers(d)) {
+    if (doc_word(d, layer, "kind") != "environment") continue;
+    const double since = s.now - doc_number(d, layer, "start", 0, 0),
+                 lasts = doc_number(d, layer, "duration", 0, -1);
+    if (since >= 0.0 && (lasts < 0.0 || since < lasts) &&
+        doc_visible(d, layer)) {
+      envLayer = layer;
+    }
+  }
   // Remember the intensity of the light that the canvas was opened with.
   if (d.look.roomLight <= 0.f && s.scene->getIndirectLight())
     d.look.roomLight = s.scene->getIndirectLight()->getIntensity();
-  std::string which = doc_word(d, 0, "room");
+  std::string which = doc_word(d, envLayer, "room");
+  if (which.empty() && envLayer > 0) which = doc_word(d, 0, "room");
   // The room that the canvas was opened with.
   if (which.empty()) which = "small_studio";
   // Another room: its light is made once from its file and then reused. Every
@@ -291,10 +313,10 @@ void doc_look(Doc& d) {
   }
   if (IndirectLight* room = s.scene->getIndirectLight()) {
     room->setIntensity(d.look.roomLight *
-                       (float)doc_number(d, 0, "environment", 0, 1));
+                       (float)doc_number(d, envLayer, "environment", s.now, 1));
     room->setRotation(math::mat3f::rotation(
-        (float)(doc_number(d, 0, "environment_rotate", 0, 0) * (double)TAU /
-                360.0),
+        (float)(doc_number(d, envLayer, "environment_rotate", s.now, 0) *
+                (double)TAU / 360.0),
         math::float3{0, 1, 0}));
   }
   // Gives the canvas effects access to the analysis of a sound file.
@@ -336,12 +358,20 @@ void doc_look(Doc& d) {
         return doc_number(d, 0, doc_screen_parameter(file, name).c_str(),
                           d.stage->now, usual);
       });
-  // The background color.
-  const std::string behind = doc_word(d, 0, "background");
+  // The background color and behind mode come from the active environment
+  // layer (or layer 0 when none is active).
+  const std::string behindMode = [&] {
+    const std::string w = doc_word(d, envLayer, "behind");
+    return (w.empty() && envLayer > 0) ? doc_word(d, 0, "behind") : w;
+  }();
+  const std::string behind = [&] {
+    const std::string w = doc_word(d, envLayer, "background");
+    return (w.empty() && envLayer > 0) ? doc_word(d, 0, "background") : w;
+  }();
   // The room itself is shown behind everything, as bright as it lights the
   // canvas. Its sky image is made once for each room. Hidden while transparent
   // stage preview is on so alpha areas show the viewport checkerboard.
-  if (!s.transparentStage && doc_word(d, 0, "behind") == "room") {
+  if (!s.transparentStage && behindMode == "room") {
     auto& shown = d.look.skies;
     Skybox*& sky = shown[d.look.roomIs];
     if (!sky) {
@@ -375,19 +405,31 @@ void doc_look(Doc& d) {
   // all solid layers whatever their priority, so a blended backdrop was painted
   // over the solids. There is no color when the room is the background.
   const std::string colour =
-      (s.transparentStage || doc_word(d, 0, "behind") == "room") ? "" : behind;
-  if (colour != d.look.backdropIs) {
+      (s.transparentStage || behindMode == "room") ? "" : behind;
+  const std::string backdropKey = colour + "@" + std::to_string(envLayer);
+  if (backdropKey != d.look.backdropIs) {
     if (d.look.backdrop)
       canvas_off(s, d.look.backdrop), d.look.backdrop = nullptr;
     if (!colour.empty()) {
       const math::double4 up = s.camera->getProjectionMatrix() *
                                s.camera->getViewMatrix() *
                                math::double4{0, 1, 0, 1};
+      const auto hexEnv = [&](const char* name, float3 usual) {
+        const std::string w = doc_word(d, envLayer, name);
+        const std::string src = (w.empty() && envLayer > 0)
+                                    ? doc_word(d, 0, name)
+                                    : w;
+        unsigned rgb = 0;
+        return src.size() == 6 && std::sscanf(src.c_str(), "%x", &rgb) == 1
+                   ? float3{((rgb >> 16) & 255) / 255.f,
+                            ((rgb >> 8) & 255) / 255.f, (rgb & 255) / 255.f}
+                   : usual;
+      };
       // Opaque, so that Filament draws it with the solid layers, first by its
       // priority, and not over them with the blended sheets.
       if ((d.look.backdrop = flat(s, "rect", (float)s.w / (float)s.h, mat4f{},
                                   (float)(2.0 * up.w / up.y),
-                                  hex("background", float3{0.f}), "opaque"))) {
+                                  hexEnv("background", float3{0.f}), "opaque"))) {
         auto& faces = s.engine->getRenderableManager();
         for (const Stage::Renderable& made : s.renderables)
           if (made.of == d.look.backdrop->sheet)
@@ -397,7 +439,7 @@ void doc_look(Doc& d) {
             d.look.backdrop->look->setDepthCulling(false);
       }
     }
-    d.look.backdropIs = colour;
+    d.look.backdropIs = backdropKey;
   }
   if (d.look.backdrop)
     move(s, d.look.backdrop->sheet,

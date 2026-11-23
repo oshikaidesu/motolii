@@ -162,6 +162,34 @@ class FontsShelf extends StatelessWidget {
                         also: '${clip ?? ''} kinds',
                       );
                       final byPath = {for (final f in list) ?f.path: f};
+                      String fontGroupOf(FontFile f) {
+                        final tags = tagsOf(f);
+                        for (final g in const [
+                          'japanese',
+                          'korean',
+                          'chinese',
+                          'serif',
+                          'sans',
+                          'mono',
+                          'script',
+                          'italic',
+                          'bold',
+                          'light',
+                          'arabic',
+                          'hebrew',
+                          'greek',
+                          'russian',
+                        ]) {
+                          if (tags.contains(g)) {
+                            return g[0].toUpperCase() + g.substring(1);
+                          }
+                        }
+                        return tags.isNotEmpty
+                            ? tags.first[0].toUpperCase() +
+                                  tags.first.substring(1)
+                            : 'Other';
+                      }
+
                       return ShelfMapView(
                         map,
                         [
@@ -174,6 +202,36 @@ class FontsShelf extends StatelessWidget {
                             .where((f) => f.family == c.sel)
                             .firstOrNull
                             ?.path,
+                        names: {
+                          for (final MapEntry(key: p, value: f)
+                              in byPath.entries)
+                            p: f.family,
+                        },
+                        groups: {
+                          for (final MapEntry(key: p, value: f)
+                              in byPath.entries)
+                            p: fontGroupOf(f),
+                        },
+                        peek: (p) {
+                          final f = byPath[p];
+                          if (f == null) return const SizedBox.shrink();
+                          final jp = tagsOf(f).contains('japanese');
+                          return Container(
+                            color: WindowTokens.body,
+                            alignment: Alignment.center,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: Shape.s(8),
+                              vertical: Shape.s(6),
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                jp ? 'あア 永 Aa' : 'Aa Bb Motion',
+                                style: fontFaceStyle(f, 24, Grey.g95),
+                              ),
+                            ),
+                          );
+                        },
                         press: (p) {
                           if (byPath[p] case final f?) {
                             // One click, as elsewhere on the map: it sets the role's font when no text layer is selected.

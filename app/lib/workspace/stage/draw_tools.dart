@@ -5,7 +5,7 @@ import 'dart:ui' show Offset, Path, Rect;
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import 'package:perfect_freehand/perfect_freehand.dart'
-    show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;
+    show getStrokeOutlinePoints, getStrokePoints, PointVector;
 // The package does not export getStrokeRadius (how wide the pressure makes a
 // point), so it is imported from src.
 // ignore: implementation_imports
@@ -15,6 +15,7 @@ import 'package:perfect_freehand/src/get_stroke_radius.dart'
 import 'package:motolii/widgets/text_gestures.dart' show textToType;
 import 'package:motolii/workspace/stage/stage_context.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
+import 'package:motolii/workspace/stage/stroke_smooth.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -37,12 +38,16 @@ class DrawTools extends ChangeNotifier {
   bool _penning = false;
 
   /// The pointer's path while the pen is down, or null. A scribble rather than a handle becomes a path of its own.
-  List<Offset>? get penWay => _penWay;
+  List<Offset>? get penWay => _penWay == null
+      ? null
+      : StrokeStabilizer.liveSmooth(_penWay!, _stage.tool.smooth);
   List<Offset>? _penWay;
 
   /// The brush stroke so far, in stage coordinates, or null.
-  /// Smoothed on release by perfect_freehand (MIT, Steve Ruiz; Dart port: Adil Hanney).
-  List<Offset>? get brush => _brush;
+  /// Live-stabilized during drag and corner-preserving smoothed on release.
+  List<Offset>? get brush => _brush == null
+      ? null
+      : StrokeStabilizer.liveSmooth(_brush!, _stage.tool.smooth);
   List<Offset>? _brush;
 
   void endPenPath() {
@@ -259,15 +264,19 @@ class DrawTools extends ChangeNotifier {
     );
   }
 
-  /// Fits a smooth path to the pen scribble [way] within 8 screen pixels.
+  /// Fits a smooth path to the pen scribble [way] according to the active Smooth level.
   /// A closed scribble becomes a filled path; an open one becomes a stroke.
   void _fit(StageViewport v, List<Offset> way) {
     final ws = _stage.workspace;
     // The fitted path is complete, so the next pen click starts a new one.
     _penning = false;
-    final points = [for (final p in way) v.toComposition(p)],
-        error = (v.toComposition(way.first + const Offset(8, 0)) - points.first)
-            .distance;
+    final smooth = _stage.tool.smooth;
+    final cleanWay = StrokeStabilizer.finishSmooth(way, smooth);
+    final errPx = StrokeStabilizer.curveErrorPx(smooth);
+    final points = [for (final p in cleanWay) v.toComposition(p)],
+        error =
+            (v.toComposition(cleanWay.first + Offset(errPx, 0)) - points.first)
+                .distance;
     final closed = (points.first - points.last).distance < 4 * error;
     stageBeginUndoStep(ws);
     var made = 0;
@@ -303,13 +312,15 @@ class DrawTools extends ChangeNotifier {
     _brush = null;
     notifyListeners();
     if (way == null || way.length < 2 || !stageConnected(ws)) return;
-    final options = StrokeOptions(
-      size: _stage.tool.brushSize,
-      simulatePressure: true,
-      isComplete: true,
+    final smooth = _stage.tool.smooth;
+    final stabilized = StrokeStabilizer.finishSmooth(way, smooth);
+    final options = StrokeStabilizer.brushOptions(
+      _stage.tool.brushSize,
+      smooth,
     );
     final points = getStrokePoints([
-      for (final p in way) PointVector.fromOffset(offset: v.toComposition(p)),
+      for (final p in stabilized)
+        PointVector.fromOffset(offset: v.toComposition(p)),
     ], options: options);
     if (points.length < 2) return;
     getStrokeOutlinePoints(

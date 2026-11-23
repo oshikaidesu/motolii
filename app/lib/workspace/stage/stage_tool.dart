@@ -31,6 +31,7 @@ class StageTool {
     this.mask = false,
     this.brushSize = 16,
     this.brushTool = 1,
+    this.smooth = 2,
   });
 
   /// What the selected tool creates when dragged across the stage (rect, circle, line, text, brush).
@@ -60,4 +61,7 @@ class StageTool {
 
   /// The brush kind, as in Alight Motion: 0 pen, 1 brush, 2 fill (doc_brush).
   final int brushTool;
+
+  /// Freehand stroke stabilization level: 0 Off, 1 Low, 2 Med, 3 High.
+  final int smooth;
 }

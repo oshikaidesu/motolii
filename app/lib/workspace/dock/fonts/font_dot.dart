@@ -71,18 +71,25 @@ class _FontDotState extends State<FontDot> {
       },
       onDoubleTap: () => commands.setFont(f),
       builder: (context, h) => Container(
-        color: dockFill(sel, h, WindowTokens.card),
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(2),
+          vertical: Shape.s(1),
+        ),
+        color: dockFill(sel, h, WindowTokens.raised),
         child: switch (widget.map) {
           final map? => ValueListenableBuilder(
             valueListenable: map.places,
-            builder: (context, at, _) => RawImage(
-              image: controller.dotImages[f.path],
-              color: TextStyles.ink(
-                dockInk(sel, map.paletteOf(at)[f.path] ?? Grey.g95),
-              ),
-              colorBlendMode: BlendMode.modulate,
-              fit: BoxFit.contain,
-            ),
+            builder: (context, at, _) {
+              final raw = map.paletteOf(at)[f.path] ?? Grey.g95;
+              // Lift contrast so tiny font dots stay crisp and legible on dark surfaces.
+              final bright = Color.lerp(raw, Grey.g95, 0.48)!;
+              return RawImage(
+                image: controller.dotImages[f.path],
+                color: TextStyles.ink(dockInk(sel, bright)),
+                colorBlendMode: BlendMode.modulate,
+                fit: BoxFit.contain,
+              );
+            },
           ),
           null => RawImage(
             image: controller.dotImages[f.path],
