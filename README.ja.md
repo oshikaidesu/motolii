@@ -4,47 +4,38 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
-**「重くて固まる・高いプラグインに縛られる・ネットの表現を持ち込めない」を終わらせる、WebGPU ネイティブのモーショングラフィックス＆動画編集ソフト。**
+**クリエイティブコーディングとモーショングラフィックスの交差点。**
 
-![Motolii 最新ワークスペース：左に素材と棚、中央に Stage プレビュー、下に Timeline、右に Inspector](docs/pictures/tabs/window.jpg)
+Shadertoy のシェーダーを音楽のビートに反応させる。After Effects のエクスプレッションと CSS `@keyframes` を同じテキストレイヤーに重ねる。p5.js のスケッチを Lottie アニメーションの背後に合成する。Web 上で見つけたコードを貼るだけで、そのまま映像として動きます。
 
----
+Motolii は WebGPU ネイティブの軽量エンジンとプレーンファイル設計で、数千コピーやエフェクトの重ね掛けも 60 fps で軽快にプレビューできるオープンソースの動画編集ソフトです。
 
-## なぜ Motolii なのか？（従来の制作の「しんどさ」への答え）
-
-これまでの映像制作では、こんなストレスが当たり前になっていました。
-
-- **プレビュー待ちとカクつき** — レイヤーやエフェクトを少し重ねただけで再生が重くなり、試行錯誤のリズムが止まる。
-- **Web の表現を動画に持ち込めない** — Shadertoy・p5.js・CSS・Lottie・Cavalry で見つけた最高な表現も、動画ソフト側で一から作り直すしかない。
-- **古い UI と閉じたプラグイン市場** — パラメータが縦に延々と並び、手書きの式やツール管理が苦痛。かといって乗り換えると過去の資産が使えない。
-
-Motolii は **WebGPU ネイティブの軽量エンジン** と **プレーンファイル設計** でこれらを根底から解きほぐします。数千コピーやシェーダー重ねでも 60 fps で動き、Web で見つけたコードは `⌘V` で貼るだけでそのまま映像になります。
+![Motolii ワークスペース：左に素材と棚、中央に Stage プレビュー、下に Timeline、右に Inspector](docs/pictures/tabs/window.jpg)
 
 ---
 
-## 「AE から乗り換えたら、買ってきたプラグインや式は使えなくなる？」
+## 今まで培った資産やプラグインも、そのまま持ち込めます
 
-**いいえ、そのまま持ち込めます。**  
-乗り換えの一番大きなハードルである「既存資産のやり直し」を無くすため、Motolii は After Effects をはじめとする既存エコシステムとの互換性を最初から組み込んでいます。
+新しいツールを試すときに一番気になるのは、「これまで買い揃えたプラグインや書き溜めた式・素材が無駄にならないか」という点です。Motolii は既存の表現資産をそのまま活かせるように設計しています。
 
-- **買ってきた AE プラグイン（`.plugin` / `.aex`）がそのまま動く**  
-  Deep Glow・Quick Chromatic Aberration・Zink Tools・Satori などのサードパーティ製プラグインを `ae_plugins/` に置く（またはシンボリックリンクする）だけで、パラメータカード・`#ae` タグ・プレビュー付きで即利用可能。[aexlo](https://github.com/potistudio/aexlo) の隔離ワーカーで動くため、プラグインが落ちても本体はクラッシュしません。
-- **書き溜めた AE エクスプレッションがそのまま動く**  
-  独自再実装ではなく `lottie-web` の `ExpressionManager` を QuickJS-ng でそのまま実行。`thisComp`・`thisLayer`・`wiggle`・`linear`・`ease`・`sampleImage`・キーフレーム参照がそのまま通ります。
+- **手持ちの After Effects プラグイン（`.plugin` / `.aex`）がそのまま動作**  
+  Deep Glow・Quick Chromatic Aberration・Zink Tools・Satori などのサードパーティ製プラグインをユーザーフォルダの `ae_plugins/` に置く（またはシンボリックリンクする）だけで、パラメータカード・`#ae` タグ・プレビュー付きで Effects 棚に並びます。[aexlo](https://github.com/potistudio/aexlo) の隔離ワーカーで実行するため、安定性も保たれます。
+- **After Effects エクスプレッションをそのまま評価**  
+  `lottie-web` の `ExpressionManager` を QuickJS-ng で直接実行。`thisComp`・`thisLayer`・`wiggle`・`linear`・`ease`・`sampleImage`・キーフレーム参照がそのまま動きます。
 - **Lottie・PSD・Cavalry・AviUtl2・Shadertoy・p5.js・CSS を 1 本のタイムラインに混在**  
-  PSD はレイヤー構造のまま読み込んで自動リグ化でき、Cavalry スクリプト 26 本や 1,300 以上のコミュニティエフェクトも標準同梱。
+  PSD はレイヤー構成のまま取り込んで自動リグ化でき、Cavalry スクリプト 26 本や 1,300 以上のコミュニティエフェクトも標準同梱しています。
 - **透過背景ビュー（Stage `Alpha`）＆ ProRes 4444 透過書き出し**  
-  既存ツール（Premiere / DaVinci / After Effects）と併用する現場でも、透過パーツをそのまま書き出してパイプラインに差し込めます。
+  編集中の透過確認からアルファ付き書き出しまでシームレスに完結するため、Premiere・DaVinci・After Effects などの既存パイプラインとの併用にも自然に組み込めます。
 
 > 詳しい互換範囲は [After Effects 資産の持ち込みガイド](docs/AFTER_EFFECTS.ja.md) を参照してください。
 
 ---
 
-## どうやって触るのか？（UI / UX の解決アプローチ）
+## 触り心地とワークフロー（UI / UX）
 
-### 1. 名前を覚えていなくても、見た目で探せる（2D マップ＆ホバープレビュー）
+### 1. 名前を覚えていなくても、見た目から直感的に探せる
 
-1,300 以上のエフェクトや大量のフォントを「名前検索」だけで探す苦痛をなくすため、**見た目の近さで自動配置された 2D マップ（島ラベル・ズーム・拡大ルーペ付き）** と **タイルにカーソルを乗せるだけのホバー即プレビュー** を備えています。
+1,300 以上のエフェクトやフォントを、**見た目の近さで自動配置された 2D マップ（カテゴリ島ラベル・ズーム・拡大ルーペ付き）** から直感的に探せます。タイルにカーソルを乗せるだけで Stage 上に仮適用される **ホバープレビュー** にも対応しています。
 
 ![Effects 2D 類似度マップ：カテゴリごとの島ラベル・ズームバー・類似リスト付き](docs/pictures/map_showcase.jpg)
 
@@ -53,11 +44,11 @@ Motolii は **WebGPU ネイティブの軽量エンジン** と **プレーン�
 <img src="docs/pictures/tabs/fonts_wide.jpg" alt="Fonts 棚の書体一覧とロール設定" width="49%">
 </p>
 
-### 2. 縦に長い設定欄をやめて、直感的に触れる画面へ
+### 2. 見渡しやすく、迷わず触れる操作系
 
-- **タイル型 Inspector**：パラメータを行ではなくコンパクトなカード＋タイルで配置。視覚的な効き具合を色分けし、幅を広げると自動で多列化します。
-- **タイムライン＆HDR 環境オブジェクト**：音声波形・BPM ビートグリッド・スタック可能なイージング（`.way`）に加え、**HDR ルーム照明／背景も独立レイヤー（`Environment`）としてタイムライン上でトリム・切替・キーフレーム制御**できます。
-- **手ブレ補正（Smooth）付きフリーハンド＆3D Boxcam カメラ**：Brush / Pen の手書きパス補正を `Off`〜`High` で調整でき、3D カメラも FPS レーダー型の Depth パネルと合わせて直感的に動かせます。
+- **タイル型 Inspector**：パラメータをコンパクトなカードとブロックで整理し、パネル幅に応じて自動で多列化。視覚的な効き具合を色分けして重要な操作子が一目で分かります。
+- **タイムライン＆HDR 環境オブジェクト**：音声波形・BPM ビートグリッド・スタック可能なイージング（`.way`）に加え、**HDR ルーム照明・回転・背景も独立レイヤー（`Environment`）としてタイムライン上でトリム・切替・キーフレーム制御**できます。
+- **手ブレ補正（Smooth）付きフリーハンド＆3D Boxcam カメラ**：Brush / Pen の手書きパス補正を `Off`〜`High` で調整でき、3D カメラも FPS レーダー型の Depth パネルと連動して直感的に扱えます。
 
 <p>
 <img src="docs/pictures/tabs/inspector.jpg" alt="タイル型 Inspector と 2.5D/3D Transform カード" width="32%">
@@ -68,26 +59,25 @@ Motolii は **WebGPU ネイティブの軽量エンジン** と **プレーン�
 <img src="docs/pictures/tabs/depth.jpg" alt="カメラ距離と被写界深度を見る Depth パネル" width="49%">
 </p>
 
-### 3. コードも AI も、エフェクトと同じ棚で扱う（Code ワークスペース & ACP Agent）
+### 3. コードと AI エージェントを並べて制作（Code ワークスペース & ACP Agent）
 
-トップバーの **CODE** に切り替えると、**AI エージェント（ACP）・コードセル・Stage・タイムライン** を一画面に並べて制作できます。Claude Agent・Codex・Gemini CLI・Cursor など ACP 対応エージェントへ選択レイヤーのカード・値・コードをそのまま渡し、対話しながらエフェクトや自動リグを組み立てられます。
+トップバーの **CODE** に切り替えると、**ACP 対応 AI エージェント・Code ノートブック・Stage・タイムライン** を一画面に並べて作業できます。Claude Agent・Codex・Gemini CLI・Cursor などと選択レイヤーのカード・値・コードを共有し、対話しながら表現やリグを育てられます。
 
 ![Code ワークスペース：左に ACP Agent、中央に Code ノートブック、右に Stage、下に Timeline](docs/pictures/tabs/code_workspace.jpg)
 
 ---
 
-## 次世代カスタム UI 規格「Vism（ヴィズム）」
+## 自由な操作盤を作って配れる規格「Vism（ヴィズム）」
 
-「プラグインを買う」時代から、**「自分だけの操作盤（シンセ筐体・リグピッカー・音声連動デッキ）を JS 1 本で作って配る」** 時代へ。  
-**Vism** は WebView を一切使わず、**1 本の JavaScript** だけで Flutter ネイティブの 3D オブジェクト（`.glb`/`.obj`/ウェーブテーブル）・60fps GLSL シェーダー・音声波形・16 ステップシーケンサー・ロータリーノブ・リグピッカーを備えた独自パネル＆インスペクターカードを作れる仕組みです。
+**Vism** は、WebView を一切使わず **1 本の JavaScript** だけで、自分好みの操作パネルやインスペクター専用カードを作って配布できる Motolii のカスタム UI 規格です。Flutter ネイティブの 3D オブジェクト（`.glb`/`.obj`/ウェーブテーブル）・60 fps GLSL シェーダー・音声波形・16 ステップシーケンサー・リグピッカー・ロータリーノブを組み合わせて、楽器やシンセサイザーのように触れる道具を作れます。
 
 ![Vism 8デザインベクトル・ライブデモ（3D・ウェーブテーブル・ハードウェア・スタジオライト・CRT・マンガ）](docs/pictures/vism_3d_live.gif)
 
 ![Vism Pro 機能ライブデモ（音声波形・16ステップシーケンサー・GLSLシェーダー・Live2Dリグピッカー・カーブ＆フェーダー）](docs/pictures/vism_live.gif)
 
-- **10 秒で開発開始**：Tools パネルの **`+ New Vism`** を押すだけで、テンプレート生成＋IDE 型補完（`motolii-ui.d.ts`）配置＋独立タブオープン＋エディタ起動まで自動完了。保存から **約 80ms で即ホットリロード**。
-- **プリセット保存＆1 ドロップ配布**：カードの設定をプリセット保存でき、**`Pack`** で `.vism` パック化。受け取った人は `.vism` をダブルクリックまたはウィンドウへドラッグ＆ドロップするだけで即導入できます。
-- **統一 UI に戻したいときも安心**：`Settings → Appearance → Vism Card Faceplates` をオフにすれば、機能を保ったまま Motolii 標準スキンへ揃えられます。
+- **10 秒で作り始められる**：Tools パネルの **`+ New Vism`** を押すだけで、動くテンプレート生成＋IDE 型補完（`motolii-ui.d.ts`）配置＋独立タブオープン＋エディタ起動まで自動完了。保存から **約 80 ms で即ホットリロード**されます。
+- **プリセット保存＆ワンクリック配布**：カードの設定をプリセット保存でき、**`Pack`** で `.vism` パック化。受け取った人は `.vism` をダブルクリックまたはウィンドウへドラッグ＆ドロップするだけで即導入できます。
+- **統一 UI で使いたいときも安心**：`Settings → Appearance → Vism Card Faceplates` をオフにすれば、機能を保ったまま Motolii 標準スキンへ揃えられます。
 
 👉 [5 分で始める Vism 開発クイックスタート](docs/VISM_QUICKSTART.ja.md) · [Vism カスタムカード仕様書](docs/CUSTOM_CARDS.ja.md)
 

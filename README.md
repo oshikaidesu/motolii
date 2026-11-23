@@ -4,47 +4,38 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
-**A WebGPU-native motion graphics & video editor built to end sluggish previews, locked-in plugin ecosystems, and the wall between creative code and video.**
+**Where creative coding and motion design meet.**
+
+React to audio with a Shadertoy shader. Combine CSS `@keyframes` and After Effects expressions on the same text layer. Composite a p5.js sketch behind a Lottie animation. Paste code from the web and run it as published.
+
+Motolii is an open-source, WebGPU-native video editor built on plain files — keeping thousands of copies and stacked shaders smooth at 60 fps while supporting 20+ creative formats.
 
 ![Motolii workspace: shelves on the left, Stage preview in the center, Timeline at the bottom, and Inspector on the right](docs/pictures/tabs/window.jpg)
 
 ---
 
-## Why Motolii?
+## Bring Your Existing Plugins, Expressions, and Assets With You
 
-Motion design tools have forced the same trade-offs for decades:
+Switching or adding a new tool shouldn't mean leaving behind the plugins, scripts, and workflows you already rely on. Motolii lets you bring your existing creative library straight in:
 
-- **Lagging previews** — Stack a few shaders or clones and playback grinds to a halt.
-- **Rebuilding web art from scratch** — Amazing Shadertoy, p5.js, CSS, Lottie, or Cavalry pieces can't just be dropped into a video timeline.
-- **Cluttered UI & locked ecosystems** — Endless vertical parameter lists, painful scripting UX, and fear of losing paid plugins if you ever switch.
-
-Motolii is built on a **WebGPU-native C++ engine** and **plain-file shelves**. Thousands of copies and stacked shaders stay smooth at 60 fps, and code from the web runs directly when you press `⌘V`.
-
----
-
-## "If I switch from After Effects, do I lose my paid plugins and expressions?"
-
-**No — bring them straight in.**  
-Motolii is designed so you don't have to throw away years of plugins, scripts, or muscle memory:
-
-- **Your native After Effects plugins (`.plugin` / `.aex`) work out of the box**  
-  Drop or symlink third-party AE plugins (Deep Glow, Quick Chromatic Aberration, Zink Tools, Satori, etc.) into `ae_plugins/`. They appear with parameter cards, `#ae` tags, and live previews, running in an isolated worker via [aexlo](https://github.com/potistudio/aexlo) so a crashing plugin never takes down the editor.
-- **After Effects expressions run natively**  
+- **Native After Effects plugins (`.plugin` / `.aex`) run directly**  
+  Drop or symlink third-party AE plugins (Deep Glow, Quick Chromatic Aberration, Zink Tools, Satori, etc.) into `ae_plugins/`. They appear in the Effects shelf with parameter cards, `#ae` tags, and live previews, executing in an isolated worker via [aexlo](https://github.com/potistudio/aexlo) to keep the editor stable.
+- **After Effects expressions evaluate natively**  
   Powered by `lottie-web`'s `ExpressionManager` compiled to QuickJS-ng — `thisComp`, `thisLayer`, `wiggle`, `linear`, `ease`, `sampleImage`, and keyframe queries work directly without reimplementation.
-- **Lottie, PSD layers, Cavalry, AviUtl2, Shadertoy, p5.js & CSS in one timeline**  
+- **Lottie, PSD layers, Cavalry, AviUtl2, Shadertoy, p5.js & CSS on one timeline**  
   Import multi-layer PSDs ready for rigging, run 26 bundled Cavalry scripts, and mix 20+ creative formats on the same layer in any order.
 - **Alpha Stage preview & ProRes 4444 alpha export**  
-  Toggle the real-time checkerboard (`Alpha`) on the Stage and export straight-alpha ProRes 4444 `.mov` clips to slot smoothly into existing Premiere, DaVinci, or AE pipelines.
+  Toggle the live checkerboard (`Alpha`) on the Stage and export straight-alpha ProRes 4444 `.mov` clips so Motolii fits cleanly alongside Premiere, DaVinci Resolve, or After Effects.
 
-> See the [After Effects Migration Guide](docs/AFTER_EFFECTS.md) for full details.
+> See the [After Effects Migration Guide](docs/AFTER_EFFECTS.md) for full compatibility details.
 
 ---
 
-## How Does It Feel to Use? (UI / UX)
+## Designed for Tactile, Fluid Motion Work (UI / UX)
 
-### 1. Find Effects & Fonts Visually — No Memorizing Names
+### 1. Discover Effects & Fonts Visually
 
-Browse 1,300+ bundled effects and your entire font library on an interactive **2D similarity map** with category islands, zoom controls, and an enlarged hover loupe — or hover any tile to preview it live on the Stage.
+Browse 1,300+ bundled effects and your font library on an interactive **2D similarity map** with category islands, zoom controls, and an enlarged hover loupe — or hover any tile to preview it live on the Stage without applying it first.
 
 ![Effects 2D similarity map with cluster island labels, zoom controls, and similarity strip](docs/pictures/map_showcase.jpg)
 
@@ -53,11 +44,11 @@ Browse 1,300+ bundled effects and your entire font library on an interactive **2
 <img src="docs/pictures/tabs/fonts_wide.jpg" alt="Fonts shelf specimen grid and roles" width="49%">
 </p>
 
-### 2. Compact, Tactile Controls Instead of Endless Rows
+### 2. Clear, Scannable Controls
 
-- **Tile-based Inspector**: Parameters sit in dense multi-column cards that expand cleanly as you widen the pane, color-coded by visual impact.
-- **Timeline + HDR Environment Objects**: Audio waveforms, tap-tempo BPM beat grids, stackable easings, and **timeline `Environment` layers** so you can trim, toggle, and keyframe HDR room lighting, rotation, fog, and skyboxes directly on the timeline.
-- **Adjustable Freehand Smoothing & 3D Boxcam**: Dial Brush/Pen stroke stabilization (`Off`–`High`) with corner preservation, and steer 3D cameras alongside the live Depth radar panel.
+- **Tile-based Inspector**: Parameters sit in compact multi-column blocks that expand as you widen the panel, color-coded by visual impact so key controls stand out immediately.
+- **Timeline & HDR Environment Objects**: Audio waveforms, tap-tempo BPM beat grids, stackable easings, and **timeline `Environment` layers** that let you trim, toggle, and keyframe HDR room lighting, rotation, fog, and skyboxes directly on the timeline.
+- **Adjustable Freehand Smoothing & 3D Boxcam**: Tune Brush/Pen stroke stabilization (`Off`–`High`) with corner preservation, and steer 3D cameras alongside the live Depth radar panel.
 
 <p>
 <img src="docs/pictures/tabs/inspector.jpg" alt="Tile-based Inspector with 2.5D/3D Transform card" width="32%">
@@ -68,25 +59,25 @@ Browse 1,300+ bundled effects and your entire font library on an interactive **2
 <img src="docs/pictures/tabs/depth.jpg" alt="Depth radar panel for camera focus and DOF" width="49%">
 </p>
 
-### 3. Code & AI Side-by-Side (Code Workspace & ACP Agent)
+### 3. Co-Create with Code & AI Agents (Code Workspace & ACP Agent)
 
-Switch to the **CODE** workspace to keep **ACP AI Agents**, stacked **Code notebook cells**, **Stage**, and **Timeline** open together. Connect Claude Agent, Codex, Gemini CLI, or Cursor with live context of the selected layer's cards, values, and scripts.
+Switch to the **CODE** workspace to keep **ACP AI Agents**, stacked **Code notebook cells**, **Stage**, and **Timeline** open side by side. Connect Claude Agent, Codex, Gemini CLI, or Cursor with full live context of the selected layer's cards, values, and code.
 
 ![Code workspace: ACP Agent on the left, Code notebook in the center, Stage on the right, Timeline at the bottom](docs/pictures/tabs/code_workspace.jpg)
 
 ---
 
-## Vism — Next-Gen Custom UI Panels & Cards
+## Vism — Build & Share Custom Tactile Interfaces in Plain JS
 
-Instead of waiting on closed plugin vendors, **Vism** lets anyone build synth-grade custom Inspector faceplates and dockable tool panels in **a single JavaScript file** — zero WebView, rendered 100% natively in Flutter with 3D scenes (`.glb`/`.obj`/wavetables), 60 fps GLSL shaders, audio waveforms, 16-step sequencers, rig pickers, and rotary knobs.
+**Vism** lets creators build bespoke Inspector faceplates and dockable tool panels in **a single JavaScript file** — zero WebView, rendered 100% natively in Flutter with 3D scenes (`.glb`/`.obj`/wavetables), 60 fps GLSL shaders, audio waveforms, 16-step sequencers, character rig pickers, and rotary knobs.
 
 ![Vism 8 design vectors live demo: 3D toon, wavetable synth, hardware OLED, studio light rig, retro CRT, comic](docs/pictures/vism_3d_live.gif)
 
 ![Vism pro capabilities live demo: audio waveform, 16-step sequencer, GLSL shader, Live2D rig picker, curve and faders](docs/pictures/vism_live.gif)
 
-- **Start building in 10 seconds**: Click **`+ New Vism`** in the Tools panel to scaffold a runnable starter with IDE autocomplete (`motolii-ui.d.ts`), open it as a live docking tab, and launch your editor — every save hot-reloads in ~80 ms.
+- **Start in 10 seconds**: Click **`+ New Vism`** in the Tools panel to scaffold a runnable starter with IDE autocomplete (`motolii-ui.d.ts`), open it as a live docking tab, and launch your editor — every save hot-reloads in ~80 ms.
 - **Presets & 1-click `.vism` sharing**: Save parameter presets on any Vism card, export a `.vism` package (presets & assets bundled), and double-click or drop onto Motolii to install instantly.
-- **Prefer a uniform UI?**: Toggle `Settings → Appearance → Vism Card Faceplates` off at any time to keep full functionality in Motolii's standard skin.
+- **Uniform UI whenever you want**: Toggle `Settings → Appearance → Vism Card Faceplates` off at any time to keep full functionality in Motolii's standard skin.
 
 👉 [Vism 5-Minute Quickstart (Japanese)](docs/VISM_QUICKSTART.ja.md) · [Vism Custom Card Specification](docs/CUSTOM_CARDS.md)
 
