@@ -6,6 +6,7 @@ Start with the repository [README](../README.md) for an overview and build instr
 |---|---|---|
 | [`TABS.md`](TABS.md) ([日本語](TABS.ja.md)) | Users | Visual overview of every tab and panel |
 | [`CAMERA.ja.md`](CAMERA.ja.md) | Users (Japanese) | Boxcam frame, Z-target lock-on, 3D View, Match View, and FPS radar Depth panel guide |
+| [`ACP_TUTORIAL.ja.md`](ACP_TUTORIAL.ja.md) | Users (Japanese) | ACP Agent tutorial: scene-wide `ops.json` editing, PSD Live2D-style auto-rigging, Group Focus, and Texflow workflows |
 | [`AFTER_EFFECTS.md`](AFTER_EFFECTS.md) ([日本語](AFTER_EFFECTS.ja.md)) | After Effects users | Bringing native AE plugins, expressions, and Lottie files into Motolii |
 | [`CODING.md`](CODING.md) ([日本語](CODING.ja.md)) | Shader & script authors | Format bases, compatibility model, WESL WGSL attributes, and IDE workflow |
 | [`CUSTOM_CARDS.md`](CUSTOM_CARDS.md) ([日本語](CUSTOM_CARDS.ja.md)) | Plugin & effect authors | `.ui.js` Custom Inspector Card spec (`ui.svg`, skin tokens, `ctx.state`, live audio/time, hot reload) |
