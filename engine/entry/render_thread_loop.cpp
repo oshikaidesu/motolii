@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "document/document.h"
-#include "entry/crash_report.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
@@ -37,6 +36,7 @@
 #include "document/scripts/recipes.h"
 #include "document/undo.h"
 #include "entry/calls_time.h"
+#include "entry/crash_report.h"
 #include "entry/motolii_handle.h"
 #include "entry/render_thread.h"
 #include "entry/snapshot.h"
@@ -158,7 +158,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         if (m->render_thread.closing) break;
         todo.swap(m->render_thread.asked);
         beat = m->display.beats;
-          if (m->display.seen_beat && beat > m->display.seen_beat + 1)
+        if (m->display.seen_beat && beat > m->display.seen_beat + 1)
           m->timing.beats_unseen += (long)(beat - m->display.seen_beat - 1);
         m->display.seen_beat = beat;
       }
@@ -191,14 +191,15 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         for (auto& does : todo) does();
         if (!todo.empty()) ++m->display.writes_on_beat;
         lap(6);
-        // User's own easings folder → tile appears at once. Otherwise re-snapshot
-        // if the document changed.
+        // User's own easings folder → tile appears at once. Otherwise
+        // re-snapshot if the document changed.
         if (doc_own_easings(), doc_own_easings_made() != m->snapshots.easings)
           m->snapshots.easings = doc_own_easings_made(), snapshot_update(m);
         else if (sqlite3_total_changes(m->d->file) != m->snapshots.rows)
           snapshot_update(m);
-        // Catch-all revision bump for posted() calls that skip on_render_thread.
-        // Harmless if already bumped: stage_cache_fresh compares for equality.
+        // Catch-all revision bump for posted() calls that skip
+        // on_render_thread. Harmless if already bumped: stage_cache_fresh
+        // compares for equality.
         if (sqlite3_total_changes(m->d->file) != rows)
           m->revision.fetch_add(1, std::memory_order_release);
       }
@@ -435,7 +436,8 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       m->render_thread.changed = false;
       m->playback.playing = false;
     } catch (...) {
-      std::fprintf(stderr, "motolii: the hand's round threw (unknown) while %s\n",
+      std::fprintf(stderr,
+                   "motolii: the hand's round threw (unknown) while %s\n",
                    m->render_thread.status.load());
       m->error = "the hand's round threw (unknown)";
       ++m->timing.rounds_threw;
@@ -473,6 +475,9 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       m->s->engine->destroy(m->playback.cache.shown),
           m->playback.cache.shown = nullptr;
     if (m->d) doc_teardown(*m->d);
+    if (m->s->fxCacheDrop)
+      m->s->fxCacheDrop(*m->s), m->s->fxCacheDrop = nullptr,
+                                m->s->fxCache = nullptr;
     for (interop::Screen* sc : m->s->edge_screens)
       if (sc) interop::drop(m->s->engine, sc);
     if (m->s->place_copy) interop::drop(m->s->engine, m->s->place_copy);

@@ -134,6 +134,8 @@ Stage open_stage(int w, int h) {
 
 void close_stage(Stage& s) {
   if (!s.engine) return;
+  if (s.fxCacheDrop) s.fxCacheDrop(s), s.fxCacheDrop = nullptr;
+  s.fxCache = nullptr;
   Engine* e = s.engine;
   e->flushAndWait();
   // Engine::destroy releases every Filament object owned by this dedicated
@@ -217,8 +219,7 @@ bool room(Stage& s, const char* ktx, float intensity) {
     if (buf.empty()) return false;
     bytes = &buf;
   }
-  auto* bundle =
-      new image::Ktx1Bundle(bytes->data(), (uint32_t)bytes->size());
+  auto* bundle = new image::Ktx1Bundle(bytes->data(), (uint32_t)bytes->size());
   float3 sh[9];
   if (!bundle->getSphericalHarmonics(sh)) {
     delete bundle;

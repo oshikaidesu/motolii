@@ -152,24 +152,21 @@ void doc_layers_fx(Doc& d) {
                                       int wide) {
       return doc_sound_now(d, layer, file, name, fft, wide);
     };
-    // Called from the render callback; locks the document.
+    // Called from the render callback; locks the document only when needed.
     const ScreenNumbers numbers = [&d, layer = layer, &e = e](
                                       const std::string& file,
                                       const std::string& name, double usual) {
-      std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
-      // ISF clip_time / clip_length. No duration = until project end.
-      if (name == "clip_time" || name == "clip_length") {
-        const double start = doc_number(d, layer, "start", 0, 0),
-                     lasts = doc_number(d, layer, "duration", 0, -1);
-        return name == "clip_time" ? d.stage->now - start
-               : lasts >= 0        ? lasts
-                                   : std::max(0.0, doc_seconds(d) - start);
+      // Fast lock-free paths using values cached once per frame in `s.aim`.
+      if (name == "clip_time") return e.cachedClipTime;
+      if (name == "clip_length") return e.cachedClipLength;
+      if (name.rfind("layerRect_", 0) == 0) {
+        if (!e.hasCachedLayerRect) return 0.0;
+        const size_t i = std::string("xyzw").find(name.back());
+        return i < 4 ? e.cachedLayerRect[i] : 0.0;
       }
       // Layer's box on the stage as shares, by last letter (xyzw).
       if (name.rfind("backdropBox_", 0) == 0) {
         const Stage& s = *d.stage;
-        // Measured from the work box's corner, not the comp's, so it stays
-        // aligned when the panel shows past the comp's edge.
         double work[4];
         thing_fx_work(s, work);
         const size_t i = std::string("xyzw").find(name.back());
@@ -178,18 +175,7 @@ void doc_layers_fx(Doc& d) {
                : i == 2 ? (e.box[2] - e.box[0]) / (work[2] - work[0])
                         : (e.box[3] - e.box[1]) / (work[3] - work[1]);
       }
-      // Layer's own rectangle on its image, in pixels, by last letter (xyzw).
-      if (name.rfind("layerRect_", 0) == 0) {
-        double frame[8];
-        if (!doc_fx_frame(d, layer, e, frame)) return 0.0;
-        const Stage& s = *d.stage;
-        const double ppp = thing_fx_ppp(s);
-        const size_t i = std::string("xyzw").find(name.back());
-        return ppp * (i == 0   ? frame[0] - frame[2] / 2 - e.box[0]
-                      : i == 1 ? frame[1] - frame[3] / 2 - e.box[1]
-                      : i == 2 ? frame[2]
-                               : frame[3]);
-      }
+      std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
       // An AviUtl2 script asking about the other layers.
       if (name.rfind("aviutl.", 0) == 0)
         return doc_aviutl_asked(d, layer, e.box, name, usual);
@@ -251,7 +237,8 @@ void doc_layers_fx(Doc& d) {
         // A group's image is the whole stage.
         const bool found = !doc_holds_fx(d, layer) &&
                            doc_seen_box(d, layer, d.stage->now, seen);
-        // 128-pixel margin around the visible box for effects that draw outside.
+        // 128-pixel margin around the visible box for effects that draw
+        // outside.
         if (found) {
           const double m = 128.0 / thing_fx_ppp(s);
           box[0] = std::max(work[0], seen[0] - m),
@@ -305,7 +292,122 @@ void doc_layers_fx(Doc& d) {
         doc_layer_stand(d, layer, e);
       else
         thing_fx_aim(s, e, box);
+      // Populate per-frame cached layerRect and clip timing once under lock so
+      // `numbers` never re-locks or recomputes `doc_fx_frame` per component.
+      {
+        std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+        const double start = doc_number(d, layer, "start", 0, 0),
+                     lasts = doc_number(d, layer, "duration", 0, -1);
+        e.cachedClipTime = d.stage->now - start;
+        e.cachedClipLength =
+            lasts >= 0 ? lasts : std::max(0.0, doc_seconds(d) - start);
+        double frame[8];
+        if (doc_fx_frame(d, layer, e, frame)) {
+          const double ppp = thing_fx_ppp(s);
+          e.cachedLayerRect[0] = ppp * (frame[0] - frame[2] / 2 - e.box[0]);
+          e.cachedLayerRect[1] = ppp * (frame[1] - frame[3] / 2 - e.box[1]);
+          e.cachedLayerRect[2] = ppp * frame[2];
+          e.cachedLayerRect[3] = ppp * frame[3];
+          e.hasCachedLayerRect = true;
+        } else {
+          e.hasCachedLayerRect = false;
+        }
+      }
       thing_fx_textures(s, e.st, e.view);
+      // Compute static-layer cache eligibility and base fingerprint under lock
+      // so `thing_effects_draw` can skip re-rendering unchanged layers safely.
+      {
+        std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+        const auto found = d.on_stage.shown.find(layer);
+        const bool fxCacheable =
+            !e.st.steps.empty() && e.st.aviutl.empty() &&
+            e.st.aePlugins.empty() && !e.st.readsBehind &&
+            std::all_of(e.st.fx.begin(), e.st.fx.end(), [](const ScreenFx* f) {
+              if (!f || f->historyFrames != 0 || !f->others.empty())
+                return false;
+              for (const auto& t : f->targets)
+                if (t.persistent) return false;
+              return true;
+            });
+        bool layerCacheable =
+            fxCacheable && e.solidFile.empty() && !e.shell &&
+            d.held.layer != layer && found != d.on_stage.shown.end() &&
+            doc_members(d, layer) == 1 && doc_sheet_material(d, layer).empty();
+        if (layerCacheable) {
+          const DocShownLayer& sh = found->second;
+          if (sh.video || sh.sketch || sh.solid || sh.grains ||
+              !sh.deep.empty() || sh.wordsMove || sh.textMove || sh.celMove)
+            layerCacheable = false;
+          if (layerCacheable && sh.drawn) {
+            const Canvas2D& c = *sh.drawn;
+            if (c.seconds > 0.f || c.lottie || c.sketchLines || c.redraw ||
+                c.film || c.inLight || c.boxed.z != 0.f || !c.fx.wear.empty())
+              layerCacheable = false;
+          }
+        }
+        e.cacheEligible = layerCacheable;
+        if (layerCacheable) {
+          uint64_t h = 14695981039346656037ull;
+          const auto mix = [&](const void* p, size_t n) {
+            const auto* b = static_cast<const uint8_t*>(p);
+            for (size_t i = 0; i < n; ++i) h = (h ^ b[i]) * 1099511628211ull;
+          };
+          const DocShownLayer& sh = found->second;
+          mix(&sh.drawn, sizeof(sh.drawn));
+          mix(&sh.shape, sizeof(sh.shape));
+          mix(&sh.in, sizeof(sh.in));
+          mix(sh.of.data(), sh.of.size());
+          if (sh.drawn) {
+            const Canvas2D& c = *sh.drawn;
+            mix(&c.texture, sizeof(c.texture));
+            mix(&c.sheet, sizeof(c.sheet));
+            mix(&c.wash, sizeof(c.wash));
+            mix(&c.trimmed, sizeof(c.trimmed));
+            mix(c.bent.data(), sizeof(c.bent));
+            const size_t nSteps = c.bentSteps.size();
+            mix(&nSteps, sizeof(nSteps));
+            for (const PathOpStep& ps : c.bentSteps) mix(&ps, sizeof(ps));
+            mix(&c.bentVoxel, sizeof(c.bentVoxel));
+            mix(&c.joined.how, sizeof(c.joined.how));
+            mix(&c.joined.much, sizeof(c.joined.much));
+            const size_t jn = c.joined.at.size(), mn = c.morphed.at.size(),
+                         tn = c.traced.at.size();
+            mix(&jn, sizeof(jn));
+            mix(&c.morphed.how, sizeof(c.morphed.how));
+            mix(&c.morphed.much, sizeof(c.morphed.much));
+            mix(&mn, sizeof(mn));
+            mix(&c.traced.how, sizeof(c.traced.how));
+            mix(&tn, sizeof(tn));
+            mix(&s.bentChanges, sizeof(s.bentChanges));
+          }
+          const math::mat4 worldAt = doc_shown_at(d, layer, d.stage->now);
+          mix(&worldAt, sizeof(worldAt));
+          const double opacity =
+              doc_number(d, layer, "opacity", d.stage->now, 1);
+          mix(&opacity, sizeof(opacity));
+          const std::string col = doc_word(d, layer, "color");
+          mix(col.data(), col.size());
+          const math::mat4 proj = e.camera->getProjectionMatrix();
+          const math::mat4 model = e.camera->getModelMatrix();
+          mix(&proj, sizeof(proj));
+          mix(&model, sizeof(model));
+          const float ap = e.camera->getAperture(),
+                      shutter = e.camera->getShutterSpeed(),
+                      sens = e.camera->getSensitivity();
+          mix(&ap, sizeof(ap));
+          mix(&shutter, sizeof(shutter));
+          mix(&sens, sizeof(sens));
+          const filament::Viewport vp = e.view->getViewport();
+          mix(&vp, sizeof(vp));
+          mix(e.st.files.data(), e.st.files.size());
+          mix(e.st.frame, sizeof(e.st.frame));
+          mix(e.st.own, sizeof(e.st.own));
+          mix(&e.st.ground, sizeof(e.st.ground));
+          e.cacheBaseKey = h;
+        } else {
+          e.cacheValid = false;
+        }
+      }
       refresh_matte_picture(d, layer, thing_fx_seen(e.st));
       if (e.look)
         e.look->setParameter(
@@ -325,7 +427,7 @@ void doc_layers_fx(Doc& d) {
     // In the frame: draw the layer alone, run its effects.
     s.before.push_back([&d, layer = layer, &e = e, numbers] {
       if (!e.solidFile.empty()) return doc_layer_solid(d, layer, e, numbers);
-      thing_effects_draw(*d.stage, e.st, e.view, numbers);
+      thing_effects_draw(*d.stage, e.st, e.view, numbers, nullptr, &e);
       if (e.shell) doc_layer_shell(d, layer, e, true);
     });
     if (e.shell)
@@ -433,7 +535,8 @@ void doc_layers_read(Doc& d,
 
 // -- per-layer effect parts --
 
-// Prepares a solid layer: draws square to its face, runs effects, maps to solid.
+// Prepares a solid layer: draws square to its face, runs effects, maps to
+// solid.
 void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e) {
   Stage& s = *d.stage;
   math::mat4 place;
@@ -442,6 +545,12 @@ void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e) {
     // Render callback runs mid-draw; lock first.
     std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
     place = doc_place(d, layer, d.stage->now), doc_half(d, layer, &half);
+    const double start = doc_number(d, layer, "start", 0, 0),
+                 lasts = doc_number(d, layer, "duration", 0, -1);
+    e.cachedClipTime = d.stage->now - start;
+    e.cachedClipLength =
+        lasts >= 0 ? lasts : std::max(0.0, doc_seconds(d) - start);
+    e.hasCachedLayerRect = false;
   }
   thing_fx_face(s, e, place, half);
   thing_fx_textures(s, e.st, e.view);
@@ -514,7 +623,10 @@ void doc_layer_stand(Doc& d, int layer, ThingFx& e) {
                         b = doc_seen(d, place[3].xyz +
                                             normalize(d.camera.facing[0].xyz));
     seen = length(b - a);
-    doc_fx_sides(d, place, seen, e.sides);
+    if (e.st.allPointwiseTight)
+      std::fill(e.sides, e.sides + 4, 0.0);
+    else
+      doc_fx_sides(d, place, seen, e.sides);
   }
   thing_fx_stand(*d.stage, e, place, half, seen);
 }

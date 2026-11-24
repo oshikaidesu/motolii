@@ -393,6 +393,7 @@ void time_is(Stage& s, double seconds) {
 }
 
 bool begins(Stage& s) {
+  ++s.frameCount;
   static const char* const eyes[] = {"matteEye0", "matteEye1", "matteEye2",
                                      "matteEye3"};
   // Aim the layers that have effects of their own and set the parameters of
@@ -463,8 +464,8 @@ void take_off(Stage& s, const Mesh* m) {
   if (!look) return;
   // No matte camera matrix or scissor is set on it any more.
   std::erase_if(s.cuts, [look](const Stage::Cut& c) { return c.look == look; });
-  std::erase_if(
-      s.scissors, [look](const Stage::Scissor& sc) { return sc.look == look; });
+  std::erase_if(s.scissors,
+                [look](const Stage::Scissor& sc) { return sc.look == look; });
   // The material instance goes with its entities.
   s.engine->destroy(look);
 }

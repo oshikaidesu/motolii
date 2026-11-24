@@ -1,0 +1,124 @@
+#ifndef MOTOLII_STAGE_EFFECTS_SCREEN_POOL_H_
+#define MOTOLII_STAGE_EFFECTS_SCREEN_POOL_H_
+// Stage-wide shared GPU nodes for effects: compiled WGSL/ISF shader cache,
+// automatically fused pointwise shader cache, and transient RenderTarget /
+// Texture pool shared across all layers and non-persistent ISF passes.
+#include <filament/RenderTarget.h>
+#include <filament/Texture.h>
+
+#include <cstdint>
+#include <deque>
+#include <filesystem>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "gpu/screen_interop.h"
+#include "stage/effects/screen_fx.h"
+#include "stage/render/render_stage.h"
+
+namespace motolii {
+
+// A single compiled shader program shared by all layers and stacked instances
+// that reference the same effect file.
+struct SharedScreen {
+  std::string file;
+  std::filesystem::file_time_type stamp{};
+  int seen = -1;
+  uint64_t slotFrame = 0;
+  uint32_t nextSlot = 0;
+  interop::Screen* interop = nullptr;
+  ScreenFx proto;
+};
+
+// A compiled single-pass WGSL shader fusing a contiguous run of pointwise
+// effects (and optionally the leading linear->sRGB / trailing sRGB->linear
+// conversions).
+struct FusedScreen {
+  interop::Screen* interop = nullptr;
+  bool failed = false;
+  uint64_t slotFrame = 0;
+  uint32_t nextSlot = 0;
+  std::vector<uint32_t> offsets;
+  uint32_t totalBytes = 0;
+  std::vector<std::string> files;
+  std::vector<std::filesystem::file_time_type> stamps;
+};
+
+// A transient BGRA8 + WGPUTexture slot for layer shot / ping-pong scratch.
+struct PooledLayerSlot {
+  uint32_t w = 0, h = 0;
+  bool withDepth = false;
+  bool inUse = false;
+  uint64_t lastUsedFrame = 0;
+  void* device = nullptr;
+  filament::Texture* tex = nullptr;
+  filament::RenderTarget* colorTarget = nullptr;
+  filament::RenderTarget* depthTarget = nullptr;
+};
+
+// A transient RGBA8 or RGBA16F slot for non-persistent ISF intermediate passes.
+struct PooledTarget {
+  uint32_t w = 0, h = 0;
+  bool fine = false;
+  bool inUse = false;
+  uint64_t lastUsedFrame = 0;
+  filament::Texture* tex = nullptr;
+  filament::RenderTarget* rt = nullptr;
+};
+
+struct StageFxCache {
+  uint64_t lastFrame = 0;
+  std::map<std::string, SharedScreen> compiled;
+  std::map<std::string, FusedScreen> fused;
+  // Shared DEPTH24 textures keyed by (w << 32) | h.
+  std::map<uint64_t, filament::Texture*> depths;
+  // Deques preserve pointer stability across push_back while slots are lent.
+  std::deque<PooledLayerSlot> layerSlots;
+  std::deque<PooledTarget> targets;
+};
+
+// Returns (creating on first use) the Stage's shared GPU effect cache.
+StageFxCache& screen_cache(Stage& s);
+// Releases every GPU shader, fused program, and pooled texture on `s`.
+void screen_cache_off(Stage& s);
+// Marks frame start for `interop::new_frame` and trims stale pooled textures.
+void screen_frame_begin(Stage& s);
+
+// Returns the Stage-wide compiled shader for `file`, compiling once on first
+// use and hot-reloading automatically when the file's mtime changes.
+SharedScreen& screen_shared(Stage& s, const std::string& file);
+// Returns the Stage-wide copy shader (`s.place_copy`), creating once on first
+// use instead of per-layer.
+interop::Screen* screen_shared_copy(Stage& s);
+
+// Borrows a shared DEPTH24 texture of size `w` x `h`. Owned by StageFxCache.
+filament::Texture* screen_pool_depth(Stage& s, uint32_t w, uint32_t h);
+// Borrows a transient BGRA8/WGPUTexture layer slot. Return with
+// `screen_pool_release_layer`.
+PooledLayerSlot* screen_pool_acquire_layer(Stage& s, uint32_t w, uint32_t h,
+                                           bool withDepth);
+void screen_pool_release_layer(Stage& s, PooledLayerSlot* slot);
+
+// Borrows a transient ISF pass target (RGBA8 or RGBA16F). Return with
+// `screen_pool_release_target`.
+PooledTarget* screen_pool_acquire_target(Stage& s, uint32_t w, uint32_t h,
+                                         bool fine);
+void screen_pool_release_target(Stage& s, PooledTarget* t);
+
+// Analyzes normalized WGSL produced by `screen_read` and sets `fx.pointwise`
+// and its fusion metadata when the shader strictly samples only its own pixel.
+void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl);
+
+// Draws a contiguous run of pointwise effects (optionally folding linear->sRGB
+// at entry and sRGB->linear at exit) in a single GPU pass. Returns false if the
+// fused shader could not be compiled (caller falls back to individual passes).
+bool screen_draw_fused(Stage& s, ScreenStack& st, ScreenFx* const* nodes,
+                       size_t count, bool foldToSrgb, bool foldToLinear,
+                       filament::Texture* from, filament::RenderTarget* to,
+                       const ScreenNumbers& numbers, uint32_t w, uint32_t h,
+                       bool over = false);
+
+}  // namespace motolii
+
+#endif  // MOTOLII_STAGE_EFFECTS_SCREEN_POOL_H_

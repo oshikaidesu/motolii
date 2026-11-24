@@ -20,6 +20,7 @@
 
 #include "gpu/screen_interop.h"
 #include "stage/effects/screen_fx.h"
+#include "stage/effects/screen_pool.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
@@ -120,144 +121,133 @@ void screen_sounds(Stage& s, ScreenStack& st, ScreenFx& fx) {
   }
 }
 
-// Fills the parameter uniform struct of `fx` for one pass and uploads it.
-// Members with special names (time, frameRect, passRect, aspect, resolution and
-// so on) are computed by the stage; every other member is read through
-// `numbers`, a vector one component at a time as name_x, name_y and so on.
-// `pass` is the pass index. pw and ph give the size of the image drawn into in
-// pixels, or 0 for the stage size.
-void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
-                       int pass, double pw, double ph) {
-  std::vector<float> at(fx.bytes / 4, 0.f);
-  // An ISF effect declares frameRect and is told its frame's size. A WGSL
-  // effect reads its layerRect, or the whole image.
-  const bool framed = std::any_of(
-      fx.fields.begin(), fx.fields.end(),
-      [](const ScreenFx::Field& f) { return f.name == "frameRect"; });
-  // The size in pixels of the image drawn into: ISF's RENDERSIZE, which each
-  // pass has of its own (ISF spec, VVISF). The same rule as vgpu: a shader is
-  // told the size of its own target, as gl_FragCoord and @builtin(position)
-  // count it.
-  const double w = (pw > 0 ? pw : s.w) * (framed ? fx.pass[2] : 1.0),
-               h = (ph > 0 ? ph : s.h) * (framed ? fx.pass[3] : 1.0);
+void screen_fill_parameters(Stage& s, ScreenFx& fx,
+                            const ScreenNumbers& numbers, float* out, int pass,
+                            double pw, double ph) {
+  if (!fx.bytes || !out) return;
+  std::memset(out, 0, fx.bytes);
+  const double w = (pw > 0 ? pw : s.w) * (fx.hasFrameRect ? fx.pass[2] : 1.0),
+               h = (ph > 0 ? ph : s.h) * (fx.hasFrameRect ? fx.pass[3] : 1.0);
+  const std::string key = fx.numbers_key();
   for (const ScreenFx::Field& f : fx.fields) {
     float v[4] = {0, 0, 0, 0};
-    if (f.name == "time")
-      v[0] = (float)s.now;
-    else if (f.name == "frameRect" || f.name == "passRect")
-      for (int i = 0; i < 4; ++i)
-        v[i] = (float)(f.name == "passRect" ? fx.pass : fx.frame)[i];
-    // Where one of the other inputs is read: the effect's own image by the
-    // frame, another layer's image whole.
-    else if (f.name.rfind("isf_other_", 0) == 0) {
-      const size_t k = (size_t)(std::find(fx.others.begin(), fx.others.end(),
-                                          f.name.substr(10)) -
-                                fx.others.begin());
-      const bool own = k < fx.othersOwn.size() && fx.othersOwn[k];
-      for (int i = 0; i < 4; ++i)
-        v[i] = own ? (float)fx.frame[i] : i < 2 ? 0.f : 1.f;
-    } else if (f.name == "aspect")
-      v[0] = (float)(w / h);
-    else if (f.name == "resolution")
-      v[0] = (float)w, v[1] = (float)h;
-    // AbsentMotion's effects.cpp defines screen as -area.left, -area.top, the
-    // scene's width and height. This image is that scene, so a wave's reach is
-    // magnitude * min(screen.z, screen.w) * 0.01.
-    else if (f.name == "screen" && f.floats >= 4)
-      v[2] = (float)w, v[3] = (float)h;
-    else if ((f.name == "layer" && f.floats == 2) ||
-                     (f.name == "duration" && f.floats == 1)
-                 ? std::none_of(fx.parameters.begin(), fx.parameters.end(),
-                                [&](const ScriptParameter& one) {
-                                  return one.name.rfind(f.name, 0) == 0;
-                                })
-                 : false) {
-      // These come from AbsentMotion's effects.cpp, each only where the file
-      // has no parameter of that name. `layer` is the layer's own width and
-      // height, at least 1: on a layer its rectangle on its image (layerRect),
-      // on the whole image the image's. `duration` is the layer's length in
-      // seconds (clip_length: the layer's, or the document's). Block Noise's
-      // blocks are a share of `layer`.
-      if (f.name == "duration")
-        v[0] = (float)numbers(fx.numbers_key(), "clip_length", 0);
-      else
-        v[0] =
-            (float)std::max(1.0, numbers(fx.numbers_key(), "layerRect_z", w)),
-        v[1] =
-            (float)std::max(1.0, numbers(fx.numbers_key(), "layerRect_w", h));
-    } else if ((f.name == "width" || f.name == "height") &&
-               std::none_of(fx.fields.begin(), fx.fields.end(),
-                            [](const ScreenFx::Field& g) {
-                              return g.name == "resolution";
-                            }) &&
-               !(fx.file.ends_with(".fs") &&
-                 std::any_of(fx.parameters.begin(), fx.parameters.end(),
-                             [&](const ScriptParameter& one) {
-                               return one.name == f.name;
-                             })))
-      // The image size for three.js shaders: halftone.wgsl divides by width
-      // and height. A shader that already has resolution, or an ISF parameter
-      // of the same name, keeps the parameter the file declares.
-      v[0] = (float)(f.name == "width" ? w : h);
-    // ISF's FRAMEINDEX: the frame number (ISF spec).
-    else if (f.name == "frame")
-      v[0] = (float)std::lround(s.now * screen_rate(s));
-    // The frame rate; ISF's TIMEDELTA is its reciprocal, the time since the
-    // last frame (ISF spec).
-    else if (f.name == "isf_rate")
-      v[0] = (float)screen_rate(s);
-    // ISF's PASSINDEX. The member is not called `pass` because that is a
-    // reserved word in WGSL.
-    else if (f.name == "passindex")
-      v[0] = (float)pass;
-    else if (f.name == "history_head")
-      v[0] = (float)std::max(0, fx.head);
-    else if (f.name == "history_count")
-      v[0] = (float)fx.historyFrames;
-    else
-      // Each component of a vector is a parameter of its own: name_x, name_y
-      // and so on.
-      for (uint32_t i = 0; i < f.floats; ++i) {
-        const std::string k = f.floats == 1 ? f.name : f.name + "_" + "xyzw"[i];
-        double usual = 0;
-        for (const ScriptParameter& one : fx.parameters)
-          if (one.name == k) usual = one.usual;
-        v[i] = (float)numbers(fx.numbers_key(), k, usual);
+    using K = ScreenFx::FieldKind;
+    switch (f.kind) {
+      case K::Time:
+        v[0] = (float)s.now;
+        break;
+      case K::ClipTime:
+        v[0] = (float)numbers(key, "clip_time", 0);
+        break;
+      case K::FrameRect:
+        for (int i = 0; i < 4; ++i) v[i] = (float)fx.frame[i];
+        break;
+      case K::PassRect:
+        for (int i = 0; i < 4; ++i) v[i] = (float)fx.pass[i];
+        break;
+      case K::IsfOther: {
+        const bool own = f.otherIdx >= 0 &&
+                         (size_t)f.otherIdx < fx.othersOwn.size() &&
+                         fx.othersOwn[(size_t)f.otherIdx];
+        for (int i = 0; i < 4; ++i)
+          v[i] = own ? (float)fx.frame[i] : i < 2 ? 0.f : 1.f;
+        break;
       }
+      case K::Aspect:
+        v[0] = (float)(w / h);
+        break;
+      case K::Resolution:
+        v[0] = (float)w, v[1] = (float)h;
+        break;
+      case K::Screen:
+        v[2] = (float)w, v[3] = (float)h;
+        break;
+      case K::Duration:
+        v[0] = (float)numbers(key, "clip_length", 0);
+        break;
+      case K::Layer:
+        v[0] = (float)std::max(1.0, numbers(key, "layerRect_z", w));
+        v[1] = (float)std::max(1.0, numbers(key, "layerRect_w", h));
+        break;
+      case K::Width:
+        v[0] = (float)w;
+        break;
+      case K::Height:
+        v[0] = (float)h;
+        break;
+      case K::Frame:
+        v[0] = (float)std::lround(s.now * screen_rate(s));
+        break;
+      case K::IsfRate:
+        v[0] = (float)screen_rate(s);
+        break;
+      case K::PassIndex:
+        v[0] = (float)pass;
+        break;
+      case K::HistoryHead:
+        v[0] = (float)std::max(0, fx.head);
+        break;
+      case K::HistoryCount:
+        v[0] = (float)fx.historyFrames;
+        break;
+      case K::Param:
+        for (uint32_t i = 0; i < f.floats && i < 4; ++i)
+          v[i] = (float)numbers(key, f.paramNames[i], f.usual[i]);
+        break;
+    }
     for (uint32_t i = 0; i < f.floats; ++i) {
       if (f.whole) {
-        const int32_t w = (int32_t)std::lround(v[i]);
-        std::memcpy(&at[f.at / 4 + i], &w, 4);
-      } else
-        at[f.at / 4 + i] = v[i];
+        const int32_t iv = (int32_t)std::lround(v[i]);
+        std::memcpy(&out[f.at / 4 + i], &iv, 4);
+      } else {
+        out[f.at / 4 + i] = v[i];
+      }
     }
   }
-  if (!at.empty())
-    interop::parameters(s.engine, fx.interop, at.data(),
-                        (uint32_t)(at.size() * 4), pass);
 }
 
-// Creates the images an effect's passes draw into, when first drawn, at the
-// size the stage gives. Each target has two textures: one is read while the
-// other is drawn into, then they swap. A persistent target's read texture is
-// the last frame's when read before it is drawn. If `drop` is true the textures
-// are destroyed and not recreated. pw and ph give the size of the image drawn
-// into, or 0 for the stage size.
+int screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
+                      int pass, double pw, double ph) {
+  if (!fx.bytes) return 0;
+  fx.paramBuf.resize(fx.bytes / 4);
+  screen_fill_parameters(s, fx, numbers, fx.paramBuf.data(), pass, pw, ph);
+  int slot = pass;
+  if (fx.shared) {
+    if (fx.shared->slotFrame != s.frameCount)
+      fx.shared->slotFrame = s.frameCount, fx.shared->nextSlot = 0;
+    slot = (int)fx.shared->nextSlot++;
+  }
+  interop::parameters(s.engine, fx.interop, fx.paramBuf.data(),
+                      (uint32_t)(fx.paramBuf.size() * 4), slot);
+  return slot;
+}
+
+// Creates persistent ISF target textures (double-buffered across frames).
+// Non-persistent intermediate pass targets are borrowed per-draw from
+// StageFxCache's transient pool so layers share hot GPU memory.
 void screen_targets(Stage& s, ScreenFx& fx, bool drop, uint32_t pw,
                     uint32_t ph) {
-  // Sizes are a share of the image drawn into, as the ISF PASSES say: a layer's
-  // box, or the stage.
   const double W = pw ? pw : s.w, H = ph ? ph : s.h;
-  for (ScreenFx::Target& t : fx.targets)
+  for (ScreenFx::Target& t : fx.targets) {
+    const uint32_t w =
+        t.points[0] ? (uint32_t)t.points[0]
+                    : (uint32_t)std::max(1L, std::lround(W * t.share[0]));
+    const uint32_t h =
+        t.points[1] ? (uint32_t)t.points[1]
+                    : (uint32_t)std::max(1L, std::lround(H * t.share[1]));
+    if (!t.persistent) {
+      // Always track current dimensions for pooled target borrowing.
+      t.w = w, t.h = h;
+      if (drop) {
+        for (int k = 0; k < 2; ++k) {
+          if (t.into[k]) s.engine->destroy(t.into[k]), t.into[k] = nullptr;
+          if (t.textures[k])
+            s.engine->destroy(t.textures[k]), t.textures[k] = nullptr;
+        }
+      }
+      continue;
+    }
     for (int k = 0; k < 2; ++k) {
-      const uint32_t w =
-          t.points[0] ? (uint32_t)t.points[0]
-                      : (uint32_t)std::max(1L, std::lround(W * t.share[0]));
-      const uint32_t h =
-          t.points[1] ? (uint32_t)t.points[1]
-                      : (uint32_t)std::max(1L, std::lround(H * t.share[1]));
-      // Destroyed when dropped, or when the image it serves has changed size;
-      // it is then made again.
       if (drop || (t.textures[k] && (t.w != w || t.h != h))) {
         if (t.into[k]) s.engine->destroy(t.into[k]), t.into[k] = nullptr;
         if (t.textures[k])
@@ -280,6 +270,7 @@ void screen_targets(Stage& s, ScreenFx& fx, bool drop, uint32_t pw,
               .texture(RenderTarget::AttachmentPoint::COLOR, t.textures[k])
               .build(*s.engine);
     }
+  }
 }
 
 }  // namespace motolii

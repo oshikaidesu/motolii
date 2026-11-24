@@ -252,6 +252,13 @@ struct Stage {
   // Set when a bend overflows its texture. The render loop rebuilds once to
   // grow the sheet.
   bool bentOverflow = false;
+  // Incremented each time `begins(s)` starts a rendered frame; used by shared
+  // GPU effect caches and transient render-target pools.
+  uint64_t frameCount = 0;
+  // Stage-wide shared compiled shaders, fused pointwise chains, and transient
+  // render-target pool (stage/effects/screen_pool.h).
+  struct StageFxCache* fxCache = nullptr;
+  void (*fxCacheDrop)(Stage&) = nullptr;
   // True when the Stage viewport shows transparency (checkerboard underneath).
   bool transparentStage = false;
 };

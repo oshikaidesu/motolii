@@ -299,7 +299,7 @@ target_link_libraries(motolii_community_three PUBLIC motolii_flags motolii_base 
 
 # Adapter: isf code run as it is.
 add_library(motolii_community_isf STATIC $<TARGET_OBJECTS:isf_translation>)
-target_link_libraries(motolii_community_isf PUBLIC filament_libraries motolii_base motolii_community_sites motolii_community_three)
+target_link_libraries(motolii_community_isf PUBLIC filament_libraries motolii_base motolii_community_sites motolii_community_three ${SQLITE_LIBRARY})
 
 # Adapter: playcanvas code run as it is.
 add_library(motolii_community_playcanvas STATIC
@@ -319,12 +319,14 @@ target_link_libraries(motolii_stage_render PUBLIC filament_libraries)
 
 # Screen effects.
 add_library(motolii_stage_effects STATIC
+  stage/effects/screen_fuse.cpp
   stage/effects/screen_fx.cpp
+  stage/effects/screen_pool.cpp
   stage/effects/screen_read.cpp
   stage/effects/screen_resources.cpp
   stage/effects/screen_upscale.cpp
   stage/effects/viewer_settings.cpp)
-target_link_libraries(motolii_stage_effects PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_shelf motolii_community_isf motolii_stage_render)
+target_link_libraries(motolii_stage_effects PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_shelf motolii_community_isf motolii_stage_render ${THORVG}/build_dawn/src/libthorvg-1.a)
 
 # Adapter: aviutl code run as it is.
 add_library(motolii_community_aviutl STATIC

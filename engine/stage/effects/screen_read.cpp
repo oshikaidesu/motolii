@@ -284,6 +284,69 @@ bool screen_read(ScreenFx& fx, std::string& code) {
   // Fill in the default values where the file's own declarations give none; see
   // shelves/effects/sources/fx_first.sh.
   script_first(fx.file, fx.parameters);
+  // Pre-resolve every uniform field's kind, default values, and parameter keys
+  // once at compile time so per-frame uniform packing does zero string scans.
+  fx.hasFrameRect = std::any_of(
+      fx.fields.begin(), fx.fields.end(),
+      [](const ScreenFx::Field& f) { return f.name == "frameRect"; });
+  const bool hasResolution = std::any_of(
+      fx.fields.begin(), fx.fields.end(),
+      [](const ScreenFx::Field& f) { return f.name == "resolution"; });
+  const bool isFs = fx.file.ends_with(".fs");
+  for (ScreenFx::Field& f : fx.fields) {
+    using K = ScreenFx::FieldKind;
+    if (f.name == "time")
+      f.kind = K::Time;
+    else if (f.name == "clip_time")
+      f.kind = K::ClipTime;
+    else if (f.name == "frameRect")
+      f.kind = K::FrameRect;
+    else if (f.name == "passRect")
+      f.kind = K::PassRect;
+    else if (f.name.rfind("isf_other_", 0) == 0) {
+      f.kind = K::IsfOther;
+      const auto it =
+          std::find(fx.others.begin(), fx.others.end(), f.name.substr(10));
+      f.otherIdx = it == fx.others.end() ? -1 : (int)(it - fx.others.begin());
+    } else if (f.name == "aspect")
+      f.kind = K::Aspect;
+    else if (f.name == "resolution")
+      f.kind = K::Resolution;
+    else if (f.name == "screen" && f.floats >= 4)
+      f.kind = K::Screen;
+    else if (((f.name == "layer" && f.floats == 2) ||
+              (f.name == "duration" && f.floats == 1)) &&
+             std::none_of(fx.parameters.begin(), fx.parameters.end(),
+                          [&](const ScriptParameter& one) {
+                            return one.name.rfind(f.name, 0) == 0;
+                          }))
+      f.kind = f.name == "duration" ? K::Duration : K::Layer;
+    else if ((f.name == "width" || f.name == "height") && !hasResolution &&
+             !(isFs && std::any_of(fx.parameters.begin(), fx.parameters.end(),
+                                   [&](const ScriptParameter& one) {
+                                     return one.name == f.name;
+                                   })))
+      f.kind = f.name == "width" ? K::Width : K::Height;
+    else if (f.name == "frame")
+      f.kind = K::Frame;
+    else if (f.name == "isf_rate")
+      f.kind = K::IsfRate;
+    else if (f.name == "passindex")
+      f.kind = K::PassIndex;
+    else if (f.name == "history_head")
+      f.kind = K::HistoryHead;
+    else if (f.name == "history_count")
+      f.kind = K::HistoryCount;
+    else {
+      f.kind = K::Param;
+      for (uint32_t i = 0; i < f.floats && i < 4; ++i) {
+        f.paramNames[i] = f.floats == 1 ? f.name : f.name + "_" + "xyzw"[i];
+        f.usual[i] = 0.0;
+        for (const ScriptParameter& one : fx.parameters)
+          if (one.name == f.paramNames[i]) f.usual[i] = one.usual;
+      }
+    }
+  }
   return true;
 }
 

@@ -109,9 +109,11 @@ void thing_fx_stand(Stage& s, ThingFx& e, const math::mat4& place, float2 half,
   // camera distance; see document/evaluate/evaluate.h.
   const double ppp = thing_fx_ppp(s),
                usual = s.h / (12.0 * std::tan(15.0 * M_PI / 180.0));
-  const double room = 128.0 / usual, sx = length(place[0].xyz),
-               sy = length(place[1].xyz), wide = half.x * sx + room,
-               high = half.y * sy + room;
+  // Zero-alpha-preserving pointwise chains cannot spill outside the layer, so
+  // an 8px anti-alias border suffices instead of the 128px bake margin.
+  const double room = (e.st.allPointwiseTight ? 8.0 : 128.0) / usual,
+               sx = length(place[0].xyz), sy = length(place[1].xyz),
+               wide = half.x * sx + room, high = half.y * sy + room;
   const double c[4] = {std::max(wide, e.sides[0]), std::max(wide, e.sides[1]),
                        std::max(high, e.sides[2]), std::max(high, e.sides[3])},
                across = c[0] + c[1], tall = c[2] + c[3];
@@ -192,8 +194,7 @@ void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame) {
 
 void thing_fx_cover(Stage& s, ThingFx& e, int cells) {
   RenderTarget* const from =
-      e.st.steps.empty() ? e.st.target
-                         : e.st.betweenTarget[(e.st.steps.size() - 1) % 2];
+      e.st.steps.empty() ? e.st.target : e.st.betweenTarget[0];
   const Viewport vp = e.view->getViewport();
   if (!from || !vp.width || !vp.height) return;
   auto* pixels = new std::vector<uint8_t>((size_t)vp.width * vp.height * 4);

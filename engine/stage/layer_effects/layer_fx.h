@@ -32,13 +32,17 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files);
 void thing_fx_textures(Stage& s, ScreenStack& st, filament::View* v);
 // The layer's image after effects (or its own image if none).
 inline filament::Texture* thing_fx_seen(const ScreenStack& st) {
-  return st.steps.empty() ? st.shot : st.between[st.steps.size() % 2];
+  return st.steps.empty() ? st.shot : st.between[0];
 }
+struct ThingFx;
 // Draws the layer alone, runs effects through alternating textures.
-// sRGB before effects, linear after.
+// sRGB before effects, linear after. When `owner` is supplied and eligible,
+// skips re-rendering static unchanged layers whose cached output is still
+// valid.
 void thing_effects_draw(Stage& s, ScreenStack& st, filament::View* v,
                         const ScreenNumbers& numbers,
-                        const ScreenTextures& textures = nullptr);
+                        const ScreenTextures& textures = nullptr,
+                        ThingFx* owner = nullptr);
 
 // A layer's effect state: its own view, effect chain, and result sheet.
 struct ThingFx {
@@ -60,13 +64,25 @@ struct ThingFx {
   bool world = false;
   // Center, width, height (layer points), points per world unit.
   double own[5] = {0, 0, 0, 0, 0};
+  // Per-frame cached values populated in `s.aim` under `d.lock` so `numbers`
+  // avoids repeated mutex acquisitions and `doc_fx_frame` recomputations.
+  double cachedLayerRect[4] = {0, 0, 0, 0};
+  bool hasCachedLayerRect = false;
+  double cachedClipTime = 0.0, cachedClipLength = 0.0;
+  // Static-layer output cache state (skips re-rendering unchanged layers).
+  bool cacheEligible = false;
+  bool cacheValid = false;
+  uint64_t cacheBaseKey = 0;
+  uint64_t cacheLastKey = 0;
+  uint32_t cacheW = 0, cacheH = 0;
   // Placement without scale; the camera films from here.
   filament::math::mat4 square;
   // Solid: stays in the world, shows the image on its faces.
   bool shell = false;
   // Original face materials, saved while the effect image is on them.
   std::vector<filament::MaterialInstance*> looks;
-  // Solid from solids/*.js. solidSaid = last build input, cover = alpha readback.
+  // Solid from solids/*.js. solidSaid = last build input, cover = alpha
+  // readback.
   std::string solidFile, solidSaid, solidAs;
   // Current parameter values and the layer's size in its own units.
   std::map<std::string, double> parameters;

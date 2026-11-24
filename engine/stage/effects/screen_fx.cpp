@@ -28,6 +28,7 @@
 #include "community/quickjs/script.h"
 #include "gpu/screen_interop.h"
 #include "shelf/shelf_folders.h"
+#include "stage/effects/screen_pool.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
@@ -49,33 +50,15 @@ Texture* screen_texture(Stage& s) {
 }
 
 namespace {
-// Returns the effect that copies an image unchanged, creating it on first use.
-interop::Screen* screen_copy(Stage& s, ScreenStack& st) {
-  if (!st.copy) {
-    static const char* const same =
-        "@group(0) @binding(0) var source: texture_2d<f32>;\n@group(0) "
-        "@binding(1) var near: sampler;\n"
-        "@fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: "
-        "vec2f) -> @location(0) vec4f { return textureSampleLevel(source, "
-        "near, uv, 0.0); }\n";
-    st.copy = interop::screen(s.engine, "copy", same, 0);
-  }
-  return st.copy;
+// Reuses the Stage's single copy shader instead of compiling one per layer.
+interop::Screen* screen_copy(Stage& s, ScreenStack&) {
+  return screen_shared_copy(s);
 }
 }  // namespace
 
 void screen_place(Stage& s, Texture* from, RenderTarget* to, uint32_t w,
                   uint32_t h, const int* at) {
-  interop::Screen*& copy = s.place_copy;
-  if (!copy) {
-    static const char* const same =
-        "@group(0) @binding(0) var source: texture_2d<f32>;\n@group(0) "
-        "@binding(1) var near: sampler;\n"
-        "@fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: "
-        "vec2f) -> @location(0) vec4f { return textureSampleLevel(source, "
-        "near, uv, 0.0); }\n";
-    copy = interop::screen(s.engine, "place", same, 0);
-  }
+  interop::Screen* copy = screen_shared_copy(s);
   if (copy) interop::draw(s.engine, copy, from, to, w, h, at);
 }
 
@@ -108,6 +91,7 @@ void screen_tone(Stage& s, Texture* from, RenderTarget* to, uint32_t w,
 void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx, Texture* from,
                  RenderTarget* to, const ScreenNumbers& numbers, uint32_t w,
                  uint32_t h, bool over) {
+  screen_frame_begin(s);
   if (!w) w = (uint32_t)s.w, h = (uint32_t)s.h;
   std::copy(fx.source ? st.own : st.frame, (fx.source ? st.own : st.frame) + 4,
             fx.frame);
@@ -156,16 +140,34 @@ void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx, Texture* from,
                   fx.historyInto[(size_t)fx.head], fx.hw, fx.hh);
   }
   screen_sounds(s, st, fx);
+  // Transient pooled targets borrowed for non-persistent ISF passes; released
+  // immediately when this effect finishes so subsequent effects/layers reuse
+  // the same hot GPU memory.
+  std::vector<PooledTarget*> pooled(fx.targets.size(), nullptr);
+  const auto releaseAll = [&] {
+    for (PooledTarget*& pt : pooled) {
+      if (pt) screen_pool_release_target(s, pt), pt = nullptr;
+    }
+  };
   std::vector<Texture*> read((size_t)fx.textureCount, from);
   const auto gather = [&] {
     size_t target = 0;
     const size_t own = read.size() - fx.others.size();
-    for (size_t k = 1; k < own; ++k)
-      read[k] = (fx.layered >> k) & 1u ? fx.history
-                : target < fx.targets.size()
-                    ? fx.targets[target].textures[fx.targets[target].front]
-                    : from,
-      target += !((fx.layered >> k) & 1u);
+    for (size_t k = 1; k < own; ++k) {
+      if ((fx.layered >> k) & 1u) {
+        read[k] = fx.history;
+      } else if (target < fx.targets.size()) {
+        const ScreenFx::Target& tgt = fx.targets[target];
+        if (tgt.persistent)
+          read[k] = tgt.textures[tgt.front];
+        else
+          read[k] = pooled[target] ? pooled[target]->tex : from;
+        ++target;
+      } else {
+        read[k] = from;
+        ++target;
+      }
+    }
     // Another layer's image. When none is chosen yet, use the effect's own,
     // except for a transition's end image, which is empty (ISF spec, endImage).
     for (size_t k = own; k < read.size(); ++k) {
@@ -201,68 +203,102 @@ void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx, Texture* from,
   if (fx.passes.empty()) {
     gather();
     passing(-1);
-    screen_parameters(s, fx, numbers, 0, w, h);
-    interop::draw(s.engine, fx.interop, read.data(), to, w, h, 0, nullptr,
+    const int slot = screen_parameters(s, fx, numbers, 0, w, h);
+    interop::draw(s.engine, fx.interop, read.data(), to, w, h, slot, nullptr,
                   over);
     return;
   }
+  // If the final pass targets a non-persistent full-size buffer, render that
+  // pass directly into `to` and skip the extra full-screen copy pass.
+  const int lastTargetIdx = fx.passes.back();
+  const bool directFinal = lastTargetIdx >= 0 &&
+                           !fx.targets[(size_t)lastTargetIdx].persistent &&
+                           fx.targets[(size_t)lastTargetIdx].w == w &&
+                           fx.targets[(size_t)lastTargetIdx].h == h;
   for (size_t p = 0; p < fx.passes.size(); ++p) {
     gather();
     const int t = fx.passes[p];
+    const bool isDirectLast = directFinal && p + 1 == fx.passes.size();
     passing(t);
-    screen_parameters(s, fx, numbers, (int)p,
-                      t < 0 ? w : fx.targets[(size_t)t].w,
-                      t < 0 ? h : fx.targets[(size_t)t].h);
-    if (t < 0) {
-      interop::draw(s.engine, fx.interop, read.data(), to, w, h, (int)p,
-                    nullptr, over);
+    const int slot = screen_parameters(s, fx, numbers, (int)p,
+                                       t < 0 ? w : fx.targets[(size_t)t].w,
+                                       t < 0 ? h : fx.targets[(size_t)t].h);
+    if (t < 0 || isDirectLast) {
+      interop::draw(s.engine, fx.interop, read.data(), to, w, h, slot, nullptr,
+                    over);
       continue;
     }
     ScreenFx::Target& into = fx.targets[(size_t)t];
-    const int back = 1 - into.front;
-    interop::draw(s.engine, fx.interop, read.data(), into.into[back], into.w,
-                  into.h, (int)p);
-    into.front = back;
+    if (into.persistent) {
+      const int back = 1 - into.front;
+      interop::draw(s.engine, fx.interop, read.data(), into.into[back], into.w,
+                    into.h, slot);
+      into.front = back;
+    } else {
+      PooledTarget* prev = pooled[(size_t)t];
+      PooledTarget* next =
+          screen_pool_acquire_target(s, into.w, into.h, into.fine);
+      interop::draw(s.engine, fx.interop, read.data(), next->rt, into.w, into.h,
+                    slot);
+      if (prev) screen_pool_release_target(s, prev);
+      pooled[(size_t)t] = next;
+    }
   }
   // The last pass drew into its own target, so that is what the effect shows.
-  if (fx.passes.back() >= 0) {
-    const ScreenFx::Target& last = fx.targets[(size_t)fx.passes.back()];
-    interop::draw(s.engine, screen_copy(s, st), &last.textures[last.front], to,
-                  w, h, 0, nullptr, over);
+  if (fx.passes.back() >= 0 && !directFinal) {
+    const size_t idx = (size_t)fx.passes.back();
+    const ScreenFx::Target& last = fx.targets[idx];
+    Texture* src =
+        last.persistent ? last.textures[last.front] : pooled[idx]->tex;
+    interop::draw(s.engine, screen_copy(s, st), &src, to, w, h, 0, nullptr,
+                  over);
   }
+  releaseAll();
 }
+
+namespace {
+void sync_from_shared(Stage& s, ScreenFx& fx, SharedScreen& sh) {
+  if (fx.interop && !fx.sharedInterop) interop::drop(s.engine, fx.interop);
+  screen_targets(s, fx, true);
+  fx.parameters = sh.proto.parameters;
+  fx.fields = sh.proto.fields;
+  fx.bytes = sh.proto.bytes;
+  fx.hasFrameRect = sh.proto.hasFrameRect;
+  fx.pointwise = sh.proto.pointwise;
+  fx.pointwiseSksl = sh.proto.pointwiseSksl;
+  fx.preservesZeroAlpha = sh.proto.preservesZeroAlpha;
+  fx.usesTime = sh.proto.usesTime;
+  fx.wgsl = sh.proto.wgsl;
+  fx.uniformStruct = sh.proto.uniformStruct;
+  fx.uniformVar = sh.proto.uniformVar;
+  fx.sampleExpr = sh.proto.sampleExpr;
+  fx.shared = &sh;
+  fx.interop = sh.interop;
+  fx.sharedInterop = true;
+  fx.trouble = sh.proto.trouble;
+  fx.textureCount = sh.proto.textureCount;
+  fx.targets = sh.proto.targets;
+  fx.passes = sh.proto.passes;
+  fx.layered = sh.proto.layered;
+  fx.historyFrames = sh.proto.historyFrames;
+  fx.historyShare = sh.proto.historyShare;
+  fx.others = sh.proto.others;
+  fx.images = sh.proto.images;
+  fx.sounds = sh.proto.sounds;
+  fx.source = sh.proto.source;
+  fx.spill = sh.proto.spill;
+  fx.alpha = sh.proto.alpha;
+  fx.stamp = sh.stamp;
+  fx.seen = sh.seen;
+}
+}  // namespace
 
 void screen_fresh(Stage& s, ScreenFx& fx) {
   if (fx.seen == files_changed()) return;
-  fx.seen = files_changed();
-  const auto stamp = screen_stamp(fx.file);
-  if (stamp == fx.stamp) return;
-  fx.stamp = stamp;
-  ScreenFx again;
-  again.file = fx.file;
-  std::string code;
-  if (!screen_read(again, code)) {
-    std::fprintf(stderr, "%s\n", again.trouble.c_str());
-    return;
-  }
-  interop::Screen* built =
-      interop::screen(s.engine, fx.file.c_str(), code.c_str(), again.bytes,
-                      &again.trouble, again.textureCount, again.layered);
-  if (!built) {
-    std::fprintf(stderr,
-                 "the effect %s as written now is not taken (the one before "
-                 "stays): %s\n",
-                 fx.file.c_str(), again.trouble.c_str());
-    return;
-  }
-  interop::drop(s.engine, fx.interop);
-  screen_targets(s, fx, true);
-  fx.parameters = again.parameters, fx.fields = again.fields,
-  fx.bytes = again.bytes, fx.interop = built;
-  // The history frames are kept as they are while their count stays the same.
-  fx.textureCount = again.textureCount, fx.targets = again.targets,
-  fx.passes = again.passes, fx.layered = again.layered, fx.spill = again.spill,
-  fx.alpha = again.alpha;
+  SharedScreen& sh = screen_shared(s, fx.file);
+  fx.seen = sh.seen;
+  if (sh.stamp == fx.stamp && fx.interop == sh.interop) return;
+  sync_from_shared(s, fx, sh);
 }
 
 bool screen_moved(const ScreenStack& st) {
@@ -273,8 +309,9 @@ bool screen_moved(const ScreenStack& st) {
 }
 
 ScreenFx* screen_built(Stage& s, ScreenStack& st, const std::string& entry) {
-  // The entry may be "id:file" or just "file". Compile using the actual path;
-  // cache by the full entry so two instances of the same file are independent.
+  // The entry may be "id:file" or just "file". Share the compiled GPU program
+  // across all layers and stacked instances via StageFxCache, while keeping
+  // per-instance state (persistent targets, history, instance_id) separate.
   const std::string id = fx_entry_id(entry);
   const std::string file = fx_entry_path(entry);
   ScreenFx*& built = st.built[entry];
@@ -282,20 +319,8 @@ ScreenFx* screen_built(Stage& s, ScreenStack& st, const std::string& entry) {
   built = new ScreenFx;
   built->file = file;
   built->instance_id = id;
-  std::string code;
-  // Keep the effect marked as not built (interop null), so that it is not read
-  // again each time.
-  if (!screen_read(*built, code)) {
-    std::fprintf(stderr, "%s\n", built->trouble.c_str());
-    return built;
-  }
-  built->interop =
-      interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes,
-                      &built->trouble, built->textureCount, built->layered);
-  if (!built->interop)
-    std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(),
-                 built->trouble.c_str());
-  built->stamp = screen_stamp(file);
+  SharedScreen& sh = screen_shared(s, file);
+  sync_from_shared(s, *built, sh);
   return built;
 }
 
@@ -343,14 +368,47 @@ void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
   // What lies under an image that reads it is copied from here.
   s.drawTarget = st.shot;
   s.over = [&s, &st, numbers] {
-    for (size_t i = 0; i < st.fx.size(); ++i) {
-      screen_fresh(s, *st.fx[i]);
-      Texture* from = i == 0 ? st.shot : st.between[(i - 1) % 2];
-      // The last effect draws where the stage's image goes: the screen, or the
-      // window's live image.
-      RenderTarget* to =
-          i + 1 == st.fx.size() ? s.out : st.betweenTarget[i % 2];
-      screen_draw(s, st, *st.fx[i], from, to, numbers);
+    screen_frame_begin(s);
+    for (ScreenFx* fx : st.fx) screen_fresh(s, *fx);
+    // Fuse contiguous pointwise effects in the stage post-FX chain into single
+    // GPU passes when >= 2 pointwise nodes sit adjacent.
+    std::vector<std::pair<size_t, size_t>> runs;
+    for (size_t i = 0; i < st.fx.size();) {
+      if (st.fx[i]->pointwise) {
+        size_t j = i + 1;
+        while (j < st.fx.size() && st.fx[j]->pointwise) ++j;
+        if (j - i >= 2) {
+          runs.emplace_back(i, j);
+          i = j;
+          continue;
+        }
+      }
+      runs.emplace_back(i, i + 1);
+      ++i;
+    }
+    Texture* cur = st.shot;
+    for (size_t r = 0; r < runs.size(); ++r) {
+      const auto [fromIdx, toIdx] = runs[r];
+      const bool last = r + 1 == runs.size();
+      RenderTarget* dest = last ? s.out : st.betweenTarget[r % 2];
+      Texture* destTex = last ? nullptr : st.between[r % 2];
+      const size_t n = toIdx - fromIdx;
+      if (n >= 2 &&
+          screen_draw_fused(s, st, st.fx.data() + fromIdx, n, false, false, cur,
+                            dest, numbers, (uint32_t)s.w, (uint32_t)s.h)) {
+        cur = destTex;
+        continue;
+      }
+      // Single effect (or fallback if fusion declined).
+      for (size_t k = fromIdx; k < toIdx; ++k) {
+        const bool lastOfAll = last && k + 1 == toIdx;
+        RenderTarget* stepTo =
+            lastOfAll ? s.out : st.betweenTarget[(r + (k - fromIdx)) % 2];
+        Texture* stepTex =
+            lastOfAll ? nullptr : st.between[(r + (k - fromIdx)) % 2];
+        screen_draw(s, st, *st.fx[k], cur, stepTo, numbers);
+        cur = stepTex;
+      }
     }
   };
 }
@@ -359,7 +417,8 @@ void screen_stack_off(Stage& s, ScreenStack& st) {
   if (!s.engine) return;
   for (auto& [key, fx] : st.built) {
     if (!fx) continue;
-    if (fx->interop) interop::drop(s.engine, fx->interop), fx->interop = nullptr;
+    if (fx->interop && !fx->sharedInterop) interop::drop(s.engine, fx->interop);
+    fx->interop = nullptr;
     screen_targets(s, *fx, true);
     if (fx->history) s.engine->destroy(fx->history), fx->history = nullptr;
     for (RenderTarget* rt : fx->historyInto)
@@ -385,7 +444,8 @@ void screen_stack_off(Stage& s, ScreenStack& st) {
   for (int k = 0; k < 2; ++k) {
     if (st.betweenTarget[k])
       s.engine->destroy(st.betweenTarget[k]), st.betweenTarget[k] = nullptr;
-    if (st.between[k]) s.engine->destroy(st.between[k]), st.between[k] = nullptr;
+    if (st.between[k])
+      s.engine->destroy(st.between[k]), st.between[k] = nullptr;
   }
   st.seen = nullptr;
   st.files.clear();

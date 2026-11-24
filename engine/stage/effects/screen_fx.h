@@ -38,14 +38,49 @@ struct ScreenFx {
     return instance_id.empty() ? file : instance_id + ":" + file;
   }
   std::vector<ScriptParameter> parameters;
+  // Pre-resolved uniform field kind so screen_parameters avoids per-frame
+  // string comparisons and linear scans.
+  enum class FieldKind : uint8_t {
+    Param = 0,
+    Time,
+    ClipTime,
+    FrameRect,
+    PassRect,
+    IsfOther,
+    Aspect,
+    Resolution,
+    Screen,
+    Duration,
+    Layer,
+    Width,
+    Height,
+    Frame,
+    IsfRate,
+    PassIndex,
+    HistoryHead,
+    HistoryCount,
+  };
   // A uniform struct member. whole = i32 or u32, stored as integer.
   struct Field {
     std::string name;
     uint32_t at = 0, floats = 1;
     bool whole = false;
+    FieldKind kind = FieldKind::Param;
+    int otherIdx = -1;
+    double usual[4] = {0, 0, 0, 0};
+    std::string paramNames[4];
   };
   std::vector<Field> fields;
   uint32_t bytes = 0;
+  bool hasFrameRect = false;
+  bool pointwise = false;
+  bool pointwiseSksl = false;
+  bool preservesZeroAlpha = false;
+  bool usesTime = true;
+  bool sharedInterop = false;
+  std::string wgsl, uniformStruct, uniformVar, sampleExpr;
+  std::vector<float> paramBuf;
+  struct SharedScreen* shared = nullptr;
   interop::Screen* interop = nullptr;
   // Image count: stage image + one per ISF pass target.
   int textureCount = 1;
@@ -118,6 +153,9 @@ struct ScreenStack {
   bool readsBehind = false;
   // True if an effect draws to the full stage (e.g. AviUtl2 obj.draw).
   bool wide = false;
+  // True when every step is a zero-alpha-preserving pointwise GPU effect, so
+  // the layer's offscreen texture needs no full-screen expansion padding.
+  bool allPointwiseTight = false;
   double thingSeen[4] = {0, 0, 0, 0};
   // The layer's own rectangle on the image; a generator measures by this.
   double own[4] = {0, 0, 1, 1};
@@ -185,10 +223,17 @@ void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
 
 // Builds input textures for the current frame (images once, audio each frame).
 void screen_sounds(Stage& s, ScreenStack& st, ScreenFx& fx);
-// Fills and uploads the parameter uniform for one pass. pw/ph = 0 → stage size.
-void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
-                       int pass = 0, double pw = 0, double ph = 0);
-// Creates or destroys target textures. drop = destroy only. pw/ph = 0 → stage.
+// Fills `out` (at least `fx.bytes / 4` floats) with the uniform values for one
+// pass without allocating or uploading.
+void screen_fill_parameters(Stage& s, ScreenFx& fx,
+                            const ScreenNumbers& numbers, float* out,
+                            int pass = 0, double pw = 0, double ph = 0);
+// Fills and uploads the parameter uniform for one pass using the shared
+// per-frame uniform slot ring, returning the slot index to pass to `draw()`.
+int screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
+                      int pass = 0, double pw = 0, double ph = 0);
+// Creates or destroys persistent target textures. Non-persistent targets are
+// borrowed per-draw from StageFxCache's transient pool. drop = destroy only.
 void screen_targets(Stage& s, ScreenFx& fx, bool drop = false, uint32_t pw = 0,
                     uint32_t ph = 0);
 // Releases all GPU objects and compiled effects owned by `st`.
