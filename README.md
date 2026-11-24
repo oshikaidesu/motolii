@@ -12,6 +12,8 @@ Motolii is an open-source, WebGPU-native video editor built on plain files — k
 
 ![Motolii workspace: shelves on the left, Stage preview in the center, Timeline at the bottom, and Inspector on the right](docs/pictures/tabs/window.jpg)
 
+> 💬 **Join the [Motolii Discord](https://discord.gg/EFZQREAQ9g)** for devlog clips, `.vism` & shader sharing, and requesting web expressions you want to bring into Motolii (EN / JP welcome).
+
 ---
 
 ## Bring Your Existing Plugins, Expressions, and Assets With You
