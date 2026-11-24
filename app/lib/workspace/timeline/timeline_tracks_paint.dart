@@ -197,41 +197,18 @@ class TimelineTracksPainter extends CustomPainter {
       if (lift > 0) {
         c.drawRect(
           Offset.zero & s,
-          p..color = WindowTokens.body.withValues(alpha: 0.42 * lift),
+          p..color = WindowTokens.body.withValues(alpha: 0.36 * lift),
         );
       }
       if (dragRow != null && dragRow < rows.length) {
         final top = dragRow * TimelineMetrics.row - vscroll + rs.dragOffsetY;
-        final cy = top + TimelineMetrics.row / 2;
-        final grow = 1.0 + 0.015 * lift;
-        c.save();
-        c.translate(s.width / 2, cy);
-        c.scale(grow, grow);
-        c.translate(-s.width / 2, -cy);
-        if (lift > 0) {
-          // AbsentMotion-style soft multi-step lift shadow + solid row backing (zero borders/lines).
-          for (var step = 1; step <= 4; step++) {
-            final spread = step * 2.5;
-            c.drawRect(
-              Rect.fromLTWH(
-                -spread,
-                top - spread + 2.5,
-                s.width + spread * 2,
-                TimelineMetrics.row + spread * 2,
-              ),
-              p..color = Grey.g00.withValues(alpha: 0.11 * lift),
-            );
-          }
-          c.drawRect(
-            Rect.fromLTWH(0, top, s.width, TimelineMetrics.row),
-            p
-              ..color = Forms.worn
-                  .trackBand(dragRow, rows[dragRow].selected)
-                  .withValues(alpha: lift),
-          );
-        }
-        _row(c, s, rows[dragRow], top + TimelineMetrics.row / 2 - .5);
-        c.restore();
+        _row(
+          c,
+          s,
+          rows[dragRow],
+          top + TimelineMetrics.row / 2 - .5,
+          lift: lift,
+        );
       }
     }
     if (restAt case final t?) {
@@ -263,7 +240,7 @@ class TimelineTracksPainter extends CustomPainter {
     }
   }
 
-  void _row(Canvas c, Size s, TimelineRow r, double cy) {
+  void _row(Canvas c, Size s, TimelineRow r, double cy, {double lift = 0}) {
     final view = viewport.view;
     if (r.lane case final pts?) {
       // Draw the bar's extent behind the lane, so the lane has a visible in/out range.
@@ -299,6 +276,21 @@ class TimelineTracksPainter extends CustomPainter {
           bar,
           Radius.circular(Forms.worn.trackRadius),
         );
+    if (lift > 0) {
+      // Lift only the clip object itself (scale + rounded shadow hugging the bar), leaving the grid intact.
+      final grow = 1.0 + 0.025 * lift;
+      final bc = bar.center;
+      c.save();
+      c.translate(bc.dx, bc.dy);
+      c.scale(grow, grow);
+      c.translate(-bc.dx, -bc.dy);
+      c.drawRRect(
+        rr.shift(Offset(0, 4 * lift)).inflate(1.5 * lift),
+        Paint()
+          ..color = Grey.g00.withValues(alpha: 0.55 * lift)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 7 * lift),
+      );
+    }
     final fill = trackBarFill(r),
         ink = r.dim ? Grey.g56 : WindowTokens.onAccent,
         grip = Color.lerp(fill, Grey.g00, .28)!;
@@ -484,6 +476,7 @@ class TimelineTracksPainter extends CustomPainter {
         );
       }
     }
+    if (lift > 0) c.restore();
   }
 
   /// Draws a property lane, like an envelope in an Ableton Live lane.
