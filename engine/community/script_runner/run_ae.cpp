@@ -114,6 +114,14 @@ std::string Script::text(double t, const std::map<std::string, double>& numbers,
   JSContext* cx = own->cx;
   JS_UpdateStackTop(own->rt);
   parameters(numbers, words);
+  {
+    JSValue g = JS_GetGlobalObject(cx);
+    JS_SetPropertyStr(cx, g, "__hostK", JS_DupValue(cx, own->parameters));
+    const auto it = numbers.find("time");
+    JS_SetPropertyStr(cx, g, "__hostT",
+                      JS_NewFloat64(cx, it != numbers.end() ? it->second : t));
+    JS_FreeValue(cx, g);
+  }
   JSValue args[3] = {JS_NewFloat64(cx, t), JS_DupValue(cx, own->parameters),
                      JS_NewStringLen(cx, typed.data(), typed.size())};
   JSValue out = JS_Call(cx, own->text, JS_UNDEFINED, 3, args);

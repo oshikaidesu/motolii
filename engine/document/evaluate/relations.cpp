@@ -519,7 +519,7 @@ int doc_members(Doc& d, int layer) {
       !t->second.drawn->letters.empty())
     return (int)t->second.drawn->letters.size();
   if (const std::vector<AbsentCopy>& copies =
-          doc_absent_copies(d, layer, d.stage->now);
+          doc_absent_copies(d, layer, d.stage ? d.stage->now : 0.0);
       !copies.empty())
     return (int)copies.size();
   return std::max(1, (int)doc_literal(d, layer, "copies", 0, 1));

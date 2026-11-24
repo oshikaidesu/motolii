@@ -156,6 +156,35 @@ class Script {
   using SoundReader =
       std::function<std::vector<float>(int layer, bool spectrum, double t)>;
   void reads_sound(SoundReader sound);
+  // Extra project queries exposed to scripts (host_prelude.js and
+  // lottie_shim.js): string properties, bounds, toWorld/toScreen, layer tree,
+  // active camera, AudioLink-style bands, MIDI state and effect parameters.
+  struct HostReads {
+    std::function<std::string(int layer, const std::string& name)> word;
+    // [x, y, width, height, rotate, halfX, halfY, px] (all NaN when invalid).
+    std::function<std::array<double, 8>(int layer, double t)> bounds;
+    std::function<std::array<double, 3>(int layer, double x, double y, double z,
+                                        double t)>
+        to_world;
+    std::function<std::array<double, 2>(double x, double y, double z, double t)>
+        to_screen;
+    std::function<std::vector<int>()> layers;
+    std::function<std::vector<int>(int parent)> children;
+    // [eye(3), look(3), up(3), fovDeg, distance, cameraId].
+    std::function<std::array<double, 12>(double t)> camera;
+    // [bass, lowMid, highMid, treble, rms] in 0..1; layer <= 0 mixes all audio.
+    std::function<std::array<double, 5>(int layer, double t)> audio_bands;
+    // [velocity(0..1), pitch(0..127), gate(0|1), bpm].
+    std::function<std::array<double, 4>(
+        int current_layer, const std::string& source, int channel, double t)>
+        midi;
+    // Reads a layer's effect parameter by effect name & parameter name; NaN if
+    // not found.
+    std::function<double(int layer, const std::string& effect,
+                         const std::string& param, double t)>
+        effect_param;
+  };
+  void reads_host(HostReads host);
   // Returns true if the script says the text of a text layer: it defines
   //   function sourceText(t, k, value) { return "..."; }
   // the name After Effects gives the property (text.sourceText). t and k are

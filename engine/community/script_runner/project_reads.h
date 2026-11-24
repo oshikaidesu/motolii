@@ -24,6 +24,7 @@ struct ProjectReads {
   Script::SoundReader sound;    // getByteFrequencyData and the other two
   Script::KeyReader keys;       // layerKeys
   Script::LayerFinder named;    // layerNamed
+  Script::HostReads host;       // layerWord, layerBounds, toWorld, camera, etc.
 };
 
 // Gives the JavaScript of `cx` those functions, each bound to its member of

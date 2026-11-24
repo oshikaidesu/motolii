@@ -64,7 +64,8 @@ Script::Script(const std::string& file, const std::string& p5,
   // Motolii's own stand-ins for Cavalry and for a script written as a row of
   // numbers, loaded from the .js beside their call sites so engine does not
   // ship JavaScript as C++ string literals.
-  for (const char* prelude : {"cavalry_prelude", "rows_prelude"}) {
+  for (const char* prelude :
+       {"cavalry_prelude", "rows_prelude", "host_prelude"}) {
     const std::string js = read_text(doc_engine(
         ("community/script_runner/" + std::string(prelude) + ".js").c_str()));
     JS_FreeValue(own->cx, JS_Eval(own->cx, js.c_str(), js.size(), prelude,
@@ -180,6 +181,7 @@ void Script::reads_keys(KeyReader keys, LayerFinder named) {
 void Script::reads_sound(SoundReader sound) {
   own->project.sound = std::move(sound);
 }
+void Script::reads_host(HostReads host) { own->project.host = std::move(host); }
 bool Script::sketch() const { return own->sketch; }
 bool Script::says_text() const {
   return own->cx && JS_IsFunction(own->cx, own->text);
@@ -232,6 +234,14 @@ std::vector<ScriptCopy> Script::copies(
                         unit));  // (k.px: a pixel of the document in the
                                  // stage's units, so an expression written in
                                  // After Effects' pixels says where)
+      JSValue g = JS_GetGlobalObject(s.own->cx);
+      JS_SetPropertyStr(s.own->cx, g, "__hostK",
+                        JS_DupValue(s.own->cx, s.own->parameters));
+      const auto it = numbers.find("time");
+      JS_SetPropertyStr(
+          s.own->cx, g, "__hostT",
+          JS_NewFloat64(s.own->cx, it != numbers.end() ? it->second : t));
+      JS_FreeValue(s.own->cx, g);
     };
     const auto lay = [&](Script& s, int from, int to) {
       for (int i = from; i < to; ++i)

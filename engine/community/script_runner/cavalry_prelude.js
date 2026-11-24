@@ -1,3 +1,4 @@
+var time = 0, frame = 0;
 var cavalry = {
   Point: function (x, y) { this.x = x; this.y = y; },
   PointCloud: function () { this.points = []; this.sizes = []; },

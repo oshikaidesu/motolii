@@ -361,56 +361,41 @@ std::string adapter_js(const std::string& src, const std::string& form) {
     static const std::regex counts(R"(\b(index|textIndex|textTotal)\b)");
     const std::string each = std::regex_search(src, counts) ? "i" : "-1";
     return "const __ae=AE.compile(" + text + "),__ae_on='" + property +
-           "';let __ae_comp;\n"
+           "';\n"
            "function each(i,n,t,k){const px=k.px||1,W=k.wide||1920,"
-           "H=k.high||1080,at=(name,or)=>layerValue(k.id,name,k.time,or," +
+           "H=k.high||1080,copy=" +
            each +
-           "),"
-           "x=at('x',0),y=at('y',0),turn=at('rotate',0),seen=at('opacity',1);\n"
-           "const spec=(id,copy,name)=>({name,index:id,width:W,height:H,"
-           "position:u=>[W/2+layerValue(id,'x',u,0,copy)/px,"
-           "H/2-layerValue(id,'y',u,0,copy)/px],"
-           "rotation:u=>-layerValue(id,'rotate',u,0),scale:()=>[100,100],"
-           "opacity:u=>100*layerValue(id,'opacity',u,1),"
-           "keys:{position:[...new Set([...layerKeys(id,'x'),"
-           "...layerKeys(id,'y')])].sort((a,b)=>a-b),"
-           "rotation:layerKeys(id,'rotate'),opacity:layerKeys(id,'opacity')},"
-           "sampleImage:(p,r,post,u)=>sampleImage(id,p,r,post,u),"
-           "fromWorld:(p,u)=>fromWorld(id,p,u)});\n"
-           "__ae_comp=__ae_comp||AE.comp({width:W,height:H,find:a=>{const "
-           "id=typeof a==='string'?layerNamed(a):a;"
-           "return id?spec(id,-1,String(a)):null}},[]);\n"
-           "const me=AE.layer(spec(k.id," +
-           each + ",''));me.index=" + each +
-           "+1||1;\n"
-           "const "
-           "c={index:me.index,textIndex:i+1,textTotal:n,time:k.time,layer:me,"
-           "comp:__ae_comp,effect:name=>()=>k[AE.name(name).toLowerCase()]};\n"
-           // What the expression gave at each time, or threw, is kept for the
-           // Code tab (the last 3600 times, a minute at 60 fps), as After
-           // Effects shows an expression's value and error under it; the
-           // engine also runs times other than the playhead's.
+           ",at=(name,or)=>layerValue(k.id,name,k.time,or,copy),"
+           "x=at('x',0),y=at('y',0),turn=at('rotate',0),seen=at('opacity',1),"
+           "sx0=at('scale_x',1),sy0=at('scale_y',1);\n"
+           "const c={id:k.id,copy,fps:k.fps||60,index:copy+1||k.index||1,"
+           "count:k.numLayers||n,textIndex:i+1,textTotal:n,time:k.time,k,"
+           "effect:name=>param=>{const v=k[AE.name(name).toLowerCase()];"
+           "return v!==undefined?v:undefined}};\n"
+           // Keep latest evaluation for the Code tab inspector.
            "const keep=v=>{globalThis.__ae_last=v;const a=globalThis.__ae_at||"
            "(globalThis.__ae_at=new Map());a.set(Math.round(v.time*1000),v);"
            "if(a.size>3600)a.delete(a.keys().next().value)};\n"
-           "const run=value=>{c.value=value;try{const r=AE.run(__ae,c);"
-           "keep({on,time:k.time,value:r});return r}catch(e){"
-           "keep({on,time:k.time,error:String(e)});throw e}},"
+           "const run=(prop,value)=>{c.propertyName=prop;c.value=value;try{"
+           "const r=AE.run(__ae,c);keep({on:prop,time:k.time,value:r});return "
+           "r}"
+           "catch(e){keep({on:prop,time:k.time,error:String(e)});throw e}},"
            "one=r=>Array.isArray(r)?r[0]:r;\n"
-           "c.property=me[__ae_on||'position'];\n"
-           "let on=__ae_on;if(!on)on=Array.isArray(run([W/2+x/px,H/2-y/px]))?"
-           "'position':'rotation';c.property=me[on];\n"
-           "if(on==='position'){const r=run([W/2+x/px,H/2-y/px]);"
+           "let on=__ae_on;if(!on)on=Array.isArray(run('position',"
+           "[W/2+x/px,H/2-y/px]))?'position':'rotation';\n"
+           "if(on==='position'){const r=run('position',[W/2+x/px,H/2-y/px]);"
            "return{x:(r[0]-W/2)*px-x,y:(H/2-r[1])*px-y}}\n"
            "const ox=layerValue(k.id,'x',k.time,0,i)-x,"
            "oy=layerValue(k.id,'y',k.time,0,i)-y;\n"
-           "if(on==='rotation'){const d=-one(run(-turn))-turn,"
+           "if(on==='rotation'){const d=-one(run('rotation',-turn))-turn,"
            "a=d*Math.PI/180,co=Math.cos(a),si=Math.sin(a);"
            "return{rotate:d,x:ox*co-oy*si-ox,y:ox*si+oy*co-oy}}\n"
-           "if(on==='scale'){const r=run([100,100]),sx=r[0]/100,"
-           "sy=(r.length>1?r[1]:r[0])/100;"
-           "return{scale_x:sx,scale_y:sy,x:ox*(sx-1),y:oy*(sy-1)}}\n"
-           "if(on==='opacity')return{opacity:seen?one(run(100*seen))/"
+           "if(on==='scale'){const r=run('scale',[100*sx0,100*sy0]),"
+           "sx=(Array.isArray(r)?r[0]:r)/100,"
+           "sy=(Array.isArray(r)&&r.length>1?r[1]:Array.isArray(r)?r[0]:r)/100,"
+           "rx=sx0?sx/sx0:sx,ry=sy0?sy/sy0:sy;"
+           "return{scale_x:rx,scale_y:ry,x:ox*(rx-1),y:oy*(ry-1)}}\n"
+           "if(on==='opacity')return{opacity:seen?one(run('opacity',100*seen))/"
            "(100*seen):1};\n"
            "return{}}\n";
   }

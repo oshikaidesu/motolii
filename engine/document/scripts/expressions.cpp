@@ -243,12 +243,35 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
       for (const ScriptParameter::Turned& t : sc->parameters[i].turns)
         numbers[t.name] += (t.high - t.low) * (v - sc->parameters[i].usual);
     }
-    // Expose the text layer's string and split mode so per-letter expressions
-    // can apply character-class rules (e.g. Kanji / Hiragana / Katakana).
-    if (doc_word(d, layer, "kind") == "text") {
+    // Expose layer metadata & stage timing so scripts and AE expressions see
+    // real project FPS, BPM/beat, stacking index and layer identity.
+    const std::string kind = doc_word(d, layer, "kind");
+    words["kind"] = kind;
+    words["name"] = doc_word(d, layer, "name");
+    if (kind == "text") {
       words["text"] = doc_word(d, layer, "text");
       words["split"] = doc_word(d, layer, "split");
     }
+    const double raw_fps = doc_number(d, 0, "frame_rate", 0, 60.0);
+    const double fps = raw_fps > 0.0 ? raw_fps : 60.0;
+    const double bpm = doc_number(d, 0, "bpm", said, 0.0);
+    const double bpm_from = doc_number(d, 0, "bpm_from", 0, 0.0);
+    const std::vector<int> laid = doc_laid(d);
+    int stack_index = 0;
+    for (size_t idx = 0; idx < laid.size(); ++idx)
+      if (laid[idx] == layer) {
+        stack_index = (int)idx + 1;
+        break;
+      }
+    numbers["fps"] = fps;
+    numbers["frame"] = said * fps;
+    numbers["bpm"] = bpm;
+    numbers["bpm_from"] = bpm_from;
+    numbers["beat"] = bpm > 0.0 ? (said - bpm_from) * bpm / 60.0 : 0.0;
+    numbers["start"] = doc_literal(d, layer, "start", 0, 0);
+    numbers["parent"] = doc_number(d, layer, "parent", 0, 0);
+    numbers["index"] = (double)stack_index;
+    numbers["numLayers"] = (double)laid.size();
     // How long the layer lasts. An Out ends it earlier, hence `gone`.
     numbers["duration"] =
         doc_literal(d, layer, "duration", 0, -1) +

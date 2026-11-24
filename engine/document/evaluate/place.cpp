@@ -29,6 +29,8 @@ math::double3 doc_position(Doc& d, int layer, double at) {
 }
 
 double doc_stage_pixel(Doc& d, int layer, double at) {
+  if (!d.stage || !d.stage->camera)
+    return 2.0 / std::max(1.0, doc_comp_high(d));
   return (double)d.stage->h /
          std::max(1.0, doc_comp_high(d) * doc_point(d, layer, at));
 }

@@ -68,8 +68,12 @@ void run_cavalry_whole(JSContext* cx, JSRuntime* rt, const std::string& src,
     JS_SetPropertyStr(cx, g, name.c_str(), JS_NewFloat64(cx, v));
   for (const auto& [name, w] : words)
     JS_SetPropertyStr(cx, g, name.c_str(), JS_NewString(cx, w.c_str()));
+  const auto fps_it = numbers.find("fps");
+  const double fps =
+      fps_it != numbers.end() && fps_it->second > 0.0 ? fps_it->second : 60.0;
   JS_SetPropertyStr(cx, g, "time", JS_NewFloat64(cx, t)),
-      JS_SetPropertyStr(cx, g, "frame", JS_NewFloat64(cx, t * 60.0));
+      JS_SetPropertyStr(cx, g, "frame", JS_NewFloat64(cx, t * fps));
+  JS_SetPropertyStr(cx, g, "__hostT", JS_NewFloat64(cx, t));
   JS_FreeValue(cx, g);
   JSValue out =
       JS_Eval(cx, src.c_str(), src.size(), file.c_str(), JS_EVAL_TYPE_GLOBAL);
