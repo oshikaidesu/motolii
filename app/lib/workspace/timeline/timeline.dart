@@ -52,6 +52,20 @@ class _TimelinePaneState extends State<TimelinePane>
     vsync: this,
     duration: const Duration(milliseconds: 120),
   )..addListener(_zoomStep);
+  // AbsentMotion reorder timings: 100ms lift, 120ms sibling slide, 150ms drop settle.
+  late final _liftAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 100),
+  )..addListener(_liftStep);
+  late final _shiftAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 120),
+  )..addListener(_shiftStep);
+  late final _dropAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 150),
+  )..addListener(_dropStep);
+  VoidCallback? _onDropDone;
   double _zoomFrom = 1, _zoomTo = 1;
   int _zoomAnchor = 0;
   @override
@@ -106,6 +120,17 @@ class _TimelinePaneState extends State<TimelinePane>
     // only media and slip still need a widget rebuild (they feed the row data that the painters draw).
     media.addListener(_rebuild);
     _slip.addListener(_rebuild);
+    rows.onLiftStart = () => _liftAnim.forward(from: 0);
+    rows.onShiftChanged = () => _shiftAnim.forward(from: 0);
+    rows.onDropSettle = (done) {
+      _liftAnim.stop();
+      _onDropDone = done;
+      _dropAnim.forward(from: 0).whenCompleteOrCancel(() {
+        final cb = _onDropDone;
+        _onDropDone = null;
+        cb?.call();
+      });
+    };
     HardwareKeyboard.instance.addHandler(_escapeKey);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     listenForRequests();
@@ -132,9 +157,13 @@ class _TimelinePaneState extends State<TimelinePane>
     workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
     _ticker.dispose();
     _zoomAnim.dispose();
+    _liftAnim.dispose();
+    _shiftAnim.dispose();
+    _dropAnim.dispose();
     viewport.dispose();
     media.dispose();
     ruler.dispose();
+    rows.dispose();
     _slip.dispose();
     drag.dispose();
     _focus.dispose();
@@ -193,8 +222,11 @@ class _TimelinePaneState extends State<TimelinePane>
   bool _escapeKey(KeyEvent e) {
     if (e is KeyDownEvent && e.logicalKey == LogicalKeyboardKey.escape) {
       final had =
-          (workspace?.live.isOpen ?? false) || drag.selectionBox != null;
+          (workspace?.live.isOpen ?? false) ||
+          drag.selectionBox != null ||
+          rows.isReordering;
       ruler.cancel();
+      rows.reorderCancel();
       drag.up(keep: false);
       return had;
     }
@@ -213,6 +245,15 @@ class _TimelinePaneState extends State<TimelinePane>
     _zoomAnchor = anchor ?? workspace!.frame;
     _zoomAnim.forward(from: 0);
   }
+
+  void _liftStep() =>
+      rows.setLiftProgress(Curves.easeOutCubic.transform(_liftAnim.value));
+
+  void _shiftStep() =>
+      rows.setShiftProgress(Curves.easeOutCubic.transform(_shiftAnim.value));
+
+  void _dropStep() =>
+      rows.setDropProgress(Curves.easeOutCubic.transform(_dropAnim.value));
 
   void _zoomStep() {
     final t = Curves.easeOut.transform(_zoomAnim.value);
@@ -317,9 +358,9 @@ class _TimelinePaneState extends State<TimelinePane>
                       width: _labelWidth,
                       child: Stack(
                         children: [
-                          // The labels scroll with the rows via viewport, without rebuilding the whole timeline.
+                          // The labels scroll with the rows via viewport and animate reorder lifts via rows.
                           ListenableBuilder(
-                            listenable: viewport,
+                            listenable: Listenable.merge([viewport, rows]),
                             builder: (_, _) => labels(ws, drawn),
                           ),
                           // The resize handle overlays the header's right edge (its empty padding), so dragging it

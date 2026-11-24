@@ -15,6 +15,7 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/track_drag.dart';
@@ -122,14 +123,16 @@ class TimelineTracksPainter extends CustomPainter {
     required this.viewport,
     required this.fps,
     required this.drag,
+    this.rowsState,
     this.tempo,
   }) : view = viewport.view,
        vscroll = viewport.verticalScroll,
        restAt = drag.snappedAt,
-       super(repaint: Listenable.merge([viewport, drag]));
+       super(repaint: Listenable.merge([viewport, drag, ?rowsState]));
   final List<TimelineRow> rows;
   final TimelineViewport viewport;
   final TrackDrag drag;
+  final TimelineRows? rowsState;
   final Beats? tempo;
   final TimelineView view;
   final int fps;
@@ -177,10 +180,55 @@ class TimelineTracksPainter extends CustomPainter {
       fine: Grey.g15.withValues(alpha: 0.45),
       beats: tempo,
     );
+    final dragRow = rowsState?.draggingRowIndex;
     for (var i = 0; i < rows.length; i++) {
-      final top = i * TimelineMetrics.row - vscroll;
+      if (i == dragRow) continue;
+      final offset = rowsState?.animatedRowOffset(i) ?? 0;
+      final top = i * TimelineMetrics.row - vscroll + offset;
       if (top > s.height || top + TimelineMetrics.row < 0) continue;
       _row(c, s, rows[i], top + TimelineMetrics.row / 2 - .5);
+    }
+    if (rowsState case final rs? when rs.isReordering) {
+      final lift = rs.liftAmount;
+      if (lift > 0) {
+        c.drawRect(
+          Offset.zero & s,
+          p..color = WindowTokens.body.withValues(alpha: 0.42 * lift),
+        );
+      }
+      if (dragRow != null && dragRow < rows.length) {
+        final top = dragRow * TimelineMetrics.row - vscroll + rs.dragOffsetY;
+        final cy = top + TimelineMetrics.row / 2;
+        final grow = 1.0 + 0.015 * lift;
+        c.save();
+        c.translate(s.width / 2, cy);
+        c.scale(grow, grow);
+        c.translate(-s.width / 2, -cy);
+        if (lift > 0) {
+          // AbsentMotion-style soft multi-step lift shadow + solid row backing (zero borders/lines).
+          for (var step = 1; step <= 4; step++) {
+            final spread = step * 2.5;
+            c.drawRect(
+              Rect.fromLTWH(
+                -spread,
+                top - spread + 2.5,
+                s.width + spread * 2,
+                TimelineMetrics.row + spread * 2,
+              ),
+              p..color = Grey.g00.withValues(alpha: 0.11 * lift),
+            );
+          }
+          c.drawRect(
+            Rect.fromLTWH(0, top, s.width, TimelineMetrics.row),
+            p
+              ..color = Forms.worn
+                  .trackBand(dragRow, rows[dragRow].selected)
+                  .withValues(alpha: lift),
+          );
+        }
+        _row(c, s, rows[dragRow], top + TimelineMetrics.row / 2 - .5);
+        c.restore();
+      }
     }
     if (restAt case final t?) {
       final sx = view.x(t.frame).roundToDouble();

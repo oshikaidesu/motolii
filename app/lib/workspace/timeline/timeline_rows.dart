@@ -1,6 +1,7 @@
 // The timeline's rows: the order they are laid out in, what each one shows, and the drag that reorders them.
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show ChangeNotifier, VoidCallback;
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/media/timeline_service.dart'
@@ -18,7 +19,7 @@ import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 /// The timeline's rows as they are laid out: each layer's own row, then, while it is expanded, a row naming each of
 /// its targets and a lane for each of its animated properties.
 /// The lanes follow Ableton's automation lanes, where every automated envelope has its own lane.
-class TimelineRows {
+class TimelineRows extends ChangeNotifier {
   /// The rows of the workspace that `workspaceOf` returns, placed by `viewport`, showing what `media` and `slip`
   /// have read of each layer's file.
   TimelineRows({
@@ -43,6 +44,153 @@ class TimelineRows {
   List<({int layer, String? value, (String, int)? aim})> _order = const [];
 
   double _lift = 0; // how far a label row has been carried up or down
+  int? _draggingLayerId;
+  int? _draggingRowIndex;
+  int _lastDelta = 0;
+  double _liftAmount = 0;
+  double _shiftProgress = 1;
+  Map<int, double> _fromOffsets = const {};
+  double? _settleFrom;
+  double? _settleTo;
+  double _settleStartLift = 1;
+  double _settleProgress = 0;
+
+  /// Animation hooks driven by the timeline's State (AbsentMotion lift/slide/drop timings).
+  VoidCallback? onLiftStart;
+  VoidCallback? onShiftChanged;
+  void Function(VoidCallback done)? onDropSettle;
+
+  /// Whether a layer row is currently lifted or settling into its drop slot.
+  bool get isReordering => _draggingLayerId != null;
+
+  /// Whether the dragged row is currently playing its drop-settle animation.
+  bool get isSettling => _settleFrom != null;
+
+  /// The layer currently being drag-reordered vertically, or null when idle.
+  int? get draggingLayerId => _draggingLayerId;
+
+  /// The index in [order] of the layer row being drag-reordered, or null when idle.
+  int? get draggingRowIndex => _draggingRowIndex;
+
+  /// Lift progress (0..1) controlling row elevation, scale, shadow, and background dim.
+  double get liftAmount => _liftAmount;
+
+  /// Updates lift progress (0..1) during drag pickup.
+  void setLiftProgress(double t) {
+    if (_draggingLayerId == null || isSettling) return;
+    _liftAmount = t.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+
+  /// Advances the sibling-row slide animation (0..1).
+  void setShiftProgress(double t) {
+    if (_draggingLayerId == null) return;
+    _shiftProgress = t.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+
+  /// Advances the drop-settle animation (0..1), lowering the row cleanly into its slot.
+  void setDropProgress(double t) {
+    if (!isSettling) return;
+    _settleProgress = t.clamp(0.0, 1.0);
+    _liftAmount = _settleStartLift * (1.0 - _settleProgress);
+    notifyListeners();
+  }
+
+  /// Live vertical offset in pixels for the lifted row (clamped, or eased during drop-settle).
+  double get dragOffsetY {
+    final row = _draggingRowIndex;
+    if (row == null || _order.isEmpty) return 0;
+    if (_settleFrom != null && _settleTo != null) {
+      return _settleFrom! + (_settleTo! - _settleFrom!) * _settleProgress;
+    }
+    final minLift = -row * TimelineMetrics.row;
+    final maxLift = (_order.length - 1 - row) * TimelineMetrics.row;
+    return _lift.clamp(minLift, maxLift);
+  }
+
+  List<int> _visibleLayerRows() => [
+    for (var i = 0; i < _order.length; i++)
+      if (_order[i].value == null) i,
+  ];
+
+  /// Signed count of visible layers the dragged row would move past if released now.
+  int get dragDeltaLayers {
+    final row = _draggingRowIndex;
+    if (row == null || _order.isEmpty) return 0;
+    if (isSettling) return _lastDelta;
+    final layerRows = _visibleLayerRows();
+    final at = layerRows.indexOf(row);
+    if (at < 0) return 0;
+    final offset = dragOffsetY;
+    if (offset > 0) {
+      final bottomEdge = (row + 1) * TimelineMetrics.row + offset;
+      var passed = 0;
+      for (var k = at + 1; k < layerRows.length; k++) {
+        if (bottomEdge > (layerRows[k] + 0.5) * TimelineMetrics.row) {
+          passed++;
+        } else {
+          break;
+        }
+      }
+      return passed;
+    }
+    if (offset < 0) {
+      final topEdge = row * TimelineMetrics.row + offset;
+      var passed = 0;
+      for (var k = at - 1; k >= 0; k--) {
+        if (topEdge < (layerRows[k] + 0.5) * TimelineMetrics.row) {
+          passed--;
+        } else {
+          break;
+        }
+      }
+      return passed;
+    }
+    return 0;
+  }
+
+  int _targetBoundaryRow(int dragRow, int by) {
+    final layerRows = _visibleLayerRows();
+    final at = layerRows.indexOf(dragRow);
+    if (at < 0) return dragRow;
+    final target = (at + by).clamp(0, layerRows.length - 1);
+    if (by < 0) return layerRows[target];
+    return target + 1 < layerRows.length
+        ? layerRows[target + 1]
+        : _order.length;
+  }
+
+  /// Target vertical displacement in pixels for row [rowIndex] while dragging.
+  double rowVisualOffset(int rowIndex) {
+    final dragRow = _draggingRowIndex;
+    if (dragRow == null || _order.isEmpty) return 0;
+    if (rowIndex == dragRow) return dragOffsetY;
+    final by = dragDeltaLayers;
+    if (by == 0) return 0;
+    final boundary = _targetBoundaryRow(dragRow, by);
+    if (by < 0) {
+      if (rowIndex >= boundary && rowIndex < dragRow) {
+        return TimelineMetrics.row;
+      }
+    } else {
+      final dragLayer = _order[dragRow].layer;
+      if (rowIndex > dragRow &&
+          rowIndex < boundary &&
+          _order[rowIndex].layer != dragLayer) {
+        return -TimelineMetrics.row;
+      }
+    }
+    return 0;
+  }
+
+  /// Eased vertical displacement for row [rowIndex], shared by tracks and labels.
+  double animatedRowOffset(int rowIndex) {
+    final target = rowVisualOffset(rowIndex);
+    if (rowIndex == _draggingRowIndex || _shiftProgress >= 1.0) return target;
+    final from = _fromOffsets[rowIndex] ?? 0.0;
+    return from + (target - from) * _shiftProgress;
+  }
 
   /// The lane for the property [name] of [l]: its keyframe times and values as the window last read them.
   TimelineRow laneRow(Layer l, String name) {
@@ -187,28 +335,117 @@ class TimelineRows {
     );
   }
 
-  /// A drag of a row's label up or down starts.
-  void reorderStart() => _lift = 0;
+  /// A drag of a row's label up or down starts, lifting the row in depth.
+  void reorderStart(Layer l, int rowIndex) {
+    if (isSettling) return;
+    _draggingLayerId = l.id;
+    _draggingRowIndex = rowIndex;
+    _lift = 0;
+    _lastDelta = 0;
+    _shiftProgress = 1;
+    _fromOffsets = const {};
+    _settleFrom = null;
+    _settleTo = null;
+    _settleProgress = 0;
+    if (onLiftStart != null) {
+      _liftAmount = 0;
+      onLiftStart!();
+    } else {
+      _liftAmount = 1;
+    }
+    notifyListeners();
+  }
 
   /// The label being dragged was carried [dy] pixels further down, or up when negative.
-  void reorderBy(double dy) => _lift += dy;
+  void reorderBy(double dy) {
+    if (_draggingLayerId == null || isSettling) return;
+    final prevOffsets = <int, double>{
+      for (var i = 0; i < _order.length; i++)
+        if (i != _draggingRowIndex) i: animatedRowOffset(i),
+    };
+    _lift += dy;
+    final nextDelta = dragDeltaLayers;
+    if (nextDelta != _lastDelta) {
+      _lastDelta = nextDelta;
+      _fromOffsets = prevOffsets;
+      if (onShiftChanged != null) {
+        _shiftProgress = 0;
+        onShiftChanged!();
+      } else {
+        _shiftProgress = 1;
+      }
+    }
+    notifyListeners();
+  }
 
-  /// The drag of the label of [l] ended: moves the layer forward or back by as many rows as it was dragged.
-  void reorderEnd(Layer l) {
-    final ws = workspace!;
-    final by = (_lift / TimelineMetrics.row).round();
+  void _finishReorder(Layer? commitLayer, int by) {
+    final ws = workspace;
+    _draggingLayerId = null;
+    _draggingRowIndex = null;
     _lift = 0;
-    if (by != 0) {
+    _lastDelta = 0;
+    _liftAmount = 0;
+    _shiftProgress = 1;
+    _fromOffsets = const {};
+    _settleFrom = null;
+    _settleTo = null;
+    _settleProgress = 0;
+    notifyListeners();
+    if (commitLayer != null &&
+        ws != null &&
+        timeline_service.isConnected(ws) &&
+        by != 0) {
       ws.after(
         timeline_service.reorderLayer(
           ws,
-          l.id,
-          (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble(),
+          commitLayer.id,
+          (by > 0 ? -1 : 1) * _places(ws, commitLayer, by).toDouble(),
         ),
       );
     }
   }
 
-  /// Escape pressed while dragging: cancel without reordering.
-  void reorderCancel() => _lift = 0;
+  double _landingOffset(int dragRow, int by) {
+    if (by == 0) return 0;
+    final boundary = _targetBoundaryRow(dragRow, by);
+    final slotRow = by < 0 ? boundary : math.max(0, boundary - 1);
+    return (slotRow - dragRow) * TimelineMetrics.row;
+  }
+
+  /// The drag of the label of [l] ended: settles the lifted row smoothly into its slot, then commits.
+  void reorderEnd(Layer l) {
+    final dragRow = _draggingRowIndex;
+    if (dragRow == null || isSettling) return;
+    final by = dragDeltaLayers;
+    _lastDelta = by;
+    if (onDropSettle != null) {
+      _settleFrom = dragOffsetY;
+      _settleTo = _landingOffset(dragRow, by);
+      _settleStartLift = _liftAmount;
+      _settleProgress = 0;
+      notifyListeners();
+      onDropSettle!(() => _finishReorder(l, by));
+    } else {
+      _finishReorder(l, by);
+    }
+  }
+
+  /// Escape pressed while dragging: settles back to the original slot without reordering.
+  void reorderCancel() {
+    final dragRow = _draggingRowIndex;
+    if (dragRow == null || isSettling) return;
+    if (onDropSettle != null) {
+      _lastDelta = 0;
+      _fromOffsets = const {};
+      _shiftProgress = 1;
+      _settleFrom = dragOffsetY;
+      _settleTo = 0;
+      _settleStartLift = _liftAmount;
+      _settleProgress = 0;
+      notifyListeners();
+      onDropSettle!(() => _finishReorder(null, 0));
+    } else {
+      _finishReorder(null, 0);
+    }
+  }
 }

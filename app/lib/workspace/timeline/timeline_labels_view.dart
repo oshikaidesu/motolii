@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
@@ -50,131 +51,187 @@ mixin TimelineLabelsView<T extends StatefulWidget>
               child: LayoutBuilder(
                 builder: (context, box) {
                   final top = viewport.clampVerticalScroll(drawn.length);
+                  final dragRow = rows.draggingRowIndex;
+                  final reordering = rows.isReordering;
+                  final lift = rows.liftAmount;
+                  const slideDuration = Duration(milliseconds: 120);
+
+                  Widget buildRow(int i) {
+                    final offset = rows.rowVisualOffset(i);
+                    final rowTop = i * TimelineMetrics.row - top + offset;
+                    final isDragged = i == dragRow;
+                    final dur = reordering && !isDragged
+                        ? slideDuration
+                        : Duration.zero;
+                    if (rows.order[i].aim case (final said, final other)?) {
+                      return AnimatedPositioned(
+                        key: ValueKey(
+                          'ws-tl-aim-${ws.layers[rows.order[i].layer].id}-$said-$other',
+                        ),
+                        duration: dur,
+                        curve: Curves.easeOutCubic,
+                        left: Shape.s(34),
+                        right: Shape.s(8),
+                        top: rowTop,
+                        height: TimelineMetrics.row,
+                        child: NakedButton(
+                          enableFeedback: false,
+                          mouseCursor: SystemMouseCursors.basic,
+                          // Pressing selects the target layer
+                          onPressed: () => ws.select(other),
+                          child: Row(
+                            children: [
+                              Text(
+                                said,
+                                maxLines: 1,
+                                style: TextStyles.label(Grey.g56),
+                              ),
+                              SizedBox(width: Shape.s(5)),
+                              Flexible(
+                                child: Text(
+                                  numbered(ws, other),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyles.label(Grey.g91),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    // A property lane shows the property name under its layer's name
+                    if (rows.order[i].value case final n?) {
+                      return AnimatedPositioned(
+                        key: ValueKey(
+                          'ws-tl-lane-${ws.layers[rows.order[i].layer].id}-$n',
+                        ),
+                        duration: dur,
+                        curve: Curves.easeOutCubic,
+                        left: Shape.s(34),
+                        right: Shape.s(8),
+                        top: rowTop,
+                        height: TimelineMetrics.row,
+                        // The lane shows the effect card's name, then the property's own label (for example Threshold, not js_am_rays_threshold).
+                        // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
+                        child: Row(
+                          children: [
+                            if (_lane(ws, i, n)?.card case final card?) ...[
+                              Flexible(
+                                child: Text(
+                                  card,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyles.label(Grey.g56),
+                                ),
+                              ),
+                              SizedBox(width: Shape.s(5)),
+                            ],
+                            Text(
+                              _lane(ws, i, n)?.label ?? n,
+                              maxLines: 1,
+                              style: TextStyles.label(Grey.g76),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    final l = ws.layers[rows.order[i].layer];
+                    Widget rowWidget = MouseRegion(
+                      cursor: isDragged
+                          ? SystemMouseCursors.grabbing
+                          : SystemMouseCursors.grab,
+                      child: GestureDetector(
+                        supportedDevices: pressingDevices,
+                        onDoubleTap: l.kind == LayerKind.group
+                            ? () => ws.isolateGroup(
+                                ws.isolatedGroup == l.id ? null : l.id,
+                              )
+                            : null,
+                        onSecondaryTapDown: (d) =>
+                            labelRight(l, d.globalPosition),
+                        // Count the whole drag from the pointer-down position.
+                        dragStartBehavior: DragStartBehavior.down,
+                        onVerticalDragStart: (_) => rows.reorderStart(l, i),
+                        onVerticalDragUpdate: (d) => rows.reorderBy(d.delta.dy),
+                        onVerticalDragEnd: (_) => rows.reorderEnd(l),
+                        onVerticalDragCancel: rows.reorderCancel,
+                        child: TimelineLabelRow(
+                          // The layer's number, not the row's: After Effects' # column counts layers only, not property lanes.
+                          index: rows.order[i].layer,
+                          depth: ws.depth(l),
+                          row: drawn[i],
+                          hidden: RowFlags(ws).isHidden(l.id),
+                          solo: RowFlags(ws).isSolo(l.id),
+                          lanes: l.kind == LayerKind.group
+                              ? ws.groupOpen(l.id)
+                              : l.keys.isEmpty && l.links.isEmpty && !l.lined
+                              ? null
+                              : ws.lanesOpen(l.id),
+                          onLanes: () => l.kind == LayerKind.group
+                              ? ws.turnGroup(l.id)
+                              : ws.twirl([l.id]),
+                          // Shift takes the rows from the last one picked; Cmd adds or removes this layer.
+                          onSelect: () => clickLayer(
+                            ws,
+                            l.id,
+                            order: [for (final k in ws.layers) k.id],
+                          ),
+                          onEye: () => RowFlags(ws).toggleHidden(l.id),
+                          onSolo: () => RowFlags(ws).toggle('solo', l.id),
+                          onLock: () => RowFlags(ws).toggle('lock', l.id),
+                          clip: l.clipped,
+                          onClip: () => RowFlags(ws).toggleClipped(l.id),
+                        ),
+                      ),
+                    );
+                    if (isDragged && lift > 0) {
+                      // AbsentMotion-style depth lift: subtle scale + shadow, zero borders or drop lines.
+                      rowWidget = Transform.scale(
+                        scale: 1.0 + 0.015 * lift,
+                        alignment: Alignment.center,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Grey.g00.withValues(alpha: 0.55 * lift),
+                                blurRadius: 14 * lift,
+                                offset: Offset(0, 5 * lift),
+                              ),
+                            ],
+                          ),
+                          child: rowWidget,
+                        ),
+                      );
+                    }
+                    return AnimatedPositioned(
+                      key: ValueKey('ws-tl-label-${l.id}'),
+                      duration: dur,
+                      curve: Curves.easeOutCubic,
+                      left: 0,
+                      right: 0,
+                      top: rowTop,
+                      height: TimelineMetrics.row,
+                      child: rowWidget,
+                    );
+                  }
+
                   return Stack(
                     children: [
                       for (var i = 0; i < drawn.length; i++)
-                        if (rows.order[i].aim case (final said, final other)?)
-                          Positioned(
-                            key: ValueKey(
-                              'ws-tl-aim-${ws.layers[rows.order[i].layer].id}-$said-$other',
-                            ),
-                            left: Shape.s(34),
-                            right: Shape.s(8),
-                            top: i * TimelineMetrics.row - top,
-                            height: TimelineMetrics.row,
-                            child: NakedButton(
-                              enableFeedback: false,
-                              mouseCursor: SystemMouseCursors.basic,
-                              // Pressing selects the target layer
-                              onPressed: () => ws.select(other),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    said,
-                                    maxLines: 1,
-                                    style: TextStyles.label(Grey.g56),
-                                  ),
-                                  SizedBox(width: Shape.s(5)),
-                                  Flexible(
-                                    child: Text(
-                                      numbered(ws, other),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyles.label(Grey.g91),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        // A property lane shows the property name under its layer's name
-                        else if (rows.order[i].value case final n?)
-                          Positioned(
-                            key: ValueKey(
-                              'ws-tl-lane-${ws.layers[rows.order[i].layer].id}-$n',
-                            ),
-                            left: Shape.s(34),
-                            right: Shape.s(8),
-                            top: i * TimelineMetrics.row - top,
-                            height: TimelineMetrics.row,
-                            // The lane shows the effect card's name, then the property's own label (for example Threshold, not js_am_rays_threshold).
-                            // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
-                            child: Row(
-                              children: [
-                                if (_lane(ws, i, n)?.card case final card?) ...[
-                                  Flexible(
-                                    child: Text(
-                                      card,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyles.label(Grey.g56),
-                                    ),
-                                  ),
-                                  SizedBox(width: Shape.s(5)),
-                                ],
-                                Text(
-                                  _lane(ws, i, n)?.label ?? n,
-                                  maxLines: 1,
-                                  style: TextStyles.label(Grey.g76),
-                                ),
-                              ],
-                            ),
-                          )
-                        else if (ws.layers[rows.order[i].layer] case final l)
-                          Positioned(
-                            key: ValueKey('ws-tl-label-${l.id}'),
-                            left: 0,
-                            right: 0,
-                            top: i * TimelineMetrics.row - top,
-                            height: TimelineMetrics.row,
-                            // Dragging a row up or down moves the layer forward or back by as many rows as it was dragged.
-                            child: GestureDetector(
-                              supportedDevices: pressingDevices,
-                              onDoubleTap: l.kind == LayerKind.group
-                                  ? () => ws.isolateGroup(
-                                      ws.isolatedGroup == l.id ? null : l.id,
-                                    )
-                                  : null,
-                              onSecondaryTapDown: (d) =>
-                                  labelRight(l, d.globalPosition),
-                              // Count the whole drag from the pointer-down position.
-                              dragStartBehavior: DragStartBehavior.down,
-                              onVerticalDragStart: (_) => rows.reorderStart(),
-                              onVerticalDragUpdate: (d) =>
-                                  rows.reorderBy(d.delta.dy),
-                              onVerticalDragEnd: (_) => rows.reorderEnd(l),
-                              onVerticalDragCancel: rows.reorderCancel,
-                              child: TimelineLabelRow(
-                                // The layer's number, not the row's: After Effects' # column counts layers only, not property lanes.
-                                index: rows.order[i].layer,
-                                depth: ws.depth(l),
-                                row: drawn[i],
-                                hidden: RowFlags(ws).isHidden(l.id),
-                                solo: RowFlags(ws).isSolo(l.id),
-                                lanes: l.kind == LayerKind.group
-                                    ? ws.groupOpen(l.id)
-                                    : l.keys.isEmpty &&
-                                          l.links.isEmpty &&
-                                          !l.lined
-                                    ? null
-                                    : ws.lanesOpen(l.id),
-                                onLanes: () => l.kind == LayerKind.group
-                                    ? ws.turnGroup(l.id)
-                                    : ws.twirl([l.id]),
-                                // Shift takes the rows from the last one picked; Cmd adds or removes this layer.
-                                onSelect: () => clickLayer(
-                                  ws,
-                                  l.id,
-                                  order: [for (final k in ws.layers) k.id],
-                                ),
-                                onEye: () => RowFlags(ws).toggleHidden(l.id),
-                                onSolo: () => RowFlags(ws).toggle('solo', l.id),
-                                onLock: () => RowFlags(ws).toggle('lock', l.id),
-                                clip: l.clipped,
-                                onClip: () => RowFlags(ws).toggleClipped(l.id),
+                        if (i != dragRow) buildRow(i),
+                      if (reordering && lift > 0)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: ColoredBox(
+                              color: WindowTokens.body.withValues(
+                                alpha: 0.42 * lift,
                               ),
                             ),
                           ),
+                        ),
+                      if (dragRow != null && dragRow < drawn.length)
+                        buildRow(dragRow),
                       for (var i = 0; i < drawn.length; i++)
                         if (rows.order[i].value == null)
                           // The rename field is written over the label (Cmd+R).

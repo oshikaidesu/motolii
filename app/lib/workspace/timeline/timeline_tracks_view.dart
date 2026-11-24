@@ -129,6 +129,7 @@ mixin TimelineTracksView<T extends StatefulWidget>
                               viewport: viewport,
                               fps: WorkspaceController.fps,
                               drag: drag,
+                              rowsState: rows,
                               tempo: ws.beats,
                             ),
                           ),
