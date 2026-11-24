@@ -8,8 +8,10 @@ import 'package:motolii/workspace/stage/stage_desk.dart';
 import 'package:motolii/workspace/stage/stage_pointer.dart';
 
 import 'dart:async' show Timer;
+import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
@@ -46,6 +48,7 @@ class StageView extends StatefulWidget {
     required this.scene,
     required this.selected,
     required this.zoom,
+    this.zoomReset = 0,
     required this.grid,
     required this.safe,
     this.alpha = false,
@@ -67,6 +70,7 @@ class StageView extends StatefulWidget {
   final ArtScene scene;
   final int? selected;
   final int zoom;
+  final int zoomReset;
   final bool grid, safe, alpha;
 
   /// The pointer in composition px while it is over the viewport; the HUD and the rulers read it.
@@ -77,6 +81,7 @@ class StageView extends StatefulWidget {
 }
 
 class _StageViewState extends State<StageView>
+    with SingleTickerProviderStateMixin
     implements StageHandles, StageContext {
   @override
   WorkspaceController get workspace => WorkspaceScope.read(context);
@@ -100,7 +105,13 @@ class _StageViewState extends State<StageView>
   void _rebuild() => setState(() {});
 
   Offset _pan = Offset.zero;
+  double? _customScale;
+  double? _targetScale;
+  Offset? _zoomAnchor;
+  late final Ticker _zoomTicker;
+  Duration _lastTick = Duration.zero;
   int? _hover;
+  Offset? _hoverLocal;
   StageViewport?
   _shown; // The view as last laid out, so handle positions match the screen.
 
@@ -161,6 +172,12 @@ class _StageViewState extends State<StageView>
   int? _tapped;
   Timer? _tapWait;
   bool _enter(KeyEvent e) {
+    if (widget.tool.make == 'pen' &&
+        _draw.penLast != null &&
+        (e.logicalKey == LogicalKeyboardKey.shiftLeft ||
+            e.logicalKey == LogicalKeyboardKey.shiftRight)) {
+      setState(() {});
+    }
     if (e is! KeyDownEvent) return false;
     // Ignored while the user is typing text.
     if (primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() !=
@@ -176,10 +193,22 @@ class _StageViewState extends State<StageView>
         pointer.cancel();
         return true;
       }
+      if (widget.tool.make == 'pen' && _draw.penLast != null) {
+        _draw.endPenPath();
+        setState(() {});
+        return true;
+      }
       if (widget.tool.make == 'camera' && _camera.releaseIfLocked()) {
         return true;
       }
       return false;
+    }
+    if (e.logicalKey == LogicalKeyboardKey.enter &&
+        widget.tool.make == 'pen' &&
+        _draw.penLast != null) {
+      _draw.endPenPath();
+      setState(() {});
+      return true;
     }
     if (_cropping == null || e.logicalKey != LogicalKeyboardKey.enter) {
       return false;
@@ -191,6 +220,7 @@ class _StageViewState extends State<StageView>
   @override
   void initState() {
     super.initState();
+    _zoomTicker = createTicker(_onZoomTick);
     _drag = StageDrag(this)..addListener(_rebuild);
     _camera = CameraGestures(this, _drag)..addListener(_rebuild);
     _draw = DrawTools(this)..addListener(_rebuild);
@@ -216,7 +246,12 @@ class _StageViewState extends State<StageView>
   @override
   void didUpdateWidget(StageView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.zoom != widget.zoom) _pan = Offset.zero;
+    if (oldWidget.zoom != widget.zoom ||
+        oldWidget.zoomReset != widget.zoomReset) {
+      _stopZoomAnim();
+      _customScale = null;
+      _pan = Offset.zero;
+    }
     if (oldWidget.tool.make != widget.tool.make) {
       _draw.endPenPath(); // Another tool: the pen's next point starts a new shape.
     }
@@ -224,6 +259,7 @@ class _StageViewState extends State<StageView>
 
   @override
   void dispose() {
+    _zoomTicker.dispose();
     desk.release();
     _camera.dispose();
     _drag.dispose();
@@ -233,10 +269,74 @@ class _StageViewState extends State<StageView>
     super.dispose();
   }
 
+  void _stopZoomAnim() {
+    if (_zoomTicker.isActive) _zoomTicker.stop();
+    _targetScale = null;
+    _lastTick = Duration.zero;
+  }
+
+  void _applyZoom(StageViewport v, double nextScale, Offset anchor) {
+    final clamped = nextScale.clamp(.05, 16.0);
+    final nextPan = v.zoomPan(anchor, clamped);
+    final nextV = StageViewport.of(
+      Size(v.area.right, v.area.bottom),
+      composition: ArtGeometry.comp,
+      zoom: widget.zoom,
+      customScale: clamped,
+      pan: nextPan,
+      ruler: StageTokens.ruler,
+      margin: StageTokens.fitMargin,
+    );
+    setState(() {
+      _customScale = clamped;
+      _pan = nextV.clampPan(nextPan);
+    });
+  }
+
+  void _smoothZoomWheel(StageViewport v, Offset delta, Offset at) {
+    final cur = _targetScale ?? _customScale ?? v.scale;
+    _targetScale = (cur * math.exp(-delta.dy * .0024)).clamp(.05, 16.0);
+    _zoomAnchor = at;
+    _customScale ??= v.scale;
+    if (!_zoomTicker.isActive) {
+      _lastTick = Duration.zero;
+      _zoomTicker.start();
+    }
+  }
+
+  void _onZoomTick(Duration elapsed) {
+    final v = _shown, target = _targetScale, anchor = _zoomAnchor;
+    if (v == null || target == null || anchor == null) {
+      return _stopZoomAnim();
+    }
+    final dt = _lastTick == Duration.zero
+        ? .016
+        : ((elapsed - _lastTick).inMicroseconds / 1e6).clamp(.001, .05);
+    _lastTick = elapsed;
+    final cur = _customScale ?? v.scale;
+    final alpha = 1 - math.exp(-dt * 24.0);
+    final next = math.exp(
+      math.log(cur) + (math.log(target) - math.log(cur)) * alpha,
+    );
+    final done = (next - target).abs() / target < .0015;
+    _applyZoom(v, done ? target : next, anchor);
+    if (done) _stopZoomAnim();
+  }
+
+  void _pinchZoom(StageViewport v, double ratio, Offset at) {
+    if (widget.tool.make == 'camera') {
+      _camera.dollyPinch(ratio);
+      return;
+    }
+    _stopZoomAnim();
+    _applyZoom(v, v.scale * ratio, at);
+  }
+
   StageViewport _view(Size size) => StageViewport.of(
     size,
     composition: ArtGeometry.comp,
     zoom: widget.zoom,
+    customScale: _customScale,
     pan: _pan,
     ruler: StageTokens.ruler,
     margin: StageTokens.fitMargin,
@@ -258,10 +358,13 @@ class _StageViewState extends State<StageView>
     return p > 0 ? p : null;
   }
 
-  /// Pans by [by] (two-finger trackpad movement, or the wheel in the other direction) when zoomed in. At Fit there is nowhere to pan.
+  /// Pans by [by] (two-finger trackpad movement). Smoothly detaches from Fit if panned.
   void _panBy(Offset by, StageViewport v) {
-    if (widget.zoom == 0) return;
-    setState(() => _pan = v.clampPan(_pan + by));
+    _stopZoomAnim();
+    setState(() {
+      _customScale ??= v.scale;
+      _pan = v.clampPan(_pan + by);
+    });
   }
 
   final _menu = GlobalKey<ContextMenuState>();
@@ -281,6 +384,10 @@ class _StageViewState extends State<StageView>
           final lockedTarget = activeCam == null
               ? null
               : cameraTargetOf(wsNow, activeCam);
+          final inCamView =
+              widget.tool.make == 'camera' &&
+              activeCam != null &&
+              !wsNow.freeEye;
           // What the stage paints around and over the preview: the one painter, once for all of it or once for each side of the engine's image.
           ViewPainter painter(ViewPart part, {bool marked = false}) =>
               ViewPainter(
@@ -303,6 +410,10 @@ class _StageViewState extends State<StageView>
                 form: _formOf(),
                 crop: _cropOf(),
                 cameraTarget: lockedTarget,
+                cameraMode: widget.tool.make == 'camera' && activeCam != null,
+                cameraOrbiting: _drag.held?.by == 'orbit',
+                cameraHover: inCamView ? _hover : null,
+                falloffRing: _drag.falloffRing,
               );
           desk.follow(
             WorkspaceScope.read(context),
@@ -311,25 +422,67 @@ class _StageViewState extends State<StageView>
             textured: widget.texture != null,
           );
           desk.pick(
-            scrubbing ? null : widget.selected,
-            scrubbing ? null : _hover,
+            scrubbing || inCamView ? null : widget.selected,
+            scrubbing || inCamView ? null : _hover,
           );
+          final stageCursor = widget.tool.make == 'camera'
+              ? (_drag.held != null
+                    ? SystemMouseCursors.grabbing
+                    : (inCamView && _hover != null && _hover != activeCam
+                          ? SystemMouseCursors.click
+                          : SystemMouseCursors.grab))
+              : (widget.tool.make == 'pen' || widget.tool.make == 'brush'
+                    ? SystemMouseCursors.precise
+                    : MouseCursor.defer);
           return ContextMenu(
             key: _menu,
             child: TwoFingerGestures(
-              onWheel: (d) => widget.tool.make == 'camera'
-                  ? _camera.dolly(d.dy)
-                  : _panBy(-d, v),
-              onPan: (by, _) => _panBy(by, v),
+              onWheelAt: (d, at) {
+                if (_drag.held?.by == 'point') {
+                  _drag.adjustPointFalloff(v, d.dy, pointer.last ?? at);
+                } else if (widget.tool.make == 'camera') {
+                  _camera.dolly(d.dy);
+                } else {
+                  _smoothZoomWheel(v, d, at);
+                }
+              },
+              onPinch: (ratio, at) => _pinchZoom(v, ratio, at),
+              onPan: (by, at) {
+                final k = HardwareKeyboard.instance;
+                if (k.isAltPressed || k.isMetaPressed) {
+                  if (widget.tool.make == 'camera') {
+                    _camera.dolly(-by.dy);
+                  } else {
+                    _smoothZoomWheel(v, Offset(0, -by.dy), at);
+                  }
+                } else {
+                  _panBy(by, v);
+                }
+              },
               child: MouseRegion(
+                cursor: stageCursor,
                 onHover: (e) {
                   widget.cursor.value = v.toComposition(e.localPosition);
                   final h = _hitLocal(v, e.localPosition);
-                  if (h != _hover) setState(() => _hover = h);
+                  final penLive =
+                      widget.tool.make == 'pen' && _draw.penLast != null;
+                  if (h != _hover || penLive) {
+                    setState(() {
+                      _hover = h;
+                      _hoverLocal = e.localPosition;
+                    });
+                  } else {
+                    _hoverLocal = e.localPosition;
+                  }
                 },
                 onExit: (_) {
                   widget.cursor.value = null;
-                  if (_hover != null) setState(() => _hover = null);
+                  if (_hover != null || _hoverLocal != null) {
+                    setState(() {
+                      _hover = null;
+                      _hoverLocal = null;
+                    });
+                  }
                 },
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -362,16 +515,7 @@ class _StageViewState extends State<StageView>
                     if (widget.tool.make == 'camera') {
                       final ws = WorkspaceScope.read(context);
                       if (stageConnected(ws) && !ws.hasCamera) {
-                        stageBeginUndoStep(ws);
-                        var made = 0;
-                        ws.after(
-                          stageAddLayer(ws, name: 'camera', word: 'camera'),
-                          null,
-                          (t) => made = t,
-                        );
-                        ws.after(stageEndUndoStep(ws), (done, _) {
-                          if (done && made > 0) ws.select(made);
-                        });
+                        ensureCameraLayer(ws);
                         return;
                       }
                       _camera.tapLayer(_hitLocal(v, d.localPosition));
@@ -487,7 +631,9 @@ class _StageViewState extends State<StageView>
                         ),
                       ?stageDrawPreview(
                         draw: _draw,
+                        view: v,
                         last: pointer.last,
+                        hover: _hoverLocal,
                         make: widget.tool.make,
                       ),
                       ?stageHeldSays(drag: _drag, last: pointer.last),
@@ -516,7 +662,7 @@ class _StageViewState extends State<StageView>
                         bottom: StageTokens.pad,
                         child: Hud(scale: v.scale, cursor: widget.cursor),
                       ),
-                      if (widget.zoom != 0 &&
+                      if ((_customScale != null || widget.zoom != 0) &&
                           box.maxWidth > 360 &&
                           box.maxHeight > 220)
                         Positioned(

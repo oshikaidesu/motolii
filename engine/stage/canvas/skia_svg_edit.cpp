@@ -62,54 +62,141 @@ int sk_svg_ends(const char* data, float& fx, float& fy, int& stretches) {
 // anchor move too, as in a pen tool. Returns false if `nth` is out of range.
 bool sk_svg_move(const char* data, int nth, float dx, float dy,
                  std::string& out, float falloff) {
-  std::vector<float> xy;
-  const int anchorCount = sk_svg_anchors(data, xy);
-  if (nth < 0 || nth >= anchorCount) return false;
-  const SkPoint was{xy[2 * nth], xy[2 * nth + 1]}, by{dx, dy};
-  // Compute influence radius from the path's bounding diagonal so falloff feels
-  // consistent regardless of shape size (Blender Proportional Editing smooth
-  // cosine curve: w = 0.5 * (1 + cos(pi * d / R))).
-  float radius = 0.f;
-  if (falloff > 1e-4f && anchorCount > 2) {
-    float minX = xy[0], maxX = xy[0], minY = xy[1], maxY = xy[1];
-    for (int i = 1; i < anchorCount; ++i) {
-      minX = std::min(minX, xy[2 * i]), maxX = std::max(maxX, xy[2 * i]);
-      minY = std::min(minY, xy[2 * i + 1]), maxY = std::max(maxY, xy[2 * i + 1]);
-    }
-    const float diag = std::hypot(maxX - minX, maxY - minY);
-    radius = std::clamp(falloff, 0.f, 1.f) * std::max(diag, 1e-3f);
-  }
-  const auto weight_at = [&](SkPoint p) -> float {
-    const float d = SkPoint::Distance(p, was);
-    if (d < 1e-4f) return 1.f;
-    if (radius <= 1e-4f || d >= radius) return 0.f;
-    return 0.5f * (1.f + std::cos(3.14159265358979323846f * d / radius));
+  const std::optional<SkPath> parsed = SkParsePath::FromSVGString(data);
+  if (!parsed) return false;
+  struct Seg {
+    SkPathVerb verb;
+    std::vector<SkPoint> pts;
+    float conicW = 1.f;
+    int anchorIdx = -1;
+    int contour = -1;
   };
-  SkPathBuilder b;
-  // Weight of the anchor that started the current segment (moves its outgoing handle).
-  float prevW = 0.f;
-  // The iterator reads from this path, so it must stay alive while iterating.
-  const SkPath path = *SkParsePath::FromSVGString(data);
-  SkPathIter it = path.iter();
+  struct Contour {
+    int start = 0;
+    int end = 0;
+    bool closed = false;
+    float totalLen = 0.f;
+  };
+  std::vector<Seg> segs;
+  std::vector<SkPoint> anchors;
+  std::vector<int> anchorContour;
+  std::vector<Contour> contours;
+  SkPathIter it = parsed->iter();
   while (const std::optional<SkPathIter::Rec> r = it.next()) {
-    std::vector<SkPoint> p(r->fPoints.begin(), r->fPoints.end());
-    const float curW =
-        r->fVerb != SkPathVerb::kClose ? weight_at(p.back()) : 0.f;
-    if (r->fVerb == SkPathVerb::kCubic) {
-      if (prevW > 0.f) p[1] += SkPoint{by.fX * prevW, by.fY * prevW};
-      if (curW > 0.f) {
-        p[2] += SkPoint{by.fX * curW, by.fY * curW};
-        p[3] += SkPoint{by.fX * curW, by.fY * curW};
+    Seg s{r->fVerb,
+          std::vector<SkPoint>(r->fPoints.begin(), r->fPoints.end()),
+          r->fVerb == SkPathVerb::kConic ? r->conicWeight() : 1.f,
+          -1,
+          contours.empty() ? -1 : (int)contours.size() - 1};
+    if (r->fVerb == SkPathVerb::kMove) {
+      const int idx = (int)anchors.size();
+      contours.push_back({idx, idx, false, 0.f});
+      s.contour = (int)contours.size() - 1;
+      s.anchorIdx = idx;
+      anchors.push_back(s.pts.back());
+      anchorContour.push_back(s.contour);
+    } else if (r->fVerb == SkPathVerb::kClose) {
+      if (!contours.empty()) contours.back().closed = true;
+    } else {
+      const int idx = (int)anchors.size();
+      if (!contours.empty()) contours.back().end = idx;
+      s.anchorIdx = idx;
+      anchors.push_back(s.pts.back());
+      anchorContour.push_back(s.contour);
+    }
+    segs.push_back(std::move(s));
+  }
+  const int anchorCount = (int)anchors.size();
+  if (nth < 0 || nth >= anchorCount) return false;
+  const SkPoint was = anchors[nth], by{dx, dy};
+
+  // Connected (geodesic) arc-length falloff along each contour so dragging a
+  // joint bends neighboring segments without pulling opposite unrelated edges.
+  std::vector<float> cum(anchorCount, 0.f);
+  for (Contour& c : contours) {
+    if (c.end > c.start &&
+        SkPoint::Distance(anchors[c.start], anchors[c.end]) < 1e-3f) {
+      c.closed = true;
+    }
+    for (int i = c.start + 1; i <= c.end; ++i) {
+      cum[i] = cum[i - 1] + SkPoint::Distance(anchors[i - 1], anchors[i]);
+    }
+    c.totalLen = cum[c.end];
+    if (c.closed && c.end > c.start) {
+      c.totalLen += SkPoint::Distance(anchors[c.end], anchors[c.start]);
+    }
+  }
+  std::vector<int> grabbed;
+  for (int i = 0; i < anchorCount; ++i) {
+    if (SkPoint::Distance(anchors[i], was) < 1e-4f) grabbed.push_back(i);
+  }
+  const float kFalloff = std::clamp(falloff, 0.f, 1.f);
+  std::vector<float> weights(anchorCount, 0.f);
+  for (int i = 0; i < anchorCount; ++i) {
+    if (SkPoint::Distance(anchors[i], was) < 1e-4f) {
+      weights[i] = 1.f;
+      continue;
+    }
+    if (kFalloff <= 1e-4f || anchorCount <= 2) continue;
+    const int ci = anchorContour[i];
+    if (ci < 0) continue;
+    const Contour& c = contours[ci];
+    const float radius = kFalloff * std::max(c.totalLen * 0.5f, 1e-3f);
+    float bestD = radius;
+    for (int g : grabbed) {
+      if (anchorContour[g] != ci) continue;
+      float d = std::fabs(cum[i] - cum[g]);
+      if (c.closed && c.totalLen > 1e-4f) d = std::min(d, c.totalLen - d);
+      bestD = std::min(bestD, d);
+    }
+    if (bestD < radius) {
+      weights[i] =
+          0.5f * (1.f + std::cos(3.14159265358979323846f * bestD / radius));
+    }
+  }
+
+  const auto rotateVec = [](SkPoint v, float angle) -> SkPoint {
+    const float cs = std::cos(angle), sn = std::sin(angle);
+    return {v.fX * cs - v.fY * sn, v.fX * sn + v.fY * cs};
+  };
+
+  SkPathBuilder b;
+  float prevW = 0.f;
+  for (const Seg& seg : segs) {
+    std::vector<SkPoint> p = seg.pts;
+    const float curW = seg.anchorIdx >= 0 ? weights[seg.anchorIdx] : 0.f;
+    if (seg.verb == SkPathVerb::kCubic) {
+      const SkPoint startOld = p[0], endOld = p[3];
+      const SkPoint startNew = startOld + SkPoint{by.fX * prevW, by.fY * prevW};
+      const SkPoint endNew = endOld + SkPoint{by.fX * curW, by.fY * curW};
+      SkPoint h1 = p[1] + SkPoint{by.fX * prevW, by.fY * prevW};
+      SkPoint h2 = p[2] + SkPoint{by.fX * curW, by.fY * curW};
+      // Gently rotate adjacent Bezier handles with the chord bend so curves
+      // flex like a joint instead of shearing flat when falloff is active.
+      if (kFalloff > 1e-4f && std::fabs(prevW - curW) > 1e-4f) {
+        const SkPoint oldC = endOld - startOld, newC = endNew - startNew;
+        if (oldC.length() > 1e-3f && newC.length() > 1e-3f) {
+          const float cross = oldC.fX * newC.fY - oldC.fY * newC.fX;
+          const float dot = oldC.fX * newC.fX + oldC.fY * newC.fY;
+          const float dTheta = std::atan2(cross, dot) * 0.55f;
+          const float bendW = std::max(prevW, curW);
+          h1 = startNew + rotateVec(h1 - startNew, dTheta * bendW);
+          h2 = endNew + rotateVec(h2 - endNew, dTheta * bendW);
+        }
       }
-    } else if (r->fVerb == SkPathVerb::kQuad || r->fVerb == SkPathVerb::kConic) {
+      p[1] = h1;
+      p[2] = h2;
+      p[3] = endNew;
+    } else if (seg.verb == SkPathVerb::kQuad ||
+               seg.verb == SkPathVerb::kConic) {
       const float hw = 0.5f * (prevW + curW);
       if (hw > 0.f) p[1] += SkPoint{by.fX * hw, by.fY * hw};
       if (curW > 0.f) p[2] += SkPoint{by.fX * curW, by.fY * curW};
-    } else if (r->fVerb != SkPathVerb::kClose && curW > 0.f) {
+    } else if (seg.verb != SkPathVerb::kClose && curW > 0.f) {
       p.back() += SkPoint{by.fX * curW, by.fY * curW};
     }
-    prevW = curW;
-    switch (r->fVerb) {
+    if (seg.verb != SkPathVerb::kClose) prevW = curW;
+    switch (seg.verb) {
       case SkPathVerb::kMove:
         b.moveTo(p[0]);
         break;
@@ -120,7 +207,7 @@ bool sk_svg_move(const char* data, int nth, float dx, float dy,
         b.quadTo(p[1], p[2]);
         break;
       case SkPathVerb::kConic:
-        b.conicTo(p[1], p[2], r->conicWeight());
+        b.conicTo(p[1], p[2], seg.conicW);
         break;
       case SkPathVerb::kCubic:
         b.cubicTo(p[1], p[2], p[3]);

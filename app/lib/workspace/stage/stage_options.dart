@@ -15,7 +15,8 @@ import 'package:motolii/workspace/stage/camera_gestures.dart'
         cameraAlignToView,
         cameraReleaseTarget,
         cameraResetTilt,
-        cameraTargetOf;
+        cameraTargetOf,
+        ensureCameraLayer;
 import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/stroke_smooth.dart'
     show strokeSmoothLabels;
@@ -158,30 +159,16 @@ class OptionsStrip extends StatelessWidget {
     );
   }
 
-  List<Widget> _cameraStrip(WorkspaceController ws) {
+  List<Widget> _cameraStrip(BuildContext c, WorkspaceController ws) {
     final cam = stageCameraLayer(ws, ws.selected);
     if (cam == null) {
       return [
         Chip(
           key: const ValueKey('ws-camera-add-chip'),
-          label: '+ Add Camera',
+          label: '+ Camera',
           look: ChipLook.flat(WindowTokens.accent),
-          onTap: !stageConnected(ws)
-              ? null
-              : () {
-                  stageBeginUndoStep(ws);
-                  var made = 0;
-                  ws.after(
-                    stageAddLayer(ws, name: 'camera', word: 'camera'),
-                    null,
-                    (t) => made = t,
-                  );
-                  ws.after(stageEndUndoStep(ws), (done, _) {
-                    if (done && made > 0) ws.select(made);
-                  });
-                },
+          onTap: !stageConnected(ws) ? null : () => ensureCameraLayer(ws),
         ),
-        const _Field('Stage', value: 'Click to place camera'),
       ];
     }
     final targetId = cameraTargetOf(ws, cam);
@@ -189,14 +176,15 @@ class OptionsStrip extends StatelessWidget {
         ? null
         : ws.layers.where((l) => l.id == targetId).firstOrNull;
     return [
-      if (targetLayer != null)
-        Chip(
-          label: 'Target: ${targetLayer.name} ×',
-          look: ChipLook.flat(WindowTokens.toneCamera),
-          onTap: () => cameraReleaseTarget(ws, cam),
-        )
-      else
-        const _Field('Target', value: 'Click layer'),
+      Forms.worn.segment(
+        c,
+        ChoiceSpec(
+          labels: const ['Camera', '3D'],
+          selected: ws.freeEye ? 1 : 0,
+          onSelect: (i) => ws.setOverview(i == 1),
+        ),
+      ),
+      if (!ws.freeEye) _seg(c, 'cam.drag', const ['Orbit', 'Pan']),
       if (ws.freeEye)
         Chip(
           key: const ValueKey('ws-camera-align-chip'),
@@ -205,13 +193,12 @@ class OptionsStrip extends StatelessWidget {
           onTap: () => cameraAlignToView(ws, cam),
         ),
       Chip(label: 'Flat 0°', onTap: () => cameraResetTilt(ws, cam)),
-      _Field(
-        'Drag',
-        value: ws.freeEye
-            ? 'View Orbit · Frame Pan/Scale/Roll'
-            : 'Orbit / Shift Pan',
-      ),
-      const _Field('Wheel', value: 'Distance'),
+      if (targetLayer != null)
+        Chip(
+          label: '${targetLayer.name} ×',
+          look: ChipLook.flat(WindowTokens.toneCamera),
+          onTap: () => cameraReleaseTarget(ws, cam),
+        ),
     ];
   }
 
@@ -257,8 +244,8 @@ class OptionsStrip extends StatelessWidget {
       const _Field('Smooth', value: ''),
       _seg(c, 'draw.smooth', strokeSmoothLabels, initial: 2),
     ],
-    // Camera tool strip: active Z-target status/release, tilt reset to flat Boxcam, and gesture hint.
-    7 => _cameraStrip(ws),
+    // Camera mode strip: direct controls only (view, orbit/pan, match view, flat reset, target).
+    7 => _cameraStrip(c, ws),
     6 => [
       _Field('Fill', swatch: p.fill ?? WindowTokens.body),
       _seg(c, 'brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),

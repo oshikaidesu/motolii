@@ -2,6 +2,7 @@
 // the numbers beside a held layer, and the brush's path so far. Each is a widget (or null) for the stage's stack; none changes anything.
 import 'dart:ui' show PointMode;
 
+import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
@@ -9,36 +10,64 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/stage/draw_tools.dart';
 import 'package:motolii/workspace/stage/ruler_painter.dart';
 import 'package:motolii/workspace/stage/stage_drag.dart';
+import 'package:motolii/workspace/stage/stage_viewport.dart';
 
 /// What the drawing tool in use shows from where the pointer went down to [last]; null when nothing is being drawn.
 Widget? stageDrawPreview({
   required DrawTools draw,
+  required StageViewport view,
   required Offset? last,
+  required Offset? hover,
   required String? make,
 }) {
   final from = draw.drawFrom;
+  final shift = HardwareKeyboard.instance.isShiftPressed;
+  // Rubber-band line from the last pen anchor to the cursor (45° snapped with Shift).
+  if (make == 'pen' && from == null && draw.penLast != null && hover != null) {
+    final prev = view.toScreen(draw.penLast!);
+    final next = draw.penTarget(view, hover);
+    return IgnorePointer(
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _PenRubberBand(prev, next, snapped: shift),
+      ),
+    );
+  }
   if (from == null || last == null) return null;
   // A scribble is drawn thin like the brush and becomes a path on release.
   if (make == 'pen' &&
       draw.penWay != null &&
       DrawTools.scribbled(draw.penWay!, from, last)) {
-    return IgnorePointer(child: CustomPaint(painter: BrushWay(draw.penWay!)));
+    final way = shift ? [from, snapAngle45(from, last)] : draw.penWay!;
+    return IgnorePointer(child: CustomPaint(painter: BrushWay(way)));
   }
   // The pen's handle being pulled out, drawn through its point both ways.
   if (make == 'pen') {
+    final anchor = draw.penTarget(view, from);
+    final rawEnd = anchor + (last - from);
+    final end = shift ? snapAngle45(anchor, rawEnd) : rawEnd;
     return IgnorePointer(
       child: CustomPaint(
         size: Size.infinite,
-        painter: PointsPainter([from], [(last, from), (from * 2 - last, from)]),
+        painter: PointsPainter(
+          [anchor],
+          [(end, anchor), (anchor * 2 - end, anchor)],
+        ),
       ),
     );
   }
-  // The box of the layer being drawn.
+  // The box of the layer being drawn (1:1 constrained with Shift).
+  final end = shift && (make == 'rect' || make == 'circle')
+      ? snapSquare(from, last)
+      : last;
   return Positioned.fromRect(
-    rect: Rect.fromPoints(from, last),
+    rect: Rect.fromPoints(from, end),
     child: IgnorePointer(
       child: DecoratedBox(
-        decoration: BoxDecoration(border: WindowTokens.chosen),
+        decoration: BoxDecoration(
+          border: WindowTokens.chosen,
+          borderRadius: make == 'circle' ? BorderRadius.circular(9999) : null,
+        ),
       ),
     ),
   );
@@ -92,4 +121,40 @@ class BrushWay extends CustomPainter {
   );
   @override
   bool shouldRepaint(BrushWay o) => true;
+}
+
+class _PenRubberBand extends CustomPainter {
+  const _PenRubberBand(this.from, this.to, {required this.snapped});
+  final Offset from, to;
+  final bool snapped;
+  @override
+  void paint(Canvas c, Size s) {
+    final col = WindowTokens.accent;
+    c.drawLine(
+      from,
+      to,
+      Paint()
+        ..color = Grey.g00.withValues(alpha: .55)
+        ..strokeWidth = snapped ? 3.2 : 2.2
+        ..strokeCap = StrokeCap.round,
+    );
+    c.drawLine(
+      from,
+      to,
+      Paint()
+        ..color = col.withValues(alpha: snapped ? .95 : .65)
+        ..strokeWidth = snapped ? 1.6 : 1.1
+        ..strokeCap = StrokeCap.round,
+    );
+    c.drawCircle(to, snapped ? 3.8 : 3.0, Paint()..color = Grey.g00);
+    c.drawCircle(
+      to,
+      snapped ? 2.6 : 2.0,
+      Paint()..color = col.withValues(alpha: .95),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_PenRubberBand o) =>
+      o.from != from || o.to != to || o.snapped != snapped;
 }

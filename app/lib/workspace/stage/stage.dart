@@ -9,9 +9,8 @@ import 'package:motolii/widgets/controls.dart' show Pressable, IconPress;
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/glyphs.dart';
 import 'package:motolii/widgets/panel_header.dart';
-import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/stage/camera_gestures.dart'
-    show cameraAlignToView;
+    show cameraAlignToView, ensureCameraLayer;
 import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_options.dart';
 import 'package:motolii/workspace/stage/stage_tool.dart';
@@ -38,7 +37,10 @@ class StagePane extends StatelessWidget {
 /// Photoshop do, not only while the stage has focus.
 Map<String, VoidCallback> stageToolCommands(WorkspaceController ws) => {
   for (final (i, t) in stageTools.indexed)
-    'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i),
+    'tool.${t.$2.toLowerCase()}': () {
+      if (i == 7) ensureCameraLayer(ws);
+      ws.setView('stage.tool', i);
+    },
 };
 
 class _Stage extends StatefulWidget {
@@ -77,6 +79,7 @@ class _StageState extends State<_Stage> {
   // The snapshot as it was when taken: a still image among the system's temporary files.
   String? _shot;
   bool _showing = false;
+  int _zoomReset = 0;
 
   @override
   void dispose() {
@@ -155,9 +158,24 @@ class _StageState extends State<_Stage> {
                   Forms.worn.segment(
                     context,
                     ChoiceSpec(
+                      labels: const ['Select', 'Camera'],
+                      selected: _tool == 7 ? 1 : 0,
+                      onSelect: (i) {
+                        if (i == 1) ensureCameraLayer(ws);
+                        setState(() => _tool = i == 1 ? 7 : 0);
+                      },
+                    ),
+                  ),
+                  SizedBox(width: Shape.s(6)),
+                  Forms.worn.segment(
+                    context,
+                    ChoiceSpec(
                       labels: stageZooms,
                       selected: _zoom,
-                      onSelect: (i) => setState(() => _zoom = i),
+                      onSelect: (i) => setState(() {
+                        _zoom = i;
+                        _zoomReset++;
+                      }),
                     ),
                   ),
                   SizedBox(width: Shape.s(6)),
@@ -239,19 +257,7 @@ class _StageState extends State<_Stage> {
                       active: _tool,
                       onChanged: (i) {
                         setState(() => _tool = i);
-                        // Clicking the Camera icon when no camera layer exists creates one right away.
-                        if (i == 7 && stageConnected(ws) && !ws.hasCamera) {
-                          stageBeginUndoStep(ws);
-                          var made = 0;
-                          ws.after(
-                            stageAddLayer(ws, name: 'camera', word: 'camera'),
-                            null,
-                            (t) => made = t,
-                          );
-                          ws.after(stageEndUndoStep(ws), (done, _) {
-                            if (done && made > 0) ws.select(made);
-                          });
-                        }
+                        if (i == 7) ensureCameraLayer(ws);
                       },
                       onTwice: (kind) => _whole(ws, kind),
                     ),
@@ -259,78 +265,72 @@ class _StageState extends State<_Stage> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          TwoFingerGestures(
-                            onPinchStep: (step) => setState(
-                              () => _zoom = (_zoom + step).clamp(
-                                0,
-                                stageZooms.length - 1,
-                              ),
-                            ),
-                            child: _AtFrame(
-                              builder: (context, scene) {
-                                _tellEye(ws);
-                                _alphaTold.tell(ws, _alpha);
-                                return StageView(
-                                  key: _view,
-                                  scene: scene,
-                                  selected: ws.selected,
-                                  zoom: _zoom,
-                                  grid: _grid,
-                                  safe: _safe,
-                                  alpha: _alpha,
-                                  cursor: _cursor,
-                                  onPoke: _focus.requestFocus,
-                                  texture: ws.stageTexture,
-                                  snapshot: _showing ? _shot : null,
-                                  tool: StageTool(
-                                    make: const [
-                                      null,
-                                      null,
-                                      'rect',
-                                      'circle',
-                                      'pen',
-                                      'text',
-                                      'brush',
-                                      'camera',
-                                    ][_tool],
-                                    brushSize: const [
-                                      8.0,
-                                      16.0,
-                                      32.0,
-                                    ][_opts['brush.size'] ?? 1],
-                                    brushTool: const [
-                                      1,
-                                      0,
-                                      2,
-                                      3,
-                                    ][_opts['brush.kind'] ?? 0],
-                                    smooth: _opts['draw.smooth'] ?? 2,
-                                    axis: _tool == 1
-                                        ? _opts['move.axis'] ?? 0
-                                        : 0,
-                                    fromCentre: (_opts['ell.from'] ?? 0) == 1,
-                                    snap:
-                                        _tool < 2 &&
-                                        (_opts[_tool == 0
-                                                    ? 'sel.snap'
-                                                    : 'move.snap'] ??
-                                                0) ==
-                                            1,
-                                    pivots: (_opts['sel.pivot'] ?? 0) == 1,
-                                    group:
-                                        _tool == 0 &&
-                                        (_opts['sel.level'] ?? 0) == 1,
-                                    mask:
-                                        (_opts[_tool == 2
-                                                    ? 'rect.mode'
-                                                    : 'pen.mode'] ??
-                                                0) ==
-                                            1 &&
-                                        (_tool == 2 || _tool == 4),
-                                  ),
-                                );
-                              },
-                            ),
+                          _AtFrame(
+                            builder: (context, scene) {
+                              _tellEye(ws);
+                              _alphaTold.tell(ws, _alpha);
+                              return StageView(
+                                key: _view,
+                                scene: scene,
+                                selected: ws.selected,
+                                zoom: _zoom,
+                                zoomReset: _zoomReset,
+                                grid: _grid,
+                                safe: _safe,
+                                alpha: _alpha,
+                                cursor: _cursor,
+                                onPoke: _focus.requestFocus,
+                                texture: ws.stageTexture,
+                                snapshot: _showing ? _shot : null,
+                                tool: StageTool(
+                                  make: const [
+                                    null,
+                                    null,
+                                    'rect',
+                                    'circle',
+                                    'pen',
+                                    'text',
+                                    'brush',
+                                    'camera',
+                                  ][_tool],
+                                  brushSize: const [
+                                    8.0,
+                                    16.0,
+                                    32.0,
+                                  ][_opts['brush.size'] ?? 1],
+                                  brushTool: const [
+                                    1,
+                                    0,
+                                    2,
+                                    3,
+                                  ][_opts['brush.kind'] ?? 0],
+                                  smooth: _opts['draw.smooth'] ?? 2,
+                                  cameraDrag: _opts['cam.drag'] ?? 0,
+                                  axis: _tool == 1
+                                      ? _opts['move.axis'] ?? 0
+                                      : 0,
+                                  fromCentre: (_opts['ell.from'] ?? 0) == 1,
+                                  snap:
+                                      _tool < 2 &&
+                                      (_opts[_tool == 0
+                                                  ? 'sel.snap'
+                                                  : 'move.snap'] ??
+                                              0) ==
+                                          1,
+                                  pivots: (_opts['sel.pivot'] ?? 0) == 1,
+                                  group:
+                                      _tool == 0 &&
+                                      (_opts['sel.level'] ?? 0) == 1,
+                                  mask:
+                                      (_opts[_tool == 2
+                                                  ? 'rect.mode'
+                                                  : 'pen.mode'] ??
+                                              0) ==
+                                          1 &&
+                                      (_tool == 2 || _tool == 4),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),

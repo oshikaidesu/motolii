@@ -23,11 +23,15 @@ class TwoFingerGestures extends StatefulWidget {
     this.onPinch,
     this.onPinchStep,
     this.onWheel,
+    this.onWheelAt,
     required this.child,
   });
 
   /// Called with a mouse wheel's scroll delta. This is the other way to move the view.
   final void Function(Offset by)? onWheel;
+
+  /// Called with a mouse wheel's scroll delta and pointer position in local coordinates.
+  final void Function(Offset by, Offset at)? onWheelAt;
 
   /// Called on each move with the movement of the fingers in local points and their position.
   final void Function(Offset by, Offset at)? onPan;
@@ -51,7 +55,10 @@ class _TwoFingerGesturesState extends State<TwoFingerGestures> {
   @override
   Widget build(BuildContext context) => Listener(
     onPointerSignal: (e) {
-      if (e is PointerScrollEvent) widget.onWheel?.call(e.scrollDelta);
+      if (e is PointerScrollEvent) {
+        widget.onWheel?.call(e.scrollDelta);
+        widget.onWheelAt?.call(e.scrollDelta, e.localPosition);
+      }
     },
     onPointerPanZoomStart: (_) => _scale = _spread = 1,
     onPointerPanZoomUpdate: (e) {

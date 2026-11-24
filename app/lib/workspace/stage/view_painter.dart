@@ -57,10 +57,26 @@ class ViewPainter extends CustomPainter {
     this.form = ('', 0),
     this.crop = const [],
     this.cameraTarget,
+    this.cameraMode = false,
+    this.cameraOrbiting = false,
+    this.cameraHover,
+    this.falloffRing,
   });
 
   /// The layer ID the active camera is currently Z-targeting, drawn with lock-on brackets.
   final int? cameraTarget;
+
+  /// True while Camera Mode is active: paints subtle viewfinder chrome and Z-target hover reticles.
+  final bool cameraMode;
+
+  /// True while actively orbiting in Camera Mode: paints a subtle virtual trackball circle.
+  final bool cameraOrbiting;
+
+  /// Hovered layer ID in Camera Mode (invited for 1-click Z-target lock-on).
+  final int? cameraHover;
+
+  /// Active proportional editing falloff circle during a path-point drag.
+  final ({Offset center, double radius})? falloffRing;
 
   /// The handle being dragged. Only it is drawn, highlighted, until the drag ends.
   final String? grip;
@@ -178,8 +194,32 @@ class ViewPainter extends CustomPainter {
     for (final id in scene.gizmos.keys) {
       _gizmo(c, id);
     }
+    if (cameraMode && scene.gizmos.isEmpty) {
+      _viewfinder(c, comp);
+    }
     if (ArtGeometry.boxOf(scene, cameraTarget) case final b?) {
       _lockBrackets(c, b);
+    }
+    if (cameraMode &&
+        cameraHover != null &&
+        cameraHover != cameraTarget &&
+        ArtGeometry.boxOf(scene, cameraHover) != null) {
+      _hoverReticle(c, ArtGeometry.boxOf(scene, cameraHover)!);
+    }
+    if (falloffRing case final ring? when ring.radius > 2) {
+      c.drawCircle(
+        ring.center,
+        ring.radius,
+        linePaint(Grey.g00.withValues(alpha: .45), 2.4),
+      );
+      c.drawCircle(
+        ring.center,
+        ring.radius,
+        linePaint(WindowTokens.accent.withValues(alpha: .65), 1.1),
+      );
+    }
+    if (cameraMode && scene.gizmos.isEmpty) {
+      return c.restore();
     }
     if (marked) {
       // The engine marks the frame, corners, sides, rotate knob and anchor. Only the layer's own handles are drawn here.
@@ -414,6 +454,69 @@ class ViewPainter extends CustomPainter {
     _legible(c, path, WindowTokens.toneCamera, 1.8);
   }
 
+  /// Subtle viewfinder frame chrome while Camera Mode is active in Camera View.
+  void _viewfinder(Canvas c, Rect comp) {
+    final cam = WindowTokens.toneCamera;
+    final inset = comp.deflate(6);
+    if (inset.width < 24 || inset.height < 24) return;
+    final k = math.min(18.0, math.min(inset.width, inset.height) * .08);
+    final corners = Path();
+    for (final (o, dx, dy) in [
+      (inset.topLeft, 1.0, 1.0),
+      (inset.topRight, -1.0, 1.0),
+      (inset.bottomRight, -1.0, -1.0),
+      (inset.bottomLeft, 1.0, -1.0),
+    ]) {
+      corners
+        ..moveTo(o.dx + dx * k, o.dy)
+        ..lineTo(o.dx, o.dy)
+        ..lineTo(o.dx, o.dy + dy * k);
+    }
+    _legible(c, corners, cam.withValues(alpha: .85), 1.6);
+    final m = comp.center;
+    final cross = Path()
+      ..moveTo(m.dx - 7, m.dy)
+      ..lineTo(m.dx - 2.5, m.dy)
+      ..moveTo(m.dx + 2.5, m.dy)
+      ..lineTo(m.dx + 7, m.dy)
+      ..moveTo(m.dx, m.dy - 7)
+      ..lineTo(m.dx, m.dy - 2.5)
+      ..moveTo(m.dx, m.dy + 2.5)
+      ..lineTo(m.dx, m.dy + 7);
+    _legible(c, cross, cam.withValues(alpha: .55), 1.0);
+    if (cameraOrbiting) {
+      final r = math.min(comp.width, comp.height) * .28;
+      c.drawCircle(m, r, linePaint(Grey.g00.withValues(alpha: .35), 2.5));
+      c.drawCircle(m, r, linePaint(cam.withValues(alpha: .42), 1.1));
+    }
+  }
+
+  /// Visual invitation reticle on a hovered layer in Camera Mode (click to Z-target).
+  void _hoverReticle(Canvas c, ArtBox b) {
+    final pts = [for (final p in b.corners) v.toScreen(p)];
+    if (pts.length != 4) return;
+    final cam = WindowTokens.toneCamera.withValues(alpha: .72);
+    final path = Path();
+    for (var i = 0; i < 4; i++) {
+      final p = pts[i];
+      final prev = pts[(i + 3) % 4] - p;
+      final next = pts[(i + 1) % 4] - p;
+      final lp = math.min(8.0, prev.distance * .18);
+      final ln = math.min(8.0, next.distance * .18);
+      if (prev.distance < 1 || next.distance < 1) continue;
+      final a = p + prev / prev.distance * lp;
+      final d = p + next / next.distance * ln;
+      path
+        ..moveTo(a.dx, a.dy)
+        ..lineTo(p.dx, p.dy)
+        ..lineTo(d.dx, d.dy);
+    }
+    _legible(c, path, cam, 1.2);
+    final ctr = v.toScreen(b.c);
+    c.drawCircle(ctr, 3.2, linePaint(Grey.g00.withValues(alpha: .6), 2.2));
+    c.drawCircle(ctr, 3.2, linePaint(cam, 1.2));
+  }
+
   void _selection(Canvas c, ArtBox b, ArtLayer l) {
     final h = selectionHandles(
           v.toScreen,
@@ -614,6 +717,10 @@ class ViewPainter extends CustomPainter {
       o.parent != parent ||
       o.grip != grip ||
       o.cameraTarget != cameraTarget ||
+      o.cameraMode != cameraMode ||
+      o.cameraOrbiting != cameraOrbiting ||
+      o.cameraHover != cameraHover ||
+      o.falloffRing != falloffRing ||
       o.form != form ||
       !listEquals(o.crop, crop);
 }

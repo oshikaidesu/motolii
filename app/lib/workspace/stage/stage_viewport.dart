@@ -27,6 +27,7 @@ class StageViewport {
     Size size, {
     required Size composition,
     required int zoom,
+    double? customScale,
     required Offset pan,
     required double ruler,
     required double margin,
@@ -39,7 +40,9 @@ class StageViewport {
         (area.height - margin * 2) / composition.height,
       ),
     );
-    final s = zoom == 0 ? fit : _fixedScales[zoom];
+    final s = customScale != null
+        ? customScale.clamp(.05, 16.0)
+        : (zoom == 0 ? fit : _fixedScales[zoom]);
     final half = Offset(composition.width * s, composition.height * s) / 2;
     return StageViewport(area.center - half + pan, s, area, composition);
   }
@@ -64,6 +67,14 @@ class StageViewport {
 
   /// The composition point shown at the screen position [p].
   Offset toComposition(Offset p) => (p - origin) / scale;
+
+  /// The pan needed at [nextScale] so the composition pixel under [anchorLocal]
+  /// stays pinned at [anchorLocal] during smooth cursor-anchored zoom.
+  Offset zoomPan(Offset anchorLocal, double nextScale) {
+    final compPt = toComposition(anchorLocal);
+    final halfComp = Offset(composition.width / 2, composition.height / 2);
+    return anchorLocal - area.center + (halfComp - compPt) * nextScale;
+  }
 
   /// The [pan] nearest to the one asked for that keeps the composition in reach.
   /// The composition may be moved off the middle of [area] until 60 screen pixels of it are left inside, on each axis.

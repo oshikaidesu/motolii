@@ -135,4 +135,28 @@ void main() {
       isNot(v),
     );
   });
+
+  test(
+    'customScale supports smooth zoom and zoomPan pins the cursor pixel',
+    () {
+      final v = viewport();
+      const anchor = Offset(220, 180);
+      final before = v.toComposition(anchor);
+      const nextScale = 2.35;
+      final pan = v.zoomPan(anchor, nextScale);
+      final zoomed = StageViewport.of(
+        pane,
+        composition: composition,
+        zoom: 0,
+        customScale: nextScale,
+        pan: pan,
+        ruler: 16,
+        margin: 28,
+      );
+      expect(zoomed.scale, closeTo(nextScale, 1e-9));
+      final after = zoomed.toComposition(anchor);
+      expect(after.dx, closeTo(before.dx, 1e-6));
+      expect(after.dy, closeTo(before.dy, 1e-6));
+    },
+  );
 }

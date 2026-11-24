@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:flutter/services.dart' show HardwareKeyboard;
 
 import 'package:motolii/widgets/gestures.dart';
+import 'package:motolii/workspace/stage/draw_tools.dart' show snapAngle45;
 import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_context.dart';
 import 'package:motolii/workspace/stage/stage_tokens.dart';
@@ -50,6 +51,24 @@ class StageDrag extends ChangeNotifier {
 
   List<SnapGap> get gaps => _gaps;
   List<SnapGap> _gaps = const [];
+
+  /// Screen position and visual radius of the active proportional falloff ring while dragging a path point.
+  ({Offset center, double radius})? get falloffRing =>
+      held?.by == 'point' && _pointCenter != null && _pointFalloff > 1e-3
+      ? (center: _pointCenter!, radius: _pointFalloff * _pointExtent)
+      : null;
+  Offset? _pointCenter;
+  double _pointFalloff = 0.35;
+  double _pointExtent = 0;
+
+  /// Adjusts `path_falloff` live with the scroll wheel during a path-point drag (Blender Proportional Editing style).
+  void adjustPointFalloff(StageViewport v, double wheelDy, Offset lastLocal) {
+    final ws = _stage.workspace;
+    if (held?.by != 'point' || !stageConnected(ws)) return;
+    _pointFalloff = (_pointFalloff - wheelDy * 0.0012).clamp(0.0, 1.0);
+    stageUpdateDrag(ws, 'path_falloff', _pointFalloff);
+    dragUpdate(v, lastLocal);
+  }
 
   // A guide pulled from a ruler or dragged. Released over its ruler → deleted.
   ({String axis, double? was})? _pulling;
@@ -380,6 +399,21 @@ class StageDrag extends ChangeNotifier {
         stageUpdateDrag(ws, 'grip', at.dx, at.dy);
         if (ws.playing) ws.playing = false;
         held = (from: local, moved: false, by: by);
+        if (by == 'point') {
+          _pointFalloff = (stageValue(ws, picked, 'path_falloff', 0) ?? 0.35)
+              .clamp(0.0, 1.0);
+          final pts = [
+            for (final p in stagePathPoints(ws, picked)) v.toScreen(p),
+          ];
+          var perimeter = 0.0;
+          for (var i = 1; i < pts.length; i++) {
+            perimeter += (pts[i] - pts[i - 1]).distance;
+          }
+          if (pts.length > 2) perimeter += (pts.first - pts.last).distance;
+          _pointExtent = math.max(36.0, perimeter * 0.25);
+          _pointCenter = local;
+          notifyListeners();
+        }
         if (grip != _heldGrip) {
           _heldGrip = grip;
           notifyListeners();
@@ -482,6 +516,10 @@ class StageDrag extends ChangeNotifier {
       final keys = HardwareKeyboard.instance,
           sized = way == 'scale' || way == 'edge',
           even = keys.isShiftPressed && (sized || way == 'turn') ? 'even_' : '';
+      if (way == 'point') {
+        if (keys.isShiftPressed) gone = snapAngle45(Offset.zero, gone);
+        _pointCenter = h.from + gone * v.scale;
+      }
       if (_heldGrip case final g? when way == 'edge') {
         final at = _stage.handles[g],
             across =
@@ -523,6 +561,10 @@ class StageDrag extends ChangeNotifier {
         free = h?.by == 'orbit' && ws.freeEye;
     held = null;
     _snapTo = null;
+    if (_pointCenter != null) {
+      _pointCenter = null;
+      notifyListeners();
+    }
     if (_heldGrip != null) {
       _heldGrip = null;
       notifyListeners();

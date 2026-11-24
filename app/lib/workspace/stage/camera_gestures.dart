@@ -14,6 +14,21 @@ import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
+/// Creates and selects a camera layer immediately when none exists yet.
+void ensureCameraLayer(WorkspaceController ws) {
+  if (!stageConnected(ws) || ws.hasCamera) return;
+  stageBeginUndoStep(ws);
+  var made = 0;
+  ws.after(
+    stageAddLayer(ws, name: 'camera', word: 'camera'),
+    null,
+    (t) => made = t,
+  );
+  ws.after(stageEndUndoStep(ws), (done, _) {
+    if (done && made > 0) ws.select(made);
+  });
+}
+
 /// Roll handle position extending from the top midpoint of a 4-corner camera frame.
 Offset? cameraFrameRollKnob(List<Offset> frame) {
   if (frame.length != 4) return null;
@@ -149,6 +164,13 @@ class CameraGestures extends ChangeNotifier {
     return true;
   }
 
+  /// Moves the camera nearer to or further from its frame centre by a multiplicative
+  /// pinch [ratio] (> 1 zooms in / decreases distance, < 1 zooms out).
+  void dollyPinch(double ratio) {
+    if (ratio <= 0 || (ratio - 1).abs() < 1e-4) return;
+    dolly(-math.log(ratio) / .002);
+  }
+
   /// Moves the camera nearer to or further from its frame centre (Boxcam zoom / dolly).
   /// All wheel turns until the wheel rests for 300 ms form one undo step.
   void dolly(double by) {
@@ -193,8 +215,11 @@ class CameraGestures extends ChangeNotifier {
     final at = ws.frame / WorkspaceController.fps;
     ws.live.hold(cam);
     if (ws.playing) ws.playing = false;
-    if (HardwareKeyboard.instance.isShiftPressed) {
-      // Shift + drag pans the Boxcam frame directly in screen space.
+    final pan =
+        (_stage.tool.cameraDrag == 1) !=
+        HardwareKeyboard.instance.isShiftPressed;
+    if (pan) {
+      // Pans the Boxcam frame directly in screen space.
       _drag.held = (from: local, moved: false, by: null);
       return;
     }

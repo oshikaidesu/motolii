@@ -32,6 +32,7 @@ class StageTool {
     this.brushSize = 16,
     this.brushTool = 1,
     this.smooth = 2,
+    this.cameraDrag = 0,
   });
 
   /// What the selected tool creates when dragged across the stage (rect, circle, line, text, brush).
@@ -64,4 +65,7 @@ class StageTool {
 
   /// Freehand stroke stabilization level: 0 Off, 1 Low, 2 Med, 3 High.
   final int smooth;
+
+  /// Camera mode drag action in Camera View: 0 Orbit (Shift = Pan), 1 Pan (Shift = Orbit).
+  final int cameraDrag;
 }

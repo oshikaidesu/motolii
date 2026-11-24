@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' show Offset, Path, Rect;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier;
+import 'package:flutter/services.dart' show HardwareKeyboard;
 
 import 'package:perfect_freehand/perfect_freehand.dart'
     show getStrokeOutlinePoints, getStrokePoints, PointVector;
@@ -19,6 +20,40 @@ import 'package:motolii/workspace/stage/stroke_smooth.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+
+/// Snaps [point] relative to [origin] to the nearest 45° angle while preserving distance.
+Offset snapAngle45(Offset origin, Offset point) {
+  final d = point - origin;
+  final len = d.distance;
+  if (len < 1e-3) return point;
+  final angle =
+      (math.atan2(d.dy, d.dx) / (math.pi / 4)).round() * (math.pi / 4);
+  return origin + Offset(math.cos(angle) * len, math.sin(angle) * len);
+}
+
+/// Constrains a straight drag from [origin] to [point], magnetically snapping to
+/// 0° / 45° / 90° when within 6°.
+Offset snapStraight(Offset origin, Offset point) {
+  final d = point - origin;
+  final len = d.distance;
+  if (len < 1e-3) return point;
+  final raw = math.atan2(d.dy, d.dx);
+  final snapped = (raw / (math.pi / 4)).round() * (math.pi / 4);
+  if ((raw - snapped).abs() < 6 * math.pi / 180) {
+    return origin + Offset(math.cos(snapped) * len, math.sin(snapped) * len);
+  }
+  return point;
+}
+
+/// Constrains a drag box from [origin] to [point] to a 1:1 square/circle.
+Offset snapSquare(Offset origin, Offset point) {
+  final d = point - origin;
+  final side = math.max(d.dx.abs(), d.dy.abs());
+  return Offset(
+    origin.dx + (d.dx < 0 ? -side : side),
+    origin.dy + (d.dy < 0 ? -side : side),
+  );
+}
 
 class DrawTools extends ChangeNotifier {
   DrawTools(this._stage);
@@ -37,6 +72,20 @@ class DrawTools extends ChangeNotifier {
   // path the pen created). The engine handles close/add/remove.
   bool _penning = false;
 
+  /// Last anchor placed by the pen tool, in composition coordinates, for rubber-band & Shift snap.
+  Offset? get penLast => _penning ? _penLast : null;
+  Offset? _penLast;
+
+  /// Target screen point for the next pen anchor (45° snapped from [penLast] while Shift is held).
+  Offset penTarget(StageViewport v, Offset local) {
+    if (_penning &&
+        _penLast != null &&
+        HardwareKeyboard.instance.isShiftPressed) {
+      return snapAngle45(v.toScreen(_penLast!), local);
+    }
+    return local;
+  }
+
   /// The pointer's path while the pen is down, or null. A scribble rather than a handle becomes a path of its own.
   List<Offset>? get penWay => _penWay == null
       ? null
@@ -47,25 +96,40 @@ class DrawTools extends ChangeNotifier {
   /// Live-stabilized during drag and corner-preserving smoothed on release.
   List<Offset>? get brush => _brush == null
       ? null
+      : _brushStraight
+      ? _brush
       : StrokeStabilizer.liveSmooth(_brush!, _stage.tool.smooth);
   List<Offset>? _brush;
+  Offset? _brushStart;
+  bool _brushStraight = false;
 
   void endPenPath() {
     _penning = false;
+    _penLast = null;
   }
 
   void brushDragStart(Offset local) {
+    _brushStart = local;
+    _brushStraight = HardwareKeyboard.instance.isShiftPressed;
     _brush = [local];
     notifyListeners();
   }
 
   void brushDragUpdate(Offset local) {
-    _brush!.add(local);
+    if (HardwareKeyboard.instance.isShiftPressed && _brushStart != null) {
+      _brushStraight = true;
+      _brush = [_brushStart!, snapStraight(_brushStart!, local)];
+    } else {
+      _brushStraight = false;
+      _brush!.add(local);
+    }
     notifyListeners();
   }
 
   void brushDragCancel() {
     _brush = null;
+    _brushStart = null;
+    _brushStraight = false;
     notifyListeners();
   }
 
@@ -138,8 +202,13 @@ class DrawTools extends ChangeNotifier {
     _drawFrom = null;
     notifyListeners();
     if (from == null || !stageConnected(ws) || kind == null) return;
+    final end =
+        HardwareKeyboard.instance.isShiftPressed &&
+            (kind == 'rect' || kind == 'circle')
+        ? snapSquare(from, to)
+        : to;
     final a = v.toComposition(from),
-        b = v.toComposition(to),
+        b = v.toComposition(end),
         p = stagePointsPerUnit(ws),
         c = ArtGeometry.comp;
     // Drawn out from its centre: twice the drag, centred on where the drag started.
@@ -227,10 +296,20 @@ class DrawTools extends ChangeNotifier {
     _penWay = null;
     notifyListeners();
     if (!stageConnected(ws)) return;
-    if (way != null && scribbled(way, down, up)) return _fit(v, way);
-    final a = v.toComposition(down), h = v.toComposition(up) - a;
+    final shift = HardwareKeyboard.instance.isShiftPressed;
+    if (way != null && scribbled(way, down, up)) {
+      return _fit(v, shift ? [down, snapAngle45(down, up)] : way);
+    }
+    final anchor = penTarget(v, down);
+    final dragged = (up - down).distance > 1;
+    final handleEnd = shift && dragged
+        ? snapAngle45(anchor, anchor + (up - down))
+        : anchor + (up - down);
+    final a = v.toComposition(anchor),
+        h = dragged ? v.toComposition(handleEnd) - a : Offset.zero;
     final first = !_penning;
     _penning = true;
+    _penLast = a;
     if (first) stageBeginUndoStep(ws);
     var made = 0;
     ws.after(
@@ -308,12 +387,19 @@ class DrawTools extends ChangeNotifier {
 
   /// Turns the brush stroke into a drawing layer, or erases from the selected drawing with the eraser.
   void brushDragEnd(StageViewport v) {
-    final way = _brush, ws = _stage.workspace;
+    final way = _brush, straight = _brushStraight, ws = _stage.workspace;
     _brush = null;
+    _brushStart = null;
+    _brushStraight = false;
     notifyListeners();
     if (way == null || way.length < 2 || !stageConnected(ws)) return;
     final smooth = _stage.tool.smooth;
-    final stabilized = StrokeStabilizer.finishSmooth(way, smooth);
+    final stabilized = straight
+        ? [
+            for (var i = 0; i <= 12; i++)
+              Offset.lerp(way.first, way.last, i / 12)!,
+          ]
+        : StrokeStabilizer.finishSmooth(way, smooth);
     final options = StrokeStabilizer.brushOptions(
       _stage.tool.brushSize,
       smooth,
