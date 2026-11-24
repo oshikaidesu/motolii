@@ -125,7 +125,8 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
       !st.steps.empty() && st.aviutl.empty() && st.aePlugins.empty() &&
       !st.readsBehind && !st.wide &&
       std::all_of(st.fx.begin(), st.fx.end(), [](const ScreenFx* f) {
-        return f && f->pointwise && f->preservesZeroAlpha;
+        return f && f->pointwise &&
+               (f->preservesZeroAlpha || f->preservesAlpha);
       });
 }
 
@@ -142,72 +143,35 @@ void thing_fx_textures(Stage& s, ScreenStack& st, View* v, bool needShot) {
                    st.between[0]->getHeight() == h);
   if (shotOk && outOk) return;
 
-  const auto newTexture = [&](int slot, const char* label) {
-    WGPUTextureDescriptor like{};
-    like.size = {w, h, 1};
-    like.format = WGPUTextureFormat_BGRA8Unorm;
-    like.usage = WGPUTextureUsage_RenderAttachment |
-                 WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc |
-                 WGPUTextureUsage_CopyDst;
-    like.dimension = WGPUTextureDimension_2D;
-    like.mipLevelCount = 1, like.sampleCount = 1;
-    like.label = {label, WGPU_STRLEN};
-    void* built = st.device[slot] =
-        wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
-    return Texture::Builder()
-        .width(w)
-        .height(h)
-        .levels(1)
-        .format(Texture::InternalFormat::RGBA8)
-        .usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE |
-               Texture::Usage::BLIT_SRC)
-        .import((intptr_t)built)
-        .build(*s.engine);
-  };
-
-  // Lazily add `st.shot` without reallocating `st.between[0]` when a previously
-  // flat-bypassed layer falls back to Filament rendering at the same size.
-  if (wantShot && !st.shot && outOk && st.between[0]) {
-    st.shot = newTexture(0, "thing shot");
-    st.target = RenderTarget::Builder()
-                    .texture(RenderTarget::AttachmentPoint::COLOR, st.shot)
-                    .texture(RenderTarget::AttachmentPoint::DEPTH,
-                             screen_pool_depth(s, w, h))
-                    .build(*s.engine);
-    return;
+  // Back per-layer `shot` and `between[0]` with StageFxCache layer slots so
+  // cut exits/entries and resizes reuse hot GPU textures without triggering
+  // texture destruction or descriptor-set invalidation spikes.
+  if (!shotOk) {
+    if (st.shotSlot) {
+      screen_pool_release_layer(s, st.shotSlot);
+      st.shotSlot = nullptr;
+      st.shot = nullptr;
+      st.target = nullptr;
+    }
+    if (wantShot) {
+      st.shotSlot = screen_pool_acquire_layer(s, w, h, true);
+      st.shot = st.shotSlot->tex;
+      st.target = st.shotSlot->depthTarget;
+    }
   }
-
-  if (st.shot || st.between[0] || st.between[1])
-    interop::invalidate_textures(s.engine);
-  st.seen = nullptr;
-  for (Texture*& t : {std::ref(st.shot), std::ref(st.depth),
-                      std::ref(st.between[0]), std::ref(st.between[1])})
-    if (t) s.engine->destroy(t), t = nullptr;
-  for (RenderTarget*& r : {std::ref(st.target), std::ref(st.betweenTarget[0]),
-                           std::ref(st.betweenTarget[1])})
-    if (r) s.engine->destroy(r), r = nullptr;
-  interop::on_driver(s.engine,
-                     [built = std::vector<void*>(st.device, st.device + 3)] {
-                       for (void* t : built)
-                         if (t) wgpuTextureRelease((WGPUTexture)t);
-                     });
-  st.device[0] = st.device[1] = st.device[2] = nullptr;
-
-  if (wantShot) {
-    st.shot = newTexture(0, "thing shot");
-    // Depth is shared across all layers of size w x h via StageFxCache.
-    st.target = RenderTarget::Builder()
-                    .texture(RenderTarget::AttachmentPoint::COLOR, st.shot)
-                    .texture(RenderTarget::AttachmentPoint::DEPTH,
-                             screen_pool_depth(s, w, h))
-                    .build(*s.engine);
-  }
-  if (needOut) {
-    st.between[0] = newTexture(1, "thing out");
-    st.betweenTarget[0] =
-        RenderTarget::Builder()
-            .texture(RenderTarget::AttachmentPoint::COLOR, st.between[0])
-            .build(*s.engine);
+  if (!outOk) {
+    st.seen = nullptr;
+    if (st.outSlot) {
+      screen_pool_release_layer(s, st.outSlot);
+      st.outSlot = nullptr;
+      st.between[0] = nullptr;
+      st.betweenTarget[0] = nullptr;
+    }
+    if (needOut) {
+      st.outSlot = screen_pool_acquire_layer(s, w, h, false);
+      st.between[0] = st.outSlot->tex;
+      st.betweenTarget[0] = st.outSlot->colorTarget;
+    }
   }
 }
 
@@ -254,7 +218,8 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
       st.aviutl.empty() && st.aePlugins.empty() && !st.readsBehind &&
       !st.wide &&
       std::all_of(st.fx.begin(), st.fx.end(), [](const ScreenFx* f) {
-        return f && f->pointwise && f->preservesZeroAlpha;
+        return f && f->pointwise &&
+               (f->preservesZeroAlpha || f->preservesAlpha);
       });
 
   // Skip re-rendering static unchanged layers whose cached output in

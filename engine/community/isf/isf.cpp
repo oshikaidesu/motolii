@@ -135,13 +135,13 @@ std::string isf_file(const std::string& asked) {
   const auto size = std::filesystem::file_size(file, missing);
   if (missing) return "";
   const std::string key =
-      "isf 17|" + file + "|" +
+      "isf 18|" + file + "|" +
       std::to_string((long long)when.time_since_epoch().count()) + "|" +
       std::to_string(size);
 #else
   struct stat st{};
   if (stat(file.c_str(), &st) != 0) return "";
-  const std::string key = "isf 17|" + file + "|" +
+  const std::string key = "isf 18|" + file + "|" +
                           std::to_string(st.st_mtimespec.tv_sec) + "." +
                           std::to_string(st.st_mtimespec.tv_nsec) + "|" +
                           std::to_string(st.st_size);

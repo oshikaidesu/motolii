@@ -213,18 +213,46 @@ std::string isf_wgsl(const std::string& text, const std::string& name,
             "_imgSize RENDERSIZE\n#define _" + n + "_flip false\n";
   // ISF 1's name for isf_FragNormCoord, which VVISF still accepts.
   glsl += "#define vv_FragNormCoord isf_FragNormCoord\n";
+  // Single-pass filters always have passRect == frameRect, so self-pixel reads
+  // of the primary input can sample `isf_FragNormCoord_down` directly without
+  // redundant Y-flips or keeping frameRect/passRect live in Knobs.
+  const bool directSelf = !imageNames.empty() && passLines.empty();
   glsl +=
       "#define IMG_NORM_PIXEL(i, c) texture(i, c)\n#define IMG_PIXEL(i, c) "
       "texture(i, (c) / RENDERSIZE)\n";
-  glsl +=
-      "#define IMG_THIS_NORM_PIXEL(i) texture(i, isf_FragNormCoord)\n#define "
-      "IMG_THIS_PIXEL(i) texture(i, isf_FragNormCoord)\n#define IMG_SIZE(i) "
-      "RENDERSIZE\n";
+  if (directSelf) {
+    glsl +=
+        "#define IMG_THIS_NORM_PIXEL(i) textureLod(i, "
+        "isf_FragNormCoord_down, 0.0)\n#define IMG_THIS_PIXEL(i) "
+        "textureLod(i, isf_FragNormCoord_down, 0.0)\n#define IMG_SIZE(i) "
+        "RENDERSIZE\n";
+  } else {
+    glsl +=
+        "#define IMG_THIS_NORM_PIXEL(i) texture(i, isf_FragNormCoord)\n#define "
+        "IMG_THIS_PIXEL(i) texture(i, isf_FragNormCoord)\n#define IMG_SIZE(i) "
+        "RENDERSIZE\n";
+  }
   body = std::regex_replace(
       body,
       std::regex(
           R"((\bIMG_(?:NORM_PIXEL|PIXEL|THIS_PIXEL|THIS_NORM_PIXEL|SIZE)\s*\(\s*)(\w+))"),
       "$1isf_img_$2");
+  if (directSelf) {
+    body = std::regex_replace(
+        body,
+        std::regex(
+            R"(\b(?:IMG_NORM_PIXEL|texture2D|texture)\s*\(\s*(?:isf_img_)?)" +
+            inputName +
+            R"(\s*,\s*(?:isf_FragNormCoord|vv_FragNormCoord)\s*\))"),
+        "IMG_THIS_PIXEL(isf_img_" + inputName + ")");
+    if (body.find("#define u_texture " + inputName) != std::string::npos &&
+        body.find("#define v_uv isf_FragNormCoord") != std::string::npos) {
+      body = std::regex_replace(
+          body,
+          std::regex(R"(\btexture(?:2D)?\s*\(\s*u_texture\s*,\s*v_uv\s*\))"),
+          "IMG_THIS_PIXEL(isf_img_" + inputName + ")");
+    }
+  }
   glsl +=
       "#define gl_FragColor isf_FragColor\n#define texture2D texture\n#define "
       "varying //\n";

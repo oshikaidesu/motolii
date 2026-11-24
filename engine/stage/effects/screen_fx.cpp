@@ -268,6 +268,7 @@ void sync_from_shared(Stage& s, ScreenFx& fx, SharedScreen& sh) {
   fx.pointwise = sh.proto.pointwise;
   fx.pointwiseSksl = sh.proto.pointwiseSksl;
   fx.preservesZeroAlpha = sh.proto.preservesZeroAlpha;
+  fx.preservesAlpha = sh.proto.preservesAlpha;
   fx.usesTime = sh.proto.usesTime;
   fx.spillKind = sh.proto.spillKind;
   fx.spillField = sh.proto.spillField;
@@ -443,21 +444,25 @@ void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
 
 void screen_stack_off(Stage& s, ScreenStack& st) {
   if (!s.engine) return;
-  interop::invalidate_textures(s.engine);
+  bool destroyedTex = false;
   for (auto& [key, fx] : st.built) {
     if (!fx) continue;
     if (fx->interop && !fx->sharedInterop) interop::drop(s.engine, fx->interop);
     fx->interop = nullptr;
     screen_targets(s, *fx, true);
-    if (fx->history) s.engine->destroy(fx->history), fx->history = nullptr;
+    if (fx->history)
+      s.engine->destroy(fx->history), fx->history = nullptr,
+                                      destroyedTex = true;
     for (RenderTarget* rt : fx->historyInto)
       if (rt) s.engine->destroy(rt);
     fx->historyInto.clear();
     for (Texture* t : fx->imagesBuilt)
-      if (t) s.engine->destroy(t);
+      if (t) s.engine->destroy(t), destroyedTex = true;
     fx->imagesBuilt.clear();
     for (ScreenFx::Sound& snd : fx->sounds)
-      if (snd.texture) s.engine->destroy(snd.texture), snd.texture = nullptr;
+      if (snd.texture)
+        s.engine->destroy(snd.texture), snd.texture = nullptr,
+                                        destroyedTex = true;
     delete fx;
   }
   st.built.clear();
@@ -466,16 +471,35 @@ void screen_stack_off(Stage& s, ScreenStack& st) {
   st.aviutl.clear();
   st.aePlugins.clear();
   if (st.copy) interop::drop(s.engine, st.copy), st.copy = nullptr;
-  if (st.target) s.engine->destroy(st.target), st.target = nullptr;
-  if (st.shot) s.engine->destroy(st.shot), st.shot = nullptr;
+  // Return pooled per-layer textures to StageFxCache without destroying them,
+  // avoiding GPU reallocations and descriptor-set invalidation across cuts.
+  if (st.shotSlot) {
+    screen_pool_release_layer(s, st.shotSlot);
+    st.shotSlot = nullptr;
+    st.shot = nullptr;
+    st.target = nullptr;
+  } else {
+    if (st.target) s.engine->destroy(st.target), st.target = nullptr;
+    if (st.shot)
+      s.engine->destroy(st.shot), st.shot = nullptr, destroyedTex = true;
+  }
   if (st.depth) s.engine->destroy(st.depth), st.depth = nullptr;
-  if (st.clear) s.engine->destroy(st.clear), st.clear = nullptr;
+  if (st.clear)
+    s.engine->destroy(st.clear), st.clear = nullptr, destroyedTex = true;
+  if (st.outSlot) {
+    screen_pool_release_layer(s, st.outSlot);
+    st.outSlot = nullptr;
+    st.between[0] = nullptr;
+    st.betweenTarget[0] = nullptr;
+  }
   for (int k = 0; k < 2; ++k) {
     if (st.betweenTarget[k])
       s.engine->destroy(st.betweenTarget[k]), st.betweenTarget[k] = nullptr;
     if (st.between[k])
-      s.engine->destroy(st.between[k]), st.between[k] = nullptr;
+      s.engine->destroy(st.between[k]), st.between[k] = nullptr,
+                                        destroyedTex = true;
   }
+  if (destroyedTex) interop::invalidate_textures(s.engine);
   st.seen = nullptr;
   st.files.clear();
 }

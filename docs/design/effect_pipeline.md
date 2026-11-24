@@ -11,15 +11,15 @@
 ### 1. Stage 横断の GPU ノード共通化（`StageFxCache`）
 - **シェーダー共有（`compiled`）**：複数レイヤーや同一エフェクトの重ね掛けで、`Program`・`DescriptorSetLayout`・`BufferObject` をエフェクトファイルごとに 1 つだけコンパイル・共有する。同一フレーム内の複数描画は共有 `BufferObject` 上の単調スロット割当（`slotFrame` / `nextSlot`）でユニフォームを分離する。レイヤーごとのコピーシェーダーも `s.place_copy` の 1 本に統一。
 - **一時テクスチャ・RenderTarget プール**：
-  - 全レイヤーの `DEPTH24`（`screen_pool_depth`）、エフェクト連鎖用のピンポン `scratch`（`PooledLayerSlot`）、非永続 ISF 中間ターゲット（`PooledTarget`、RGBA8 / RGBA16F）を Stage 共通プールから都度借りて即返却する。
-  - **制約（罠）**：`st.shot`（`Renderer::render(v)` の出力先）は Filament のフレームグラフ追跡と競合するため、同一フレーム内で別レイヤーと共有してはならない。各レイヤーは `st.shot` と最終出力 `st.between[0]` のみを所有し、`DEPTH24`・`scratch`・非永続 ISF ターゲットを共有する。
+  - 全レイヤーの `DEPTH24`（`screen_pool_depth`）、エフェクト連鎖用のピンポン `scratch`、非永続 ISF 中間ターゲット（`PooledTarget`、RGBA8 / RGBA16F）に加え、各レイヤーの `st.shot` / `st.between[0]` も `PooledLayerSlot`（`st.shotSlot` / `st.outSlot`）で管理し、リサイズやカット切り替わり（`thing_fx_off`）時にテクスチャを破棄せずプールへ返却する。これにより MV やリリックビデオの高速カット境界でも GPU テクスチャ再確保と `DescriptorSet` 無効化スパイクが発生しない。
+  - **制約（罠）**：`st.shot`（`Renderer::render(v)` の出力先）は Filament のフレームグラフ追跡と競合するため、同一フレーム内で別レイヤーと共有してはならない。各アクティブレイヤーは `shotSlot` / `outSlot` を `inUse = true` で占有し、非表示・時間範囲外になって初めてプールへ戻す。
   - プールは貸出中の生ポインタ安定性のため `std::deque` で保持し、一定フレーム未使用の古いサイズを自動回収する。
 - **最終 ISF コピーパス省略（`directFinal`）**：最終パスが非永続かつ出力と同サイズのターゲットへ向く ISF は、直接出力先 `to` へ描画して全画面コピー 1 パスを省く。
 
 ### 2. 連続ポイントワイズ WGSL の自動 1 パス融合
 - 1 ピクセル入力・1 ピクセル出力（非ループ・単一テクスチャ・単一サンプリング）の WGSL を静的解析（`screen_analyze_pointwise`）で自動検出し、隣接するノード列を **1 本の WGSL シェーダー（`StageFxCache::fused`）** に自動結合する。
-- **対応形式**：SkSL 変換済み WGSL だけでなく、`screen_framed` を通る通常のユーザー作 WGSL・TSL 生成 WGSL（`frame_sample` / `frame_level`＋任意の `@location(0)` UV 名）も自動的に対象になる。
-- **色空間変換の畳み込み**：先頭ステップが融合対象なら `linear → sRGB` を、末尾ステップが融合対象なら `sRGB → linear` を同一シェーダー内へ畳み込み、VRAM 往復を消す。
+- **対応形式**：SkSL 変換済み WGSL・ユーザー作 WGSL・TSL 生成 WGSL に加え、単一パス ISF（`.fs`）の自己ピクセル参照（`IMG_THIS_PIXEL` / `IMG_NORM_PIXEL(..., isf_FragNormCoord)` / Sashimono `texture(u_texture, v_uv)`）も `isf_translate.cpp` で `isf_FragNormCoord_down` 直接参照へ簡約し、1 パス融合・タイト領域化の対象にする（`isf 18|`）。
+- **色空間変換の畳み込み**：先頭ステップが融合対象なら `linear → sRGB`（フラット 2D バイパス時は `foldFlat`）を、末尾ステップが融合対象なら `sRGB → linear` を同一シェーダー内へ畳み込み、VRAM 往復を消す。
 - 融合シェーダーが Dawn に拒否された場合は、個別パス実行へ安全にフォールバックする。
 
 ### 3. パラメータ一括評価と 2 重評価の排除

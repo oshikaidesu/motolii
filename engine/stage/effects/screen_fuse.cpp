@@ -167,7 +167,7 @@ bool emit_node_wgsl(const ScreenFx& fx, size_t k, std::string& outBody,
     body.erase(mStart, mEnd - mStart + 1);
     std::smatch pf, pu;
     const std::regex kPosParam(R"(@builtin\(\s*position\s*\)\s*(\w+)\s*:)");
-    const std::regex kUvParam(R"(@location\(\s*0\s*\)\s*(\w+)\s*:)");
+    const std::regex kUvParam(R"(@location\(\s*0u?\s*\)\s*(\w+)\s*:)");
     std::string fragName = "_unused_frag", uvName = "_unused_uv";
     if (std::regex_search(head, pf, kPosParam)) fragName = pf[1];
     if (std::regex_search(head, pu, kUvParam)) uvName = pu[1];
@@ -322,6 +322,7 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
   fx.pointwise = false;
   fx.pointwiseSksl = false;
   fx.preservesZeroAlpha = false;
+  fx.preservesAlpha = false;
   fx.usesTime = false;
   fx.spillKind = ScreenFx::SpillKind::Unbounded;
   fx.spillField = -1;
@@ -355,6 +356,12 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
         if (fx.usesTime) break;
       }
     }
+    // Clear `hasFrameRect` when the uniform struct merely declares
+    // `frameRect`/`passRect` (e.g. single-pass ISF color filters) without the
+    // shader body ever reading them.
+    if (fx.hasFrameRect && body.find(".frameRect") == std::string::npos &&
+        body.find(".passRect") == std::string::npos)
+      fx.hasFrameRect = false;
   }
 
   // Classify bounded spill behavior and zero-strength bypass.
@@ -549,7 +556,7 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
       std::string uvName = "uv";
       {
         static const std::regex kUvDecl(
-            R"(@location\(\s*0\s*\)\s*(\w+)\s*:\s*vec2(?:f|<f32>))");
+            R"(@location\(\s*0u?\s*\)\s*(\w+)\s*:\s*vec2(?:f|<f32>))");
         std::smatch umv;
         if (std::regex_search(scanBody, umv, kUvDecl)) {
           uvName = umv[1];
@@ -576,16 +583,88 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
   // zero (and never inverts/replaces alpha) can safely render into a tight
   // bounding texture around the layer without full-screen expansion.
   if (fx.pointwise && !fx.spill && !fx.alpha && !fx.source &&
-      fx.spillKind == ScreenFx::SpillKind::Unbounded &&
       wgsl.find("invert_alpha") == std::string::npos) {
-    static const std::regex kEarlyZero(
-        R"(if\s*\(?[\w\.]+\s*<=?\s*(?:0\.0|0\.001|1e-0?[456])\s*\)?\s*\{\s*(?:\{\s*)?(?:return\s+(?:vec4(?:f|<f32>)\(0(?:\.0)?\)|\w+)|[\w_]+\s*=\s*vec4(?:f|<f32>)\(0(?:\.0)?\)))");
-    static const std::regex kPremulOut(
-        R"((?:sk_FragColor\s*=|return)\s*vec4(?:f|<f32>)\([^;]*\*\s*(_\d+_\w+\.[wa]|\w+\.[wa])\s*,\s*\1\s*\))");
-    if (std::regex_search(scanBody, kEarlyZero) ||
-        std::regex_search(scanBody, kPremulOut)) {
-      fx.preservesZeroAlpha = true;
-      fx.spillKind = ScreenFx::SpillKind::Zero;
+    if (fx.spillKind == ScreenFx::SpillKind::Unbounded) {
+      static const std::regex kEarlyZero(
+          R"(if\s*\(?[\w\.]+\s*<=?\s*(?:0\.0f?|0\.001f?|1e-0?[456]f?)\s*\)?\s*\{\s*(?:\{\s*)?(?:return\s+(?:vec4(?:f|<f32>)\(0(?:\.0)?f?\)|\w+)|[\w_]+\s*=\s*vec4(?:f|<f32>)\(0(?:\.0)?f?\)))");
+      static const std::regex kPremulOut(
+          R"((?:sk_FragColor|isf_FragColor\s*=|return)\s*=?\s*vec4(?:f|<f32>)\([^;]*\*\s*(_\d+_\w+\.[wa]|\w+\.[wa])\s*,\s*\1\s*\))");
+      if (std::regex_search(scanBody, kEarlyZero) ||
+          std::regex_search(scanBody, kPremulOut)) {
+        fx.preservesZeroAlpha = true;
+        fx.preservesAlpha = true;
+        fx.spillKind = ScreenFx::SpillKind::Zero;
+      }
+    }
+    // Detect ISF/WGSL pointwise shaders that pass input alpha through
+    // unchanged (e.g. `isf_FragColor = vec4<f32>(..., color.w)` or
+    // `tmp.w = src.w; isf_FragColor = tmp;`). Pure pointwise stacks ending in
+    // `toLinear` zero all `a <= 0` pixels, so alpha preservation alone permits
+    // tight bounds when no spatial effect follows.
+    if (!fx.preservesAlpha && !fx.sampleExpr.empty()) {
+      const size_t sp = scanBody.find(fx.sampleExpr);
+      if (sp != std::string::npos) {
+        const size_t lineStart = scanBody.rfind('\n', sp);
+        const std::string lhs = scanBody.substr(
+            lineStart == std::string::npos ? 0 : lineStart + 1,
+            sp - (lineStart == std::string::npos ? 0 : lineStart + 1));
+        static const std::regex kSampleVar(
+            R"(\b(?:let\s+|var\s+)?(\w+)\s*(?::\s*vec4(?:f|<f32>)\s*)?=\s*$)");
+        std::smatch vm;
+        if (std::regex_search(lhs, vm, kSampleVar)) {
+          const std::string inVar = vm[1];
+          const bool writesAlpha = std::regex_search(
+              scanBody, std::regex(R"(\b)" + inVar + R"(\.[wa]\s*[-+*/]?=)"));
+          if (!writesAlpha) {
+            const bool directOut = std::regex_search(
+                scanBody, std::regex(R"(\b(?:isf_FragColor\s*=|return)\s+)" +
+                                     inVar + R"(\s*;)"));
+            const bool vecOut = std::regex_search(
+                scanBody,
+                std::regex(
+                    R"(\b(?:isf_FragColor\s*=|return)\s+vec4(?:f|<f32>)\([^;]*,\s*)" +
+                    inVar + R"(\.[wa]\s*\)\s*;)"));
+            const bool copyAlphaOut = std::regex_search(
+                scanBody,
+                std::regex(
+                    R"(\b(\w+)\.[wa]\s*=\s*)" + inVar +
+                    R"(\.[wa]\s*;[\s\S]{0,160}\b(?:isf_FragColor\s*=|return)\s+\1\s*;)"));
+            if (directOut || vecOut || copyAlphaOut) {
+              fx.preservesAlpha = true;
+              // Pure multiplicative/power RGB transforms on `inVar.xyz`
+              // (Exposure Adjust, Gamma Correction, Exposure Sashimono) also
+              // strictly map vec4(0) -> vec4(0), safe even before spatial blur.
+              if (fx.spillKind == ScreenFx::SpillKind::Unbounded) {
+                std::string rgbExpr = inVar + R"(\.(?:xyz|rgb))";
+                std::smatch am;
+                if (std::regex_search(
+                        scanBody, am,
+                        std::regex(R"(\blet\s+(\w+)\s*=\s*)" + inVar +
+                                   R"(\.(?:xyz|rgb)\s*;)")))
+                  rgbExpr = "(?:" + rgbExpr + "|" + am[1].str() + ")";
+                const bool pureMulOrPow =
+                    std::regex_search(
+                        scanBody, std::regex(R"(\b)" + rgbExpr + R"(\s*\*)")) ||
+                    std::regex_search(
+                        scanBody,
+                        std::regex(R"(\bpow\s*\(\s*)" + rgbExpr + R"(\s*,)"));
+                const bool hasAddOrMix =
+                    std::regex_search(
+                        scanBody,
+                        std::regex(
+                            R"(\b(?:mix|encode_srgb|decode_srgb|to_linear|apply_curve)\s*\()")) ||
+                    std::regex_search(scanBody,
+                                      std::regex(R"(\b(?:)" + inVar + "|" +
+                                                 rgbExpr + R"()\s*[+-]\s*)"));
+                if (pureMulOrPow && !hasAddOrMix) {
+                  fx.preservesZeroAlpha = true;
+                  fx.spillKind = ScreenFx::SpillKind::Zero;
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

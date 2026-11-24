@@ -260,8 +260,10 @@ PooledLayerSlot* screen_pool_acquire_layer(Stage& s, uint32_t w, uint32_t h,
   return &cache.layerSlots.back();
 }
 
-void screen_pool_release_layer(Stage&, PooledLayerSlot* slot) {
-  if (slot) slot->inUse = false;
+void screen_pool_release_layer(Stage& s, PooledLayerSlot* slot) {
+  if (!s.fxCache || !slot) return;
+  slot->inUse = false;
+  slot->lastUsedFrame = s.frameCount;
 }
 
 PooledTarget* screen_pool_acquire_target(Stage& s, uint32_t w, uint32_t h,

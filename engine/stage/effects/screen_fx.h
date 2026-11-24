@@ -82,6 +82,10 @@ struct ScreenFx {
   bool pointwise = false;
   bool pointwiseSksl = false;
   bool preservesZeroAlpha = false;
+  // True when output alpha equals input alpha (may emit non-zero RGB where
+  // alpha == 0, which `toLinear` zeroes out at the end of a pure pointwise
+  // chain).
+  bool preservesAlpha = false;
   bool usesTime = true;
   // Bounded spill classification for tight offscreen texture sizing.
   // Unbounded falls back to full stage corners (doc_fx_sides).
@@ -207,6 +211,11 @@ struct ScreenStack {
   filament::RenderTarget* target = nullptr;
   filament::Texture* between[2] = {nullptr, nullptr};
   filament::RenderTarget* betweenTarget[2] = {nullptr, nullptr};
+  // StageFxCache pool slots backing `shot` and `between[0]` on per-layer
+  // stacks, returned to the pool on resize or cut exit to avoid reallocation
+  // and descriptor-set invalidation spikes.
+  struct PooledLayerSlot* shotSlot = nullptr;
+  struct PooledLayerSlot* outSlot = nullptr;
   // Passthrough copy for effects whose last pass draws into their own target.
   interop::Screen* copy = nullptr;
   // Steps in order: 0 = next GPU effect, 'a' = AviUtl2 script,

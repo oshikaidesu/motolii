@@ -343,6 +343,16 @@ void doc_layers_fx(Doc& d) {
             bounded = false;
           }
         }
+        // Pure pointwise chains whose steps all preserve input alpha end in
+        // `toLinear` (which zeroes every `a <= 0` pixel), so tight bounds are
+        // exact even for straight-alpha ISF color shaders.
+        const bool purePointwiseAlpha =
+            baseBounded && !e.st.fx.empty() &&
+            std::all_of(e.st.fx.begin(), e.st.fx.end(), [](const ScreenFx* fx) {
+              return fx && fx->pointwise &&
+                     (fx->preservesZeroAlpha || fx->preservesAlpha);
+            });
+        if (purePointwiseAlpha) bounded = true, totalPadPx = 0.0;
         e.st.boundPadPx = bounded ? totalPadPx : -1.0;
         e.st.anyHasFrameRect = anyFrame;
         // Domain culling: skip all offscreen rendering & effect passes when the

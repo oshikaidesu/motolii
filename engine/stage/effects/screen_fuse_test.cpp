@@ -146,5 +146,41 @@ TEST(ScreenFuse, AuthorDirectivesAndModernShelfShadersWork) {
   }
 }
 
+TEST(ScreenFuse, ClassifiesSinglePassIsfColorShadersAsPointwise) {
+  const ScreenFx exp = analyze_effect("color/Exposure Adjust.fs");
+  EXPECT_TRUE(exp.pointwise);
+  EXPECT_FALSE(exp.hasFrameRect);
+  EXPECT_TRUE(exp.preservesAlpha);
+  EXPECT_TRUE(exp.preservesZeroAlpha);
+  EXPECT_EQ(exp.spillKind, ScreenFx::SpillKind::Zero);
+
+  const ScreenFx gamma = analyze_effect("color/Gamma Correction.fs");
+  EXPECT_TRUE(gamma.pointwise);
+  EXPECT_FALSE(gamma.hasFrameRect);
+  EXPECT_TRUE(gamma.preservesAlpha);
+  EXPECT_TRUE(gamma.preservesZeroAlpha);
+  EXPECT_EQ(gamma.spillKind, ScreenFx::SpillKind::Zero);
+
+  const ScreenFx sashExp = analyze_effect("color/Exposure (Sashimono).fs");
+  EXPECT_TRUE(sashExp.pointwise);
+  EXPECT_FALSE(sashExp.hasFrameRect);
+  EXPECT_TRUE(sashExp.preservesAlpha);
+  EXPECT_TRUE(sashExp.preservesZeroAlpha);
+  EXPECT_EQ(sashExp.spillKind, ScreenFx::SpillKind::Zero);
+
+  const ScreenFx sashCC = analyze_effect("color/Color Correct (Sashimono).fs");
+  EXPECT_TRUE(sashCC.pointwise);
+  EXPECT_FALSE(sashCC.hasFrameRect);
+  EXPECT_TRUE(sashCC.preservesAlpha);
+
+  // Color Controls modifies alpha via contrast, so it fuses as pointwise while
+  // staying safely unbounded (not alpha-preserving).
+  const ScreenFx ctrl = analyze_effect("color/Color Controls.fs");
+  EXPECT_TRUE(ctrl.pointwise);
+  EXPECT_FALSE(ctrl.preservesAlpha);
+  EXPECT_FALSE(ctrl.preservesZeroAlpha);
+  EXPECT_EQ(ctrl.spillKind, ScreenFx::SpillKind::Unbounded);
+}
+
 }  // namespace
 }  // namespace motolii
