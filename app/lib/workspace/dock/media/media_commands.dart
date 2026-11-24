@@ -22,7 +22,9 @@ class MediaCommands {
     }
     final lengths = [
       for (final (i, s) in (await mediaLengthsOf(c.ws, files)).indexed)
-        media.kindOf(files[i]) == 'picture' ? media.stillSeconds : s,
+        const {'image', 'picture'}.contains(media.kindOf(files[i]))
+            ? media.stillSeconds
+            : s,
     ]; // A still image lasts as long as chosen.
     layFilesInOrder(
       c.ws,
@@ -51,8 +53,8 @@ class MediaCommands {
 
   /// Whether [file] is fitted to the canvas. Vector images (Lottie, SVG) are not.
   bool _fitted(String file) =>
-      media.kindOf(file) == 'film' ||
-      media.kindOf(file) == 'picture' &&
+      const {'video', 'film'}.contains(media.kindOf(file)) ||
+      const {'image', 'picture'}.contains(media.kindOf(file)) &&
           RegExp(
             r'\.(jpe?g|png|webp|bmp|heic)$',
             caseSensitive: false,
@@ -65,8 +67,10 @@ class MediaCommands {
       // Reading a song takes the engine a moment, so a second click in that moment counts as the same click.
       return;
     }
-    final still = media.kindOf(n.id) == 'picture' && media.stillSeconds > 0,
-        cut = const ['film', 'sound'].contains(media.kindOf(n.id))
+    final kind = media.kindOf(n.id);
+    final still =
+            const {'image', 'picture'}.contains(kind) && media.stillSeconds > 0,
+        cut = const ['video', 'film', 'sound'].contains(kind)
             ? media.filmRanges[n.id]
             : null,
         fit = _fitted(n.id); // The engine works out what the file is without waiting, and the layer is selected once made.

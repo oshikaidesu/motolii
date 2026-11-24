@@ -139,7 +139,7 @@ class TimelineRows {
               },
               selected: l.id == sel || lit.contains(l.id),
               dim:
-                  flags.isHidden(l.id) ||
+                  (l.kind != LayerKind.audio && flags.isHidden(l.id)) ||
                   (flags.anySolo && !flags.isSolo(l.id)),
               locked: flags.isLocked(l.id),
               clipped: l.clipped,

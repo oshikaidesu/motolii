@@ -47,9 +47,16 @@ class ProjectReader {
 
   int get _frameRate => _composition.frameRate;
 
-  /// Whether layer [t] is a sound-only video layer.
-  static bool isSound(Motolii m, int t) =>
-      m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
+  static bool _isVideoKind(String kind) => kind == 'video' || kind == 'film';
+  static bool _isImageKind(String kind) => kind == 'image' || kind == 'picture';
+
+  /// Whether layer [t] is a sound-only video layer (audio file or extracted sound track).
+  static bool isSound(Motolii m, int t) {
+    if (!_isVideoKind(m.word(t, 'kind'))) return false;
+    if (m.kindOf(m.word(t, 'file')) == 'sound') return true;
+    return (m.value(t, 'visible', 0) ?? 1) < .5 &&
+        m.word(t, 'name').endsWith(' (sound)');
+  }
 
   final layers = <Layer>[];
 
@@ -296,8 +303,8 @@ class ProjectReader {
         'text' => LayerKind.text,
         'camera' => LayerKind.camera,
         'environment' => LayerKind.environment,
-        'film' when isSound(m, t) => LayerKind.audio,
-        'film' || 'picture' => LayerKind.image,
+        'video' || 'film' when isSound(m, t) => LayerKind.audio,
+        'video' || 'film' || 'image' || 'picture' => LayerKind.image,
         'shape' when m.word(t, 'shape') == 'null' && _holding.contains(t) =>
           LayerKind.group,
         _ => LayerKind.shape,
@@ -307,7 +314,7 @@ class ProjectReader {
       keys,
       parent: _parentOf(m, t),
       lined:
-          (kind == 'picture' || kind == 'solid') &&
+          (_isImageKind(kind) || kind == 'solid') &&
           m.values(t).any((n) => n.startsWith('js_line_')),
       hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
       solo: (m.value(t, 'solo', 0) ?? 0) > .5,
@@ -333,13 +340,13 @@ class ProjectReader {
                 .round(),
       ],
       media: switch (kind) {
-        'film' => (
+        'video' || 'film' => (
           file: m.whole(m.word(t, 'file')),
           begin: m.value(t, 'begin', 0) ?? 0,
           speed: m.value(t, 'speed', 0) ?? 1,
           still: false,
         ),
-        'picture' => (
+        'image' || 'picture' => (
           file: m.whole(m.word(t, 'file')),
           begin: 0.0,
           speed: 1.0,

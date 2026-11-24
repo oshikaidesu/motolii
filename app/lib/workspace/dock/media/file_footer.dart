@@ -48,11 +48,13 @@ class FileFooter extends StatelessWidget {
         open = documentOpen(c.ws);
     // With a shape layer selected, an image file fills the shape
     final shape = c.ws.selected,
+        fileKind = media.kindOf(n.id),
+        shapeKind = shape == null ? '' : layerWord(c.ws, shape, 'kind'),
         fills =
             open &&
             shape != null &&
-            media.kindOf(n.id) == 'picture' &&
-            layerWord(c.ws, shape, 'kind') == 'shape' &&
+            const {'image', 'picture'}.contains(fileKind) &&
+            shapeKind == 'shape' &&
             layerWord(c.ws, shape, 'shape') != 'null';
     // An image or video layer is selected and a file of the same kind chosen: the layer shows that file instead and keeps
     // its position, size, keyframes and effects. This is After Effects' Replace Layer Source and Premiere Pro's Replace With Clip.
@@ -61,8 +63,8 @@ class FileFooter extends StatelessWidget {
         shape != null &&
         !fills &&
         layer != shape &&
-        const {'picture', 'film'}.contains(layerWord(c.ws, shape, 'kind')) &&
-        media.kindOf(n.id) == layerWord(c.ws, shape, 'kind');
+        const {'image', 'picture', 'video', 'film'}.contains(shapeKind) &&
+        fileKind == shapeKind;
     // The other layers that show the same file, which MediaCommands.replaceAll replaces together with this one.
     final all = swaps
         ? layersShowingFileOf(c.ws, shape)
@@ -123,9 +125,9 @@ class FileFooter extends StatelessWidget {
             : null,
         lasts: fills || swaps
             ? null
-            : switch (media.kindOf(n.id)) {
-                'picture' => _StillSeconds(c, media),
-                'film' || 'sound' when open => _FilmRange(
+            : switch (fileKind) {
+                'image' || 'picture' => _StillSeconds(c, media),
+                'video' || 'film' || 'sound' when open => _FilmRange(
                   c,
                   media,
                   n.id,

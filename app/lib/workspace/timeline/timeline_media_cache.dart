@@ -1,5 +1,6 @@
 // What the timeline's rows show of their media, requested from the engine once and kept: the beats of the layers'
 // sound, a video's frames, an image's thumbnail, a sound's waveform and the length of a video file.
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -28,7 +29,7 @@ class TimelineMediaCache extends ChangeNotifier {
   // It is requested again only when the project changes.
   // Per layer id: the project read, the from and to frames, and the loudness of each frame.
   final _waves = <int, (int, int, int, List<double>?)>{};
-  final _asked = <int>{};
+  final _asked = <(int, String)>{};
   final _waveAsked = <int, (int, int, int)>{};
   // The length of each video file in seconds; 0 while it is being read.
   final _filmSeconds = <String, double>{};
@@ -139,7 +140,8 @@ class TimelineMediaCache extends ChangeNotifier {
   List<double>? waveOf(WorkspaceController ws, Layer l) {
     if (!timeline_service.isConnected(ws)) return null;
     final t = l.id;
-    if (l.media?.still != false) return null;
+    final media = l.media;
+    if (media == null || media.still) return null;
     final key = (ws.reads, l.inF, l.outF);
     final had = _waves[l.id];
     if (had case (final r, final a, final b, final w) when (r, a, b) == key) {
@@ -148,18 +150,19 @@ class TimelineMediaCache extends ChangeNotifier {
     if (_waveAsked[l.id] != key) {
       // The engine answers on another isolate; the waveform is drawn on the bar when the answer arrives.
       _waveAsked[l.id] = key;
+      final samples = math.max(1, l.outF - l.inF);
       timeline_service
           .loudnessOver(
             ws,
             t,
             l.inF / WorkspaceController.fps,
             l.outF / WorkspaceController.fps,
-            l.outF - l.inF,
+            samples,
           )
           .then((w) {
             if (_disposed) return;
             if (w == null) {
-              if (_asked.add(l.id)) {
+              if (_asked.add((l.id, media.file))) {
                 timeline_service
                     .loudnessOf(ws, t)
                     .then(

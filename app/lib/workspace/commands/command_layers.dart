@@ -189,7 +189,8 @@ extension LayerCommands on WorkspaceState {
       'thing.extractSound': () {
         // Moves a video's sound to a layer of its own and mutes the video.
         final t = ws.selected;
-        if (t == null || wordOf(ws, t, 'kind') != 'film') return;
+        final kind = t == null ? '' : wordOf(ws, t, 'kind');
+        if (t == null || (kind != 'video' && kind != 'film')) return;
         ws.after(extractSoundOf(ws, t), null, (made) => ws.select(made));
       },
       'thing.group': () => group(''),

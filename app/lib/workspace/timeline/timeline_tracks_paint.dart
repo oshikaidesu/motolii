@@ -61,8 +61,24 @@ void _vLines(
 }) {
   final mj = majorTickSpacing(v.pixelsPerFrame, fps),
       fn = fineTickSpacing(v.pixelsPerFrame, fps, mj),
-      p = Paint();
+      p = Paint(),
+      zebra = (Grey.light ? Grey.g00 : Grey.g100).withValues(
+        alpha: Grey.light ? 0.04 : 0.036,
+      );
   if (beats != null) {
+    final barLen = beats.every * 4;
+    if (barLen > 0) {
+      final firstBar = ((v.scroll - beats.first) / barLen).floor();
+      final lastBar = ((v.scroll + w / v.pixelsPerFrame - beats.first) / barLen)
+          .ceil();
+      p.color = zebra;
+      for (var k = firstBar; k <= lastBar; k++) {
+        if (k.isEven) continue;
+        final x0 = v.x(beats.first + k * barLen).clamp(0.0, w);
+        final x1 = v.x(beats.first + (k + 1) * barLen).clamp(0.0, w);
+        if (x1 > x0) c.drawRect(Rect.fromLTRB(x0, top, x1, bottom), p);
+      }
+    }
     // Draw the grid by beat rather than by second while the lines can be told apart.
     for (final (f, bar) in beats.between(
       v.scroll,
@@ -76,6 +92,15 @@ void _vLines(
       }
     }
     return;
+  }
+  final firstBlock = (v.scroll / mj).floor();
+  final lastBlock = ((v.scroll + w / v.pixelsPerFrame) / mj).ceil();
+  p.color = zebra;
+  for (var k = firstBlock; k <= lastBlock; k++) {
+    if (k.isEven) continue;
+    final x0 = v.x(k * mj).clamp(0.0, w);
+    final x1 = v.x((k + 1) * mj).clamp(0.0, w);
+    if (x1 > x0) c.drawRect(Rect.fromLTRB(x0, top, x1, bottom), p);
   }
   final f0 = (v.scroll / fn).floor() * fn;
   for (var f = f0; f <= WorkspaceController.duration; f += fn) {
@@ -97,6 +122,7 @@ class TimelineTracksPainter extends CustomPainter {
     required this.viewport,
     required this.fps,
     required this.drag,
+    this.tempo,
   }) : view = viewport.view,
        vscroll = viewport.verticalScroll,
        restAt = drag.snappedAt,
@@ -104,6 +130,7 @@ class TimelineTracksPainter extends CustomPainter {
   final List<TimelineRow> rows;
   final TimelineViewport viewport;
   final TrackDrag drag;
+  final Beats? tempo;
   final TimelineView view;
   final int fps;
   final double vscroll;
@@ -146,8 +173,9 @@ class TimelineTracksPainter extends CustomPainter {
       math.min(s.width, end),
       0,
       s.height,
-      major: Grey.g20,
-      fine: Grey.g15,
+      major: Grey.g20.withValues(alpha: 0.65),
+      fine: Grey.g15.withValues(alpha: 0.45),
+      beats: tempo,
     );
     for (var i = 0; i < rows.length; i++) {
       final top = i * TimelineMetrics.row - vscroll;
@@ -286,7 +314,9 @@ class TimelineTracksPainter extends CustomPainter {
         );
       }
     }
-    if (r.wave case final w?) _wave(c, bar, ink, fill, r.inF, w);
+    if (r.wave case final w? when r.frames == null || r.frames!.isEmpty) {
+      _wave(c, bar, ink, fill, r.inF, w);
+    }
     if (r.hasAudio && bar.width >= 22) {
       final preview = drag.fadePreview;
       final fi = preview != null && preview.id == r.id
@@ -594,6 +624,8 @@ class TimelineTracksPainter extends CustomPainter {
       o.fps != fps ||
       o.vscroll != vscroll ||
       o.restAt != restAt ||
+      o.tempo?.first != tempo?.first ||
+      o.tempo?.every != tempo?.every ||
       !listEquals(o.rows, rows);
 }
 

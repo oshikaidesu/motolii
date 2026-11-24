@@ -432,8 +432,15 @@ String? _kindWord(WorkspaceController ws, int? id) {
         ? 'Relation'
         : 'Behaviour';
   }
-  if (w == 'film' && soundLayer(ws, id)) return 'Sound';
-  return const {'film', 'picture', 'solid', 'light'}.contains(w)
+  if ((w == 'video' || w == 'film') && soundLayer(ws, id)) return 'Sound';
+  return const {
+        'video',
+        'film',
+        'image',
+        'picture',
+        'solid',
+        'light',
+      }.contains(w)
       ? w.replaceRange(0, 1, w[0].toUpperCase())
       : null;
 }
