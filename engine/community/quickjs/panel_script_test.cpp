@@ -198,7 +198,7 @@ TEST(PanelScript, EvaluatesVismShowcaseAndNewUiPreludeHelpers) {
     const std::string tree =
         panel_eval_render(lyricPath.generic_string(), ctx, &err);
     ASSERT_TRUE(err.empty()) << "Auto Lyric mode " << mode << ": " << err;
-    EXPECT_NE(tree.find("\"AUTO LYRIC\""), std::string::npos) << tree;
+    EXPECT_NE(tree.find("\"Auto Lyric\""), std::string::npos) << tree;
   }
   const std::string applyRes = panel_eval_action(
       lyricPath.generic_string(), R"JSON({"id":"apply"})JSON",

@@ -1,5 +1,5 @@
 // --title: Auto Lyric
-// --about: Tactile Vism lyric & text motion console (Texflow-compatible: modes, Bezier curve, Kanji/Kana rules, GG strokes, zabuton, echo, beat sync & JSON presets)
+// --about: Lyric & kinetic text console (Texflow-compatible: modes, Bezier curve, Kanji/Kana rules, GG strokes, zabuton, echo, beat sync & JSON presets)
 // --acts: Layer
 // --tone: accent
 
@@ -12,11 +12,10 @@ const CURVE_PRESETS = {
   Back: [0.34, 1.45, 0.64, 1.0],
   Snap: [0.05, 0.9, 0.1, 1.0],
   Smooth: [0.45, 0.0, 0.55, 1.0],
-  Linear: [0.0, 0.0, 1.0, 1.0],
 };
 
 const ZABUTON_COLORS = [
-  "#18181B", "#FFFFFF", "#FF3B7F", "#00D4FF", "#FFE600", "#A855F7",
+  "#141414", "#F2F2F2", "#262626", "#C2D95B", "#E05252", "#4B8BF5",
 ];
 
 const BUILTIN_PRESETS = {
@@ -107,11 +106,9 @@ const PARAM_KEYS = Object.keys(PARAM_DEFAULTS);
 
 const COPY = {
   en: {
-    apply: "Apply Flow",
-    newLyric: "+ New Lyric",
+    apply: "Apply",
+    newLyric: "+ Add Text",
     beatSync: "Beat Sync",
-    noText: "Select or create a text layer",
-    curveLabel: "Easing Curve (drag P1 / P2)",
     out: "Out",
     alt: "Alternate",
     charRules: "Character Class (Kanji / Kana)",
@@ -124,30 +121,28 @@ const COPY = {
     zabuton: "Zabuton",
     echo: "Echo x3",
     bake: "Bake Keys",
-    presets: "Presets (JSON)",
+    presets: "Presets",
     save: "Save",
-    noPresets: "No user presets saved",
-    lyricPlaceholder: "Type lyric line...",
+    noPresets: "No saved presets",
+    lyricPlaceholder: "Lyric text...",
   },
   ja: {
     apply: "適用する",
-    newLyric: "+ 歌詞を追加",
+    newLyric: "+ テキスト作成",
     beatSync: "ビート同期",
-    noText: "テキストを選択または新規作成",
-    curveLabel: "イージング曲線（点をドラッグ）",
     out: "退場あり",
     alt: "交互反転",
     charRules: "文字種ルール（漢字 / かな）",
     kanjiScale: "漢字サイズ",
     kanjiDelay: "漢字ディレイ",
     kanaDelay: "かなディレイ",
-    tools: "分解 / ザブトン / 残像エコー",
+    tools: "分解 / ザブトン / 残像",
     splitLetters: "1文字分解",
     ggStrokes: "GG ストローク",
     zabuton: "ザブトン",
     echo: "残像 x3",
     bake: "キーをベイク",
-    presets: "プリセット (JSON)",
+    presets: "プリセット",
     save: "保存",
     noPresets: "保存済みプリセットなし",
     lyricPlaceholder: "歌詞を入力...",
@@ -158,17 +153,16 @@ function _clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
 function _state(ctx) {
   const raw = (ctx && ctx.state) || {};
-  const out = Object.assign({
+  return Object.assign({
     lang: "ja",
-    lyricText: "離れていた表現の交差点",
+    lyricText: "動き出す タイポグラフィ",
     presetName: "MyFlow",
-    zabutonColor: "#18181B",
+    zabutonColor: "#141414",
     zabutonPad: 0.36,
     echoCount: 3,
     echoStep: 0.04,
     handle: 0,
   }, PARAM_DEFAULTS, raw);
-  return out;
 }
 
 function _charClass(textOrName) {
@@ -212,64 +206,40 @@ function _explodedChildren(ctx, lay) {
 }
 
 function _hexNoHash(hex) {
-  return String(hex || "#18181B").replace(/^#/, "");
+  return String(hex || "#141414").replace(/^#/, "");
 }
 
-function _previewAndCurveSvg(st, sampleText) {
+function _curveSvg(st, accent) {
   const x1 = Number(st.x1), y1 = Number(st.y1);
   const x2 = Number(st.x2), y2 = Number(st.y2);
-  const modeIdx = Math.round(Number(st.mode));
-  const orderIdx = Math.round(Number(st.order));
-  const order = ORDERS[orderIdx] || "Start";
-  const alt = Number(st.alternate) >= 0.5;
 
-  const padX = 20, padY = 16, w = 240, h = 68;
+  const padX = 18, padY = 14, w = 244, h = 68;
   const sx = (x) => padX + x * w;
   const sy = (y) => padY + (1 - (y + 0.35) / 2.0) * h;
   const x0 = sx(0), y0 = sy(0), x3 = sx(1), y3 = sy(1);
   const px1 = sx(x1), py1 = sy(y1), px2 = sx(x2), py2 = sy(y2);
   const path = `M ${x0.toFixed(1)} ${y0.toFixed(1)} C ${px1.toFixed(1)} ${py1.toFixed(1)} ${px2.toFixed(1)} ${py2.toFixed(1)} ${x3.toFixed(1)} ${y3.toFixed(1)}`;
 
-  // Mini per-letter cascade strip along the bottom of the OLED screen
-  const rawChars = Array.from(String(sampleText || "AUTOLYRIC").replace(/[\r\n\s]/g, "")).slice(0, 8);
-  const chars = rawChars.length ? rawChars : ["A", "U", "T", "O"];
-  const n = chars.length;
-  const mid = (n - 1) / 2;
-  const bars = [];
-  for (let i = 0; i < n; i++) {
-    let turn = n > 1 ? i / (n - 1) : 0;
-    if (order === "End") turn = n > 1 ? (n - 1 - i) / (n - 1) : 0;
-    else if (order === "Centre") turn = mid > 0 ? Math.abs(i - mid) / mid : 0;
-    else if (order === "Edges") turn = mid > 0 ? (mid - Math.abs(i - mid)) / mid : 0;
-    else if (order === "Random") turn = _hash(Number(st.scatter_seed) + 3, i);
-
-    const cls = _charClass(chars[i]);
-    const clsBias = cls === "kanji" ? Number(st.kanji_delay) : (cls === "hiragana" || cls === "katakana") ? Number(st.kana_delay) : 0;
-    const norm = _clamp(turn + clsBias * 0.8, 0, 1);
-    const bx = padX + norm * (w - 44);
-    const by = 92 + (i % 4) * 5.2;
-    const fill = cls === "kanji" ? "#FF3B7F" : (alt && i % 2 === 1 ? "#38BDF8" : "#3ED9A4");
-    bars.push(`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="44" height="3.6" rx="1.8" fill="${fill}" opacity="0.88"/>`);
+  const grid = [];
+  for (let i = 1; i <= 3; i++) {
+    const gx = sx(i / 4).toFixed(1);
+    grid.push(`<line x1="${gx}" y1="${sy(1).toFixed(1)}" x2="${gx}" y2="${sy(0).toFixed(1)}" stroke="#222222" stroke-width="0.8"/>`);
   }
+  const midY = sy(0.5).toFixed(1);
+  grid.push(`<line x1="${padX}" y1="${midY}" x2="${padX + w}" y2="${midY}" stroke="#222222" stroke-width="0.8"/>`);
 
-  const accent = modeIdx === 1 ? "#FF3B7F" : modeIdx === 2 ? "#FFB547" : modeIdx === 3 ? "#A855F7" : "#3ED9A4";
-  return `<svg viewBox="0 0 280 116" preserveAspectRatio="none">
-    <rect x="0" y="0" width="280" height="116" rx="6" fill="#0B0F17"/>
-    <rect x="${padX}" y="${sy(1).toFixed(1)}" width="${w}" height="${(sy(0) - sy(1)).toFixed(1)}" fill="#131B2A" opacity="0.85"/>
-    <g stroke="#243047" stroke-width="0.7" stroke-dasharray="2 3">
-      <line x1="${sx(0.25).toFixed(1)}" y1="${padY}" x2="${sx(0.25).toFixed(1)}" y2="${padY + h}"/>
-      <line x1="${sx(0.5).toFixed(1)}" y1="${padY}" x2="${sx(0.5).toFixed(1)}" y2="${padY + h}"/>
-      <line x1="${sx(0.75).toFixed(1)}" y1="${padY}" x2="${sx(0.75).toFixed(1)}" y2="${padY + h}"/>
-    </g>
-    <line x1="${padX}" y1="${y0.toFixed(1)}" x2="${padX + w}" y2="${y0.toFixed(1)}" stroke="#334155" stroke-width="0.9"/>
-    <line x1="${padX}" y1="${y3.toFixed(1)}" x2="${padX + w}" y2="${y3.toFixed(1)}" stroke="#334155" stroke-width="0.9"/>
-    <line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${px1.toFixed(1)}" y2="${py1.toFixed(1)}" stroke="#38BDF8" stroke-width="1.3" opacity="0.9"/>
-    <line x1="${x3.toFixed(1)}" y1="${y3.toFixed(1)}" x2="${px2.toFixed(1)}" y2="${py2.toFixed(1)}" stroke="#FF3B7F" stroke-width="1.3" opacity="0.9"/>
-    <path d="${path}" fill="none" stroke="${accent}" stroke-width="2.4" stroke-linecap="round"/>
-    <circle cx="${px1.toFixed(1)}" cy="${py1.toFixed(1)}" r="${st.handle === 1 ? 6 : 4.8}" fill="#38BDF8" stroke="#0B0F17" stroke-width="1.5"/>
-    <circle cx="${px2.toFixed(1)}" cy="${py2.toFixed(1)}" r="${st.handle === 2 ? 6 : 4.8}" fill="#FF3B7F" stroke="#0B0F17" stroke-width="1.5"/>
-    <text x="${padX}" y="11" fill="#94A3B8" font-size="8.2" font-family="monospace">BEZIER ${x1.toFixed(2)}, ${y1.toFixed(2)}, ${x2.toFixed(2)}, ${y2.toFixed(2)} · ${MODES[modeIdx]} / ${order}</text>
-    ${bars.join("")}
+  return `<svg viewBox="0 0 280 96" preserveAspectRatio="none">
+    <rect x="0" y="0" width="280" height="96" rx="4" fill="#111111" stroke="#262626" stroke-width="1"/>
+    ${grid.join("")}
+    <line x1="${padX}" y1="${y0.toFixed(1)}" x2="${padX + w}" y2="${y0.toFixed(1)}" stroke="#333333" stroke-width="0.9" stroke-dasharray="3 3"/>
+    <line x1="${padX}" y1="${y3.toFixed(1)}" x2="${padX + w}" y2="${y3.toFixed(1)}" stroke="#333333" stroke-width="0.9" stroke-dasharray="3 3"/>
+    <line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${px1.toFixed(1)}" y2="${py1.toFixed(1)}" stroke="#5A5A5A" stroke-width="1.1"/>
+    <line x1="${x3.toFixed(1)}" y1="${y3.toFixed(1)}" x2="${px2.toFixed(1)}" y2="${py2.toFixed(1)}" stroke="#5A5A5A" stroke-width="1.1"/>
+    <path d="${path}" fill="none" stroke="${accent}" stroke-width="2.1" stroke-linecap="round"/>
+    <circle cx="${x0.toFixed(1)}" cy="${y0.toFixed(1)}" r="2.6" fill="${accent}"/>
+    <circle cx="${x3.toFixed(1)}" cy="${y3.toFixed(1)}" r="2.6" fill="${accent}"/>
+    <circle cx="${px1.toFixed(1)}" cy="${py1.toFixed(1)}" r="${st.handle === 1 ? 5.6 : 4.5}" fill="#F2F2F2" stroke="#111111" stroke-width="1.4"/>
+    <circle cx="${px2.toFixed(1)}" cy="${py2.toFixed(1)}" r="${st.handle === 2 ? 5.6 : 4.5}" fill="#F2F2F2" stroke="#111111" stroke-width="1.4"/>
   </svg>`;
 }
 
@@ -280,7 +250,6 @@ function _texflowOpsForLayer(layerId, st, existingFx) {
   if (!hasTexflow) {
     ops.push({ op: "fx", layer: layerId, file: "expressions/texflow.js" });
   }
-  // Custom curve uses ease_preset=0 ("Custom") so Bezier handles always take effect.
   ops.push({ op: "set", layer: layerId, name: "js_ease_preset", value: 0 });
   for (const k of PARAM_KEYS) {
     ops.push({ op: "set", layer: layerId, name: "js_" + k, value: Number(st[k]) });
@@ -296,6 +265,7 @@ function render(ctx) {
   const pickedCount = (ctx.selected || []).length;
   const parts = _explodedChildren(ctx, active);
 
+  const accent = (ctx && ctx.theme && ctx.theme.accent) || "#C2D95B";
   const modeIdx = Math.round(Number(st.mode));
   const mode = MODES[modeIdx] || "Slide";
   const order = ORDERS[Math.round(Number(st.order))] || "Start";
@@ -303,123 +273,120 @@ function render(ctx) {
   const bpm = Math.round(Number(ctx.bpm || 0));
   const userPresets = Object.keys((ctx && ctx.presets) || {});
 
-  const modeAccent = modeIdx === 1 ? "#FF3B7F" : modeIdx === 2 ? "#FFB547" : modeIdx === 3 ? "#A855F7" : "#3ED9A4";
+  const btnFlat = { bg: "#202020", fg: "#B8B8B8", border: "#2E2E2E", borderWidth: 1, radius: 4, fontSize: 9.5 };
+  const btnActive = { bg: accent, fg: "#111111", border: accent, borderWidth: 1, radius: 4, fontSize: 9.5 };
+  const btnSub = { bg: "#1B1B1B", fg: "#A0A0A0", border: "#2A2A2A", borderWidth: 1, radius: 4, fontSize: 9 };
 
   const modeButtons = MODES.map((m, idx) =>
-    ui.button(m, "mode:" + idx, {
-      style: idx === modeIdx
-        ? { bg: modeAccent, fg: "#0B0F17", border: modeAccent, borderWidth: 1.4, radius: 6, mono: true, fontSize: 9.5 }
-        : { bg: "#141A26", fg: "#94A3B8", border: "#263147", borderWidth: 1, radius: 6, mono: true, fontSize: 9.5 },
-    })
+    ui.button(m, "mode:" + idx, { style: idx === modeIdx ? btnActive : btnFlat })
   );
 
-  // Mode-adaptive 2nd row of tactile rotary knobs
-  let extraKnobs;
+  // Mode-specific parameters row (compact numeric fields, zero visual clutter)
+  let modeParams;
   if (mode === "Bounce" || mode === "Hang") {
-    extraKnobs = [
-      ui.knob("FREQ", Number(st.bounce_freq), { id: "bounce_freq", min: 0.5, max: 10, def: 3.0, dec: 1, look: "arc", size: 38, color: "#FF3B7F", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("DECAY", Number(st.bounce_decay), { id: "bounce_decay", min: 0.5, max: 12, def: 4.5, dec: 1, look: "arc", size: 38, color: "#FFB547", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("SCALE", Number(st.scale_from), { id: "scale_from", min: 0, max: 2.5, def: 0.65, dec: 2, look: "arc", size: 38, color: "#38BDF8", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("OPAC", Number(st.opacity_from), { id: "opacity_from", min: 0, max: 1, def: 0, dec: 2, look: "arc", size: 38, color: "#A855F7", capColor: "#141A26", trackColor: "#222C40" }),
-    ];
+    modeParams = ui.row([
+      ui.number("Freq", Number(st.bounce_freq), { id: "bounce_freq", min: 0.5, max: 10, step: 0.1, dec: 1 }),
+      ui.number("Decay", Number(st.bounce_decay), { id: "bounce_decay", min: 0.5, max: 12, step: 0.1, dec: 1 }),
+    ]);
   } else if (mode === "Scatter") {
-    extraKnobs = [
-      ui.knob("SPREAD", Number(st.scatter_spread), { id: "scatter_spread", min: 0, max: 8, def: 1.8, dec: 1, look: "arc", size: 38, color: "#A855F7", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("SEED", Number(st.scatter_seed), { id: "scatter_seed", min: 1, max: 999, def: 17, step: 1, dec: 0, look: "arc", size: 38, color: "#FF3B7F", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("SCALE", Number(st.scale_from), { id: "scale_from", min: 0, max: 2.5, def: 0.65, dec: 2, look: "arc", size: 38, color: "#38BDF8", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("OPAC", Number(st.opacity_from), { id: "opacity_from", min: 0, max: 1, def: 0, dec: 2, look: "arc", size: 38, color: "#3ED9A4", capColor: "#141A26", trackColor: "#222C40" }),
-    ];
+    modeParams = ui.row([
+      ui.number("Spread", Number(st.scatter_spread), { id: "scatter_spread", min: 0, max: 8, step: 0.1, dec: 1 }),
+      ui.number("Seed", Number(st.scatter_seed), { id: "scatter_seed", min: 1, max: 999, step: 1, dec: 0 }),
+    ]);
   } else {
-    extraKnobs = [
-      ui.knob("SCALE", Number(st.scale_from), { id: "scale_from", min: 0, max: 2.5, def: 0.65, dec: 2, look: "arc", size: 38, color: "#38BDF8", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("OPAC", Number(st.opacity_from), { id: "opacity_from", min: 0, max: 1, def: 0, dec: 2, look: "arc", size: 38, color: "#A855F7", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("KANJI", Number(st.kanji_scale), { id: "kanji_scale", min: 0.5, max: 2.5, def: 1.0, dec: 2, look: "arc", size: 38, color: "#FF3B7F", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("SEED", Number(st.scatter_seed), { id: "scatter_seed", min: 1, max: 999, def: 17, step: 1, dec: 0, look: "arc", size: 38, color: "#FFB547", capColor: "#141A26", trackColor: "#222C40" }),
-    ];
+    modeParams = ui.row([
+      ui.number("Scale", Number(st.scale_from), { id: "scale_from", min: 0, max: 2.5, step: 0.05, dec: 2 }),
+      ui.number("Opacity", Number(st.opacity_from), { id: "opacity_from", min: 0, max: 1, step: 0.05, dec: 2 }),
+    ]);
   }
 
   return ui.box([
-    // Header bar
+    // Clean single-accent utility header
     ui.row([
-      ui.badge("AUTO LYRIC", {
-        style: { bg: modeAccent, fg: "#0B0F17", borderWidth: 0, radius: 5, mono: true, fontSize: 9 },
+      ui.badge("Auto Lyric", {
+        style: { bg: accent, fg: "#111111", borderWidth: 0, radius: 4, fontSize: 9.5 },
       }),
-      ui.badge(
-        isText ? (active.name || "Text") : (pickedCount > 0 ? pickedCount + " sel" : "READY"),
-        { style: { bg: "#141B29", fg: isText ? "#E2F4FF" : "#7D93B0", border: "#26324A", borderWidth: 1, radius: 5, fontSize: 8.5 } }
+      ui.text(
+        isText
+          ? Array.from(String(active.name || "Text")).slice(0, 8).join("")
+          : (pickedCount > 0 ? pickedCount + " sel" : "No layer"),
+        {
+          muted: !isText,
+          style: { fg: isText ? "#D4D4D4" : "#777777", fontSize: 9.5 },
+        }
       ),
-      ui.spacer(),
       bpm > 0
-        ? ui.badge(bpm + " BPM", { style: { bg: "#1E1629", fg: "#C084FC", border: "#4C2E70", borderWidth: 1, radius: 5, mono: true, fontSize: 8.5 } })
+        ? ui.text(bpm + " BPM", { style: { fg: "#7A7A7A", fontSize: 9, mono: true } })
         : ui.spacer(2),
       ui.button(st.lang === "ja" ? "EN" : "JP", "toggle_lang", {
-        style: { bg: "#141A26", fg: "#94A3B8", border: "#263147", borderWidth: 1, radius: 5, mono: true, fontSize: 8.5 },
+        style: { bg: "#202020", fg: "#A0A0A0", border: "#2E2E2E", borderWidth: 1, radius: 4, fontSize: 8.5, mono: true },
       }),
     ]),
 
-    // Quick lyric line creator when no text layer is picked (or anytime!)
+    // Lyric line input + quick create
     ui.row([
       ui.input("", st.lyricText, {
         id: "lyricText",
         placeholder: t.lyricPlaceholder,
-        style: { bg: "#0B0F17", fg: "#E2F4FF", border: "#25324A", radius: 6 },
+        style: { bg: "#111111", fg: "#E6E6E6", border: "#2B2B2B", radius: 4 },
       }),
-      ui.button(t.newLyric, "new_lyric", {
-        style: { bg: "#1C2538", fg: "#3ED9A4", border: "#3ED9A466", borderWidth: 1.2, radius: 6, fontSize: 9.5 },
-      }),
+      ui.button(t.newLyric, "new_lyric", { style: btnFlat }),
     ]),
 
-    // Mode deck (Texflow 4 core modes)
+    // Mode tabs
     ui.row(modeButtons),
 
-    // Live OLED Bezier + per-letter cascade screen
-    ui.svg(116, _previewAndCurveSvg(st, isText ? (active.text || active.name) : st.lyricText), {
+    // Ease-style minimal Bezier editor
+    ui.svg(96, _curveSvg(st, accent), {
       id: "curve",
-      label: t.curveLabel,
       fit: "fill",
       framed: false,
     }),
 
-    // Curve quick presets
+    // Curve presets + numeric summary
     ui.row(
       Object.keys(CURVE_PRESETS).map((name) =>
-        ui.button(name, "curve_preset:" + name, {
-          style: { bg: "#141A26", fg: "#CBD5E1", border: "#25324A", borderWidth: 1, radius: 5, fontSize: 8.5, mono: true },
-        })
+        ui.button(name, "curve_preset:" + name, { style: btnSub })
       )
     ),
 
-    // Order (full width so all 5 options read cleanly) + Axis
-    ui.select("Order", order, ORDERS, { id: "order", style: { bg: "#111723", fg: "#E2F4FF", border: "#25324A", radius: 6 } }),
+    // Order + Axis / Toggles
+    ui.select("Order", order, ORDERS, { id: "order", style: { bg: "#141414", fg: "#E2E2E2", border: "#2B2B2B", radius: 4 } }),
     ui.row([
-      ui.select("Axis", axis, AXES, { id: "axis", style: { bg: "#111723", fg: "#E2F4FF", border: "#25324A", radius: 6 } }),
+      ui.select("Axis", axis, AXES, { id: "axis", style: { bg: "#141414", fg: "#E2E2E2", border: "#2B2B2B", radius: 4 } }),
       ui.column([
         ui.toggle(t.out, Number(st.out) >= 0.5, { id: "out" }),
         ui.toggle(t.alt, Number(st.alternate) >= 0.5, { id: "alternate" }),
       ]),
     ]),
 
-    // Primary VST knob row
+    // Compact 2-column numeric parameters (like Motolii Inspector)
     ui.row([
-      ui.knob("DIST", Number(st.distance), { id: "distance", min: -10, max: 10, def: 1.5, dec: 2, look: "arc", size: 40, color: "#3ED9A4", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("LEN", Number(st.length), { id: "length", min: 0.05, max: 4.0, def: 0.55, dec: 2, unit: "s", look: "arc", size: 40, color: "#38BDF8", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("DELAY", Number(st.delay), { id: "delay", min: 0, max: 1.0, def: 0.05, dec: 2, unit: "s", look: "arc", size: 40, color: "#FF3B7F", capColor: "#141A26", trackColor: "#222C40" }),
-      ui.knob("ROT", Number(st.rotate_from), { id: "rotate_from", min: -180, max: 180, def: -18, step: 1, dec: 0, unit: "°", look: "arc", size: 40, color: "#FFB547", capColor: "#141A26", trackColor: "#222C40" }),
+      ui.number("Distance", Number(st.distance), { id: "distance", min: -10, max: 10, step: 0.05, dec: 2 }),
+      ui.number("Length", Number(st.length), { id: "length", min: 0.05, max: 4.0, step: 0.01, dec: 2, unit: "s" }),
     ]),
+    ui.row([
+      ui.number("Delay", Number(st.delay), { id: "delay", min: 0, max: 1.0, step: 0.01, dec: 2, unit: "s" }),
+      ui.number("Rotate", Number(st.rotate_from), { id: "rotate_from", min: -360, max: 360, step: 1, dec: 0, unit: "°" }),
+    ]),
+    modeParams,
+    mode !== "Slide"
+      ? ui.row([
+          ui.number("Scale", Number(st.scale_from), { id: "scale_from", min: 0, max: 2.5, step: 0.05, dec: 2 }),
+          ui.number("Opacity", Number(st.opacity_from), { id: "opacity_from", min: 0, max: 1, step: 0.05, dec: 2 }),
+        ])
+      : ui.spacer(0),
 
-    // Secondary adaptive knob row
-    ui.row(extraKnobs),
-
-    // Main action bar: Apply Flow + Beat Sync
+    // Primary Apply + Beat Sync
     ui.row([
       ui.button(t.apply, "apply", {
         accent: true,
         disabled: pickedCount === 0,
-        style: { bg: modeAccent, fg: "#0B0F17", borderWidth: 0, radius: 7, fontSize: 10 },
+        style: btnActive,
       }),
       ui.button(t.beatSync, "beat_sync", {
         disabled: pickedCount === 0,
-        style: { bg: "#1E1629", fg: "#D8B4FE", border: "#6B21A8", borderWidth: 1.2, radius: 7, fontSize: 9.5 },
+        style: btnFlat,
       }),
     ]),
 
@@ -427,25 +394,25 @@ function render(ctx) {
     ui.section(t.charRules, [
       ui.slider(t.kanjiScale, Number(st.kanji_scale), { id: "kanji_scale", min: 0.5, max: 2.5, step: 0.05 }),
       ui.row([
-        ui.slider(t.kanjiDelay, Number(st.kanji_delay), { id: "kanji_delay", min: -0.5, max: 0.5, step: 0.01, unit: "s" }),
-        ui.slider(t.kanaDelay, Number(st.kana_delay), { id: "kana_delay", min: -0.5, max: 0.5, step: 0.01, unit: "s" }),
+        ui.number(t.kanjiDelay, Number(st.kanji_delay), { id: "kanji_delay", min: -0.5, max: 0.5, step: 0.01, dec: 2, unit: "s" }),
+        ui.number(t.kanaDelay, Number(st.kana_delay), { id: "kana_delay", min: -0.5, max: 0.5, step: 0.01, dec: 2, unit: "s" }),
       ]),
     ], { open: false }),
 
-    // Explode, Zabuton backplate, Echo trail & Keyframe Bake
+    // Explode, Zabuton, Echo & Bake
     ui.section(t.tools, [
       ui.row([
-        ui.button(t.splitLetters, "explode:letters", { disabled: !isText }),
-        ui.button(t.ggStrokes, "explode:strokes", { tone: "place", disabled: !isText }),
+        ui.button(t.splitLetters, "explode:letters", { disabled: !isText, style: btnFlat }),
+        ui.button(t.ggStrokes, "explode:strokes", { disabled: !isText, style: btnFlat }),
       ]),
       ui.row([
-        ui.button(t.zabuton, "backplate", { disabled: !active }),
-        ui.button(t.echo, "echo", { disabled: !isText }),
+        ui.button(t.zabuton, "backplate", { disabled: !active, style: btnFlat }),
+        ui.button(t.echo, "echo", { disabled: !isText, style: btnFlat }),
       ]),
       ui.button(
         parts.length > 0 ? t.bake + " (" + parts.length + ")" : t.bake,
         "bake_parts",
-        { accent: parts.length > 0, disabled: parts.length === 0 }
+        { disabled: parts.length === 0, style: parts.length > 0 ? btnActive : btnSub }
       ),
       ui.grid(
         ZABUTON_COLORS.map((hex) =>
@@ -455,10 +422,10 @@ function render(ctx) {
       ),
     ], { open: true }),
 
-    // Presets (8 built-ins + user JSON persistence)
+    // Presets (8 built-ins + JSON user presets)
     ui.section(t.presets, [
       ui.grid(
-        Object.keys(BUILTIN_PRESETS).map((n) => ui.button(n, "load_builtin:" + n)),
+        Object.keys(BUILTIN_PRESETS).map((n) => ui.button(n, "load_builtin:" + n, { style: btnSub })),
         { cols: 2 }
       ),
       userPresets.length === 0
@@ -466,27 +433,26 @@ function render(ctx) {
         : ui.column(
             userPresets.map((n) =>
               ui.row([
-                ui.button(n, "load_user:" + n),
-                ui.button("×", "del_user:" + n, { tone: "muted" }),
+                ui.button(n, "load_user:" + n, { style: btnFlat }),
+                ui.button("×", "del_user:" + n, { style: btnSub }),
               ])
             )
           ),
       ui.row([
         ui.input("Name", st.presetName, { id: "presetName", placeholder: "Preset name" }),
-        ui.button(t.save, "save_preset", { tone: "time" }),
+        ui.button(t.save, "save_preset", { style: btnFlat }),
       ]),
     ], { open: false }),
   ], {
-    bg: "#0E131D",
-    bg2: "#151D2C",
-    fg: "#E8F1FF",
-    muted: "#7D93B0",
-    accent: modeAccent,
-    border: "#26334D",
-    borderWidth: 1.4,
-    radius: 12,
-    pad: 10,
-    gap: 8,
+    bg: "#181818",
+    fg: "#E6E6E6",
+    muted: "#848484",
+    accent: accent,
+    border: "#2B2B2B",
+    borderWidth: 1,
+    radius: 6,
+    pad: 9,
+    gap: 7,
   });
 }
 
@@ -502,7 +468,6 @@ function onAction(action, ctx) {
   const picked = _selectedLayers(ctx);
   const active = _activeTextLayer(ctx);
 
-  // Live-sync helper: when editing a parameter while a texflow-enabled layer is selected, update both state and layer.
   function commitParam(patch, notice) {
     const next = Object.assign({}, st, patch);
     const ops = [];
@@ -559,8 +524,8 @@ function onAction(action, ctx) {
 
   if (id === "curve" && action.value) {
     const ptr = action.value;
-    const bx = _clamp((ptr.x * 280 - 20) / 240, 0, 1);
-    const by = _clamp(1.65 - ((ptr.y * 116 - 16) / 68) * 2.0, -0.35, 1.65);
+    const bx = _clamp((ptr.x * 280 - 18) / 244, 0, 1);
+    const by = _clamp(1.65 - ((ptr.y * 96 - 14) / 68) * 2.0, -0.35, 1.65);
     let handle = st.handle || 0;
     if (ptr.phase === "down" || !handle) {
       const d1 = Math.hypot(bx - Number(st.x1), by - Number(st.y1));
@@ -576,7 +541,6 @@ function onAction(action, ctx) {
     return res;
   }
 
-  // Create a brand-new lyric text layer at playhead with Auto Lyric (texflow.js) attached
   if (id === "new_lyric") {
     const text = String(st.lyricText || "").trim() || "Auto Lyric";
     const startAt = Math.max(0, Number(ctx.time || 0));
@@ -590,7 +554,6 @@ function onAction(action, ctx) {
     return { ops: ops, notice: "Created Auto Lyric: " + text.slice(0, 20) };
   }
 
-  // Apply non-destructive Auto Lyric (texflow.js) to all selected layers
   if (id === "apply") {
     if (picked.length === 0) return { notice: "Select a text layer first" };
     let ops = [];
@@ -603,7 +566,6 @@ function onAction(action, ctx) {
     };
   }
 
-  // Sync selected lyric layers onto timeline markers, audio beat strikes, or project BPM grid
   if (id === "beat_sync") {
     if (picked.length === 0) return { notice: "Select layers to beat-sync" };
     const marks = (ctx.marks || []).map((m) => Number(m.time)).filter((x) => !isNaN(x)).sort((a, b) => a - b);
@@ -635,7 +597,6 @@ function onAction(action, ctx) {
     return { ops: ops, notice: "Synced " + picked.length + " layer(s) to " + source };
   }
 
-  // Presets (built-in + JSON persisted user presets)
   if (id.indexOf("load_builtin:") === 0) {
     const name = id.slice(13);
     const preset = BUILTIN_PRESETS[name];
@@ -662,7 +623,6 @@ function onAction(action, ctx) {
     };
   }
 
-  // Explode into editable letters or GG stroke parts
   if ((id === "explode:letters" || id === "explode:strokes") && active && active.kind === "text") {
     const mode = id === "explode:strokes" ? "strokes" : "letters";
     return {
@@ -671,7 +631,6 @@ function onAction(action, ctx) {
     };
   }
 
-  // Auto-generate Zabuton backplate matte behind the selected text layer
   if (id === "backplate" && active) {
     const chars = Array.from(String(active.text || "")).length || 3;
     const sz = active.size || 0.7;
@@ -707,12 +666,11 @@ function onAction(action, ctx) {
     };
   }
 
-  // Generate delayed afterimage Echo trail copies behind the selected text layer
   if (id === "echo" && active && active.kind === "text") {
     const count = Math.max(1, Math.min(5, Math.round(Number(st.echoCount || 3))));
     const dt = Number(st.echoStep || 0.04);
     const baseOrder = active.order ? active.order : active.id;
-    const tints = ["FF3B7F", "38BDF8", "A855F7", "FFB547", "3ED9A4"];
+    const tints = ["C2D95B", "A0A0A0", "6E6E6E", "4B8BF5", "E05252"];
     let ops = [];
     for (let e = 1; e <= count; e++) {
       ops.push({ op: "add", kind: "text", file: "" });
@@ -733,7 +691,6 @@ function onAction(action, ctx) {
     return { ops: ops, notice: "Created " + count + " echo trail layer(s)" };
   }
 
-  // Bake current Auto Lyric settings as keyframes onto exploded letter / GG stroke parts
   if (id === "bake_parts" && active) {
     const parts = _explodedChildren(ctx, active);
     if (parts.length === 0) return { notice: "Explode into Letters or GG Strokes first" };

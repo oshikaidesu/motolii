@@ -1110,6 +1110,7 @@ const ui = {
   button:(l,id,o)=>Object.assign({type:"button",label:String(l??""),id:String(id??l??"")},o),
   toggle:(l,v,o)=>Object.assign({type:"toggle",label:String(l??""),value:!!v},o),
   knob:(l,v,o)=>Object.assign({type:"knob",label:String(l??""),value:Number(v??0)},o),
+  number:(l,v,o)=>Object.assign({type:"number",label:String(l??""),value:Number(v??0)},o),
   slider:(l,v,o)=>Object.assign({type:"slider",label:String(l??""),value:Number(v??0)},o),
   select:(l,v,opts,o)=>Object.assign({type:"select",label:String(l??""),value:String(v??""),options:opts||[]},o),
   input:(l,v,o)=>Object.assign({type:"input",label:String(l??""),value:String(v??"")},o),
@@ -1159,7 +1160,7 @@ process.stdout.write(JSON.stringify(tree));
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('AUTO LYRIC'), findsOneWidget);
+      expect(find.text('Auto Lyric'), findsOneWidget);
       expect(find.text('128 BPM'), findsOneWidget);
       expect(find.text('適用する'), findsOneWidget);
       await tester.tap(find.text('適用する'));
