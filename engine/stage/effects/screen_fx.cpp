@@ -268,6 +268,29 @@ void sync_from_shared(Stage& s, ScreenFx& fx, SharedScreen& sh) {
   fx.pointwiseSksl = sh.proto.pointwiseSksl;
   fx.preservesZeroAlpha = sh.proto.preservesZeroAlpha;
   fx.usesTime = sh.proto.usesTime;
+  fx.spillKind = sh.proto.spillKind;
+  fx.spillField = sh.proto.spillField;
+  fx.spillScale = sh.proto.spillScale;
+  fx.spillBase = sh.proto.spillBase;
+  fx.spillCap = sh.proto.spillCap;
+  // Precompute document parameter keys ("js_<stem>_<param>" with optional
+  // instance prefix) once so per-frame evaluation never parses paths.
+  std::string stem = std::filesystem::path(fx.file).stem().generic_string();
+  for (char& c : stem)
+    if (!(c >= '0' && c <= '9') && !(c >= 'A' && c <= 'Z') &&
+        !(c >= 'a' && c <= 'z') && c != '_')
+      c = '_';
+  const std::string pfx =
+      (fx.instance_id.empty() ? "" : fx.instance_id + ":") + "js_" + stem + "_";
+  for (ScreenFx::Field& f : fx.fields) {
+    f.useCachedVal = false;
+    if (f.kind == ScreenFx::FieldKind::Param) {
+      for (uint32_t i = 0; i < f.floats && i < 4; ++i)
+        f.docParamKeys[i] = pfx + f.paramNames[i];
+    }
+  }
+  fx.paramValsFrame = 0;
+  fx.paramBufFrame = 0;
   fx.wgsl = sh.proto.wgsl;
   fx.uniformStruct = sh.proto.uniformStruct;
   fx.uniformVar = sh.proto.uniformVar;

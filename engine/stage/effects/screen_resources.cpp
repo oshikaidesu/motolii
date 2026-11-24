@@ -191,8 +191,12 @@ void screen_fill_parameters(Stage& s, ScreenFx& fx,
         v[0] = (float)fx.historyFrames;
         break;
       case K::Param:
-        for (uint32_t i = 0; i < f.floats && i < 4; ++i)
-          v[i] = (float)numbers(key, f.paramNames[i], f.usual[i]);
+        if (fx.paramValsFrame == s.frameCount && f.useCachedVal) {
+          for (uint32_t i = 0; i < f.floats && i < 4; ++i) v[i] = f.paramVal[i];
+        } else {
+          for (uint32_t i = 0; i < f.floats && i < 4; ++i)
+            v[i] = (float)numbers(key, f.paramNames[i], f.usual[i]);
+        }
         break;
     }
     for (uint32_t i = 0; i < f.floats; ++i) {
@@ -209,8 +213,18 @@ void screen_fill_parameters(Stage& s, ScreenFx& fx,
 int screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
                       int pass, double pw, double ph) {
   if (!fx.bytes) return 0;
-  fx.paramBuf.resize(fx.bytes / 4);
-  screen_fill_parameters(s, fx, numbers, fx.paramBuf.data(), pass, pw, ph);
+  const uint32_t rw = (uint32_t)(pw > 0 ? pw : s.w),
+                 rh = (uint32_t)(ph > 0 ? ph : s.h);
+  if (fx.paramBufFrame != s.frameCount || fx.paramBufW != rw ||
+      fx.paramBufH != rh || fx.paramBufPass != pass ||
+      fx.paramBuf.size() != fx.bytes / 4) {
+    fx.paramBuf.resize(fx.bytes / 4);
+    screen_fill_parameters(s, fx, numbers, fx.paramBuf.data(), pass, pw, ph);
+    fx.paramBufFrame = s.frameCount;
+    fx.paramBufW = rw;
+    fx.paramBufH = rh;
+    fx.paramBufPass = pass;
+  }
   int slot = pass;
   if (fx.shared) {
     if (fx.shared->slotFrame != s.frameCount)

@@ -260,19 +260,31 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
         std::copy(fx->frame, fx->frame + 4, fx->pass);
         fx->paramBuf.resize(fx->bytes / 4);
         screen_fill_parameters(s, *fx, numbers, fx->paramBuf.data(), 0, w, h);
-        // Mask out unused `time`/`frame` uniform slots so time-invariant
-        // shaders remain cached across frames when nothing on this layer moves.
-        if (!fx->usesTime) {
-          for (const ScreenFx::Field& f : fx->fields) {
-            if (f.kind == ScreenFx::FieldKind::Time ||
-                f.kind == ScreenFx::FieldKind::ClipTime ||
-                f.kind == ScreenFx::FieldKind::Frame) {
-              for (uint32_t i = 0; i < f.floats; ++i)
-                fx->paramBuf[f.at / 4 + i] = 0.f;
+        fx->paramBufFrame = s.frameCount;
+        fx->paramBufW = w;
+        fx->paramBufH = h;
+        fx->paramBufPass = 0;
+        // Skip unused `time`/`frame`/`clip_time` uniform slots while hashing
+        // without mutating `paramBuf`, so `screen_draw_fused`/`screen_draw`
+        // reuse the already-filled buffer directly on cache misses.
+        if (fx->usesTime) {
+          fnv_mix(fullKey, fx->paramBuf.data(), fx->bytes);
+        } else {
+          const size_t nFloats = fx->bytes / 4;
+          for (size_t fi = 0; fi < nFloats; ++fi) {
+            bool skip = false;
+            for (const ScreenFx::Field& f : fx->fields) {
+              if ((f.kind == ScreenFx::FieldKind::Time ||
+                   f.kind == ScreenFx::FieldKind::ClipTime ||
+                   f.kind == ScreenFx::FieldKind::Frame) &&
+                  fi >= f.at / 4 && fi < f.at / 4 + f.floats) {
+                skip = true;
+                break;
+              }
             }
+            if (!skip) fnv_mix(fullKey, &fx->paramBuf[fi], sizeof(float));
           }
         }
-        fnv_mix(fullKey, fx->paramBuf.data(), fx->bytes);
       }
     }
     if (owner->cacheValid && st.seen == st.between[0] && owner->cacheW == w &&

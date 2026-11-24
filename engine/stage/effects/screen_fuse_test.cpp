@@ -56,10 +56,16 @@ TEST(ScreenFuse, RejectsAlphaInvertingAndMultiSampleShaders) {
   const ScreenFx blur = analyze_effect("blur/am_directionalblur.wgsl");
   EXPECT_FALSE(blur.pointwise);
   EXPECT_FALSE(blur.preservesZeroAlpha);
+  EXPECT_EQ(blur.spillKind, ScreenFx::SpillKind::ParamPx);
+  EXPECT_GE(blur.spillField, 0);
 
   const ScreenFx denoise = analyze_effect("blur/am_denoise.wgsl");
   EXPECT_FALSE(denoise.pointwise);
-  EXPECT_FALSE(denoise.preservesZeroAlpha);
+  EXPECT_TRUE(denoise.preservesZeroAlpha);
+  EXPECT_EQ(denoise.spillKind, ScreenFx::SpillKind::Zero);
+
+  const ScreenFx tile = analyze_effect("move/am_tile.wgsl");
+  EXPECT_EQ(tile.spillKind, ScreenFx::SpillKind::Unbounded);
 }
 
 TEST(ScreenFuse, DetectsTimeDependentVsStaticShaders) {
@@ -70,6 +76,8 @@ TEST(ScreenFuse, DetectsTimeDependentVsStaticShaders) {
   const ScreenFx glow = analyze_effect("blur/Glow (Sashimono).fs");
   EXPECT_FALSE(glow.pointwise);
   EXPECT_FALSE(glow.usesTime);
+  EXPECT_EQ(glow.spillKind, ScreenFx::SpillKind::ParamPx);
+  EXPECT_FLOAT_EQ(glow.spillCap, 96.f);
   const bool hasClipTime = std::any_of(
       glow.fields.begin(), glow.fields.end(), [](const ScreenFx::Field& f) {
         return f.kind == ScreenFx::FieldKind::ClipTime;
@@ -79,6 +87,8 @@ TEST(ScreenFuse, DetectsTimeDependentVsStaticShaders) {
   const ScreenFx gblur = analyze_effect("blur/Multi Pass Gaussian Blur.fs");
   EXPECT_FALSE(gblur.pointwise);
   EXPECT_FALSE(gblur.usesTime);
+  EXPECT_EQ(gblur.spillKind, ScreenFx::SpillKind::ParamPx);
+  EXPECT_FLOAT_EQ(gblur.spillCap, 128.f);
 }
 
 }  // namespace

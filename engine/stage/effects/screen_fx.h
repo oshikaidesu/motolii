@@ -69,6 +69,12 @@ struct ScreenFx {
     int otherIdx = -1;
     double usual[4] = {0, 0, 0, 0};
     std::string paramNames[4];
+    // Precomputed document parameter key ("js_<stem>_<param>" with optional
+    // instance prefix) and per-frame batch-evaluated values.
+    std::string docParamKeys[4];
+    float paramVal[4] = {0.f, 0.f, 0.f, 0.f};
+    bool useCachedVal = false;
+    bool hasDynamicKey = false;
   };
   std::vector<Field> fields;
   uint32_t bytes = 0;
@@ -77,9 +83,25 @@ struct ScreenFx {
   bool pointwiseSksl = false;
   bool preservesZeroAlpha = false;
   bool usesTime = true;
+  // Bounded spill classification for tight offscreen texture sizing.
+  // Unbounded falls back to full stage corners (doc_fx_sides).
+  enum class SpillKind : uint8_t {
+    Unbounded = 0,
+    Zero,
+    ParamPx,
+  };
+  SpillKind spillKind = SpillKind::Unbounded;
+  int spillField = -1;
+  float spillScale = 1.f;
+  float spillBase = 0.f;
+  float spillCap = 0.f;
   bool sharedInterop = false;
   std::string wgsl, uniformStruct, uniformVar, sampleExpr;
   std::vector<float> paramBuf;
+  uint64_t paramValsFrame = 0;
+  uint64_t paramBufFrame = 0;
+  uint32_t paramBufW = 0, paramBufH = 0;
+  int paramBufPass = -1;
   struct SharedScreen* shared = nullptr;
   interop::Screen* interop = nullptr;
   // Image count: stage image + one per ISF pass target.
@@ -156,6 +178,12 @@ struct ScreenStack {
   // True when every step is a zero-alpha-preserving pointwise GPU effect, so
   // the layer's offscreen texture needs no full-screen expansion padding.
   bool allPointwiseTight = false;
+  // >= 0: total provably bounded spill margin in pixels across the stack
+  // (0 for zero-alpha-preserving chains). < 0: unbounded (full stage sides).
+  double boundPadPx = -1.0;
+  // True when any active GPU effect reads `frameRect` (needs 128px bake margin
+  // so RENDERSIZE stays invariant).
+  bool anyHasFrameRect = false;
   double thingSeen[4] = {0, 0, 0, 0};
   // The layer's own rectangle on the image; a generator measures by this.
   double own[4] = {0, 0, 1, 1};

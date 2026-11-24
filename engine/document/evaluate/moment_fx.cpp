@@ -288,6 +288,60 @@ void doc_layers_fx(Doc& d) {
           d.look.backdropIs.size() == 6
               ? (int)std::strtol(d.look.backdropIs.c_str(), nullptr, 16)
               : -1;
+      // Batch-evaluate all GPU effect user parameters under one `d.lock` using
+      // precomputed keys (avoiding per-parameter mutex + path stem parsing) and
+      // compute the stack's exact bounded spill margin before aiming the view.
+      {
+        std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+        const std::string fxWord = doc_word(d, layer, "fx");
+        const double now = d.stage->now;
+        const bool baseBounded = !e.st.steps.empty() && e.st.aviutl.empty() &&
+                                 e.st.aePlugins.empty() && !e.st.readsBehind &&
+                                 !e.st.wide;
+        bool bounded = baseBounded;
+        bool anyFrame = false;
+        double totalPadPx = 0.0;
+        for (ScreenFx* fx : e.st.fx) {
+          screen_fresh(s, *fx);
+          anyFrame |= fx->hasFrameRect;
+          const bool synthMotionBlur =
+              fx->file.ends_with("am_directionalblur.wgsl") &&
+              fxWord.find("am_directionalblur.wgsl") == std::string::npos;
+          for (ScreenFx::Field& f : fx->fields) {
+            if (f.kind != ScreenFx::FieldKind::Param) continue;
+            if (f.hasDynamicKey ||
+                (synthMotionBlur &&
+                 (f.name == "blurLength" || f.name == "angle"))) {
+              f.useCachedVal = false;
+              continue;
+            }
+            for (uint32_t i = 0; i < f.floats && i < 4; ++i)
+              f.paramVal[i] = (float)doc_number(
+                  d, layer, f.docParamKeys[i].c_str(), now, f.usual[i]);
+            f.useCachedVal = true;
+          }
+          fx->paramValsFrame = s.frameCount;
+          if (!bounded) continue;
+          if (fx->spillKind == ScreenFx::SpillKind::Zero) {
+            continue;
+          } else if (fx->spillKind == ScreenFx::SpillKind::ParamPx &&
+                     fx->spillField >= 0 &&
+                     (size_t)fx->spillField < fx->fields.size() &&
+                     fx->fields[(size_t)fx->spillField].useCachedVal) {
+            double pad =
+                std::fabs(
+                    (double)fx->fields[(size_t)fx->spillField].paramVal[0]) *
+                    fx->spillScale +
+                fx->spillBase;
+            if (fx->spillCap > 0.f) pad = std::min(pad, (double)fx->spillCap);
+            totalPadPx += pad;
+          } else {
+            bounded = false;
+          }
+        }
+        e.st.boundPadPx = bounded ? totalPadPx : -1.0;
+        e.st.anyHasFrameRect = anyFrame;
+      }
       if (e.world)
         doc_layer_stand(d, layer, e);
       else
@@ -623,10 +677,28 @@ void doc_layer_stand(Doc& d, int layer, ThingFx& e) {
                         b = doc_seen(d, place[3].xyz +
                                             normalize(d.camera.facing[0].xyz));
     seen = length(b - a);
-    if (e.st.allPointwiseTight)
+    if (e.st.boundPadPx >= 0.0) {
+      double stageSides[4];
+      doc_fx_sides(d, place, seen, stageSides);
+      if (e.st.boundPadPx <= 0.0 && !e.st.anyHasFrameRect) {
+        std::fill(e.sides, e.sides + 4, 0.0);
+      } else {
+        // Quantize spill margin to 64px steps so smoothly animating blur/glow
+        // radii keep stable texture dimensions without reallocations.
+        const double padPx = std::ceil((e.st.boundPadPx + 8.0) / 64.0) * 64.0;
+        const double padWorld = padPx / std::max(seen, 1.0);
+        const double hx = half.x * length(place[0].xyz),
+                     hy = half.y * length(place[1].xyz);
+        e.sides[0] = std::min(stageSides[0], hx + padWorld);
+        e.sides[1] = std::min(stageSides[1], hx + padWorld);
+        e.sides[2] = std::min(stageSides[2], hy + padWorld);
+        e.sides[3] = std::min(stageSides[3], hy + padWorld);
+      }
+    } else if (e.st.allPointwiseTight) {
       std::fill(e.sides, e.sides + 4, 0.0);
-    else
+    } else {
       doc_fx_sides(d, place, seen, e.sides);
+    }
   }
   thing_fx_stand(*d.stage, e, place, half, seen);
 }

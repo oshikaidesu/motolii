@@ -109,11 +109,20 @@ void thing_fx_stand(Stage& s, ThingFx& e, const math::mat4& place, float2 half,
   // camera distance; see document/evaluate/evaluate.h.
   const double ppp = thing_fx_ppp(s),
                usual = s.h / (12.0 * std::tan(15.0 * M_PI / 180.0));
-  // Zero-alpha-preserving pointwise chains cannot spill outside the layer, so
-  // an 8px anti-alias border suffices instead of the 128px bake margin.
-  const double room = (e.st.allPointwiseTight ? 8.0 : 128.0) / usual,
-               sx = length(place[0].xyz), sy = length(place[1].xyz),
-               wide = half.x * sx + room, high = half.y * sy + room;
+  // Pure SkSL bounded chains never read frameRect/RENDERSIZE, so `room` can
+  // match the quantized spill radius (8px for zero-alpha-preserving chains)
+  // instead of the 128px ISF bake margin.
+  double roomPx = 128.0;
+  if (e.st.boundPadPx >= 0.0 && !e.st.anyHasFrameRect) {
+    roomPx = e.st.boundPadPx <= 0.0
+                 ? 8.0
+                 : std::ceil((e.st.boundPadPx + 8.0) / 64.0) * 64.0;
+  } else if (e.st.allPointwiseTight) {
+    roomPx = 8.0;
+  }
+  const double room = roomPx / usual, sx = length(place[0].xyz),
+               sy = length(place[1].xyz), wide = half.x * sx + room,
+               high = half.y * sy + room;
   const double c[4] = {std::max(wide, e.sides[0]), std::max(wide, e.sides[1]),
                        std::max(high, e.sides[2]), std::max(high, e.sides[3])},
                across = c[0] + c[1], tall = c[2] + c[3];

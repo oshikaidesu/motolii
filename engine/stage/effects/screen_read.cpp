@@ -339,8 +339,15 @@ bool screen_read(ScreenFx& fx, std::string& code) {
       f.kind = K::HistoryCount;
     else {
       f.kind = K::Param;
+      f.hasDynamicKey = false;
       for (uint32_t i = 0; i < f.floats && i < 4; ++i) {
         f.paramNames[i] = f.floats == 1 ? f.name : f.name + "_" + "xyzw"[i];
+        const std::string& pn = f.paramNames[i];
+        if (pn == "clip_time" || pn == "clip_length" || pn == "origin_x" ||
+            pn == "origin_y" || pn == "turn" || pn == "extent" ||
+            pn.rfind("layerRect_", 0) == 0 ||
+            pn.rfind("backdropBox_", 0) == 0 || pn.rfind("aviutl.", 0) == 0)
+          f.hasDynamicKey = true;
         f.usual[i] = 0.0;
         for (const ScriptParameter& one : fx.parameters)
           if (one.name == f.paramNames[i]) f.usual[i] = one.usual;

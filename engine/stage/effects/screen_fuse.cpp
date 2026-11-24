@@ -5,6 +5,7 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <regex>
 #include <set>
 #include <string>
@@ -288,6 +289,11 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
   fx.pointwiseSksl = false;
   fx.preservesZeroAlpha = false;
   fx.usesTime = false;
+  fx.spillKind = ScreenFx::SpillKind::Unbounded;
+  fx.spillField = -1;
+  fx.spillScale = 1.f;
+  fx.spillBase = 0.f;
+  fx.spillCap = 0.f;
   fx.sampleExpr.clear();
 
   // Determine whether the shader body outside struct declarations actually
@@ -311,6 +317,79 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
           pos = after;
         }
         if (fx.usesTime) break;
+      }
+    }
+  }
+
+  // Classify bounded spill behavior for tight offscreen texture sizing.
+  // Any unrecognized or multi-input/generator/spill shader stays Unbounded.
+  const auto find_param_field = [&](const char* name) -> int {
+    for (size_t i = 0; i < fx.fields.size(); ++i)
+      if (fx.fields[i].kind == ScreenFx::FieldKind::Param &&
+          fx.fields[i].floats == 1 && fx.fields[i].name == name)
+        return (int)i;
+    return -1;
+  };
+  if (!fx.spill && !fx.alpha && !fx.source && fx.historyFrames == 0 &&
+      fx.others.empty() && fx.layered == 0) {
+    // 1. Non-pointwise SkSL filters that strictly early-return 0 on alpha == 0
+    //    and premultiply output by center alpha (e.g. bilateral denoise, inner
+    //    blur).
+    if (!fx.hasFrameRect && fx.passes.empty() && fx.textureCount == 1 &&
+        wgsl.find("invert_alpha") == std::string::npos) {
+      static const std::regex kEarlyZeroFilter(
+          R"(if\s*\(?[\w\.]+\s*<=?\s*(?:0\.0|0\.001|1e-0?[456])(?:\s*\)\s*\|\|\s*\([^)]*\))?\s*\)?\s*\{\s*(?:\{\s*)?return\s+vec4(?:f|<f32>)\(0(?:\.0)?\))");
+      static const std::regex kPremulReturn(
+          R"(return\s+vec4(?:f|<f32>)\([^;]*\*\s*(\w+\.w)\s*,\s*\1\s*\))");
+      if (std::regex_search(wgsl, kEarlyZeroFilter) &&
+          std::regex_search(wgsl, kPremulReturn)) {
+        fx.preservesZeroAlpha = true;
+        fx.spillKind = ScreenFx::SpillKind::Zero;
+      }
+    }
+    // 2. Bounded-length SkSL directional blur (samples within blurLength px).
+    if (fx.spillKind == ScreenFx::SpillKind::Unbounded && !fx.hasFrameRect &&
+        fx.passes.empty() && fx.textureCount == 1) {
+      if (const int idx = find_param_field("blurLength");
+          idx >= 0 && wgsl.find("_uniform0.blurLength") != std::string::npos &&
+          wgsl.find("/ _uniform0.resolution") != std::string::npos) {
+        fx.spillKind = ScreenFx::SpillKind::ParamPx;
+        fx.spillField = idx;
+        fx.spillScale = 1.f;
+        fx.spillBase = 0.f;
+        fx.spillCap = 0.f;
+      }
+    }
+    // 3. Sashimono separable 1D-tap blur / glow ISF shaders (taps clamped to
+    //    min(param, 96.0) pixels).
+    if (fx.spillKind == ScreenFx::SpillKind::Unbounded && fx.hasFrameRect) {
+      for (const char* pname : {"radius", "blur"}) {
+        const int idx = find_param_field(pname);
+        if (idx >= 0 && wgsl.find(std::string("min(v.") + pname + ", 96.0f)") !=
+                            std::string::npos) {
+          fx.spillKind = ScreenFx::SpillKind::ParamPx;
+          fx.spillField = idx;
+          fx.spillScale = 1.f;
+          fx.spillBase = 0.f;
+          fx.spillCap = 96.f;
+          break;
+        }
+      }
+    }
+    // 4. Multi-pass pyramid Gaussian / Fast blur ISF shaders whose texOffsets
+    //    are clamped to [0, 1] of frameRect (worst-case spread <= 5*blurAmount
+    //    + 8 px, capped at 128 px).
+    if (fx.spillKind == ScreenFx::SpillKind::Unbounded && fx.hasFrameRect &&
+        !fx.passes.empty()) {
+      if (const int idx = find_param_field("blurAmount");
+          idx >= 0 && wgsl.find("blurRadiusInPixels") != std::string::npos &&
+          wgsl.find("halfSizeBaseRender") != std::string::npos &&
+          wgsl.find("clamp(") != std::string::npos) {
+        fx.spillKind = ScreenFx::SpillKind::ParamPx;
+        fx.spillField = idx;
+        fx.spillScale = 5.f;
+        fx.spillBase = 8.f;
+        fx.spillCap = 128.f;
       }
     }
   }
@@ -401,6 +480,7 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
     if (std::regex_search(wgsl, kEarlyZero) ||
         std::regex_search(wgsl, kPremulOut)) {
       fx.preservesZeroAlpha = true;
+      fx.spillKind = ScreenFx::SpillKind::Zero;
     }
   }
 }
@@ -426,8 +506,15 @@ bool screen_draw_fused(Stage& s, ScreenStack& st, ScreenFx* const* nodes,
                 (fx.source ? st.own : st.frame) + 4, fx.frame);
       std::copy(fx.frame, fx.frame + 4, fx.pass);
       if (fx.bytes > 0) {
-        screen_fill_parameters(s, fx, numbers,
-                               packed.data() + fused->offsets[k] / 4, 0, w, h);
+        if (fx.paramBufFrame == s.frameCount && fx.paramBufW == w &&
+            fx.paramBufH == h && fx.paramBufPass == 0 &&
+            fx.paramBuf.size() == fx.bytes / 4) {
+          std::memcpy(packed.data() + fused->offsets[k] / 4, fx.paramBuf.data(),
+                      fx.bytes);
+        } else {
+          screen_fill_parameters(
+              s, fx, numbers, packed.data() + fused->offsets[k] / 4, 0, w, h);
+        }
       }
     }
     if (fused->slotFrame != s.frameCount)
