@@ -1,8 +1,8 @@
 #ifndef MOTOLII_STAGE_EFFECTS_SCREEN_POOL_H_
 #define MOTOLII_STAGE_EFFECTS_SCREEN_POOL_H_
 // Stage-wide shared GPU nodes for effects: compiled WGSL/ISF shader cache,
-// automatically fused pointwise shader cache, and transient RenderTarget /
-// Texture pool shared across all layers and non-persistent ISF passes.
+// automatically fused pointwise shader cache, transient RenderTarget / Texture
+// pool, and shared AudioLink bus. 詳細: docs/design/effect_pipeline.md
 #include <filament/RenderTarget.h>
 #include <filament/Texture.h>
 

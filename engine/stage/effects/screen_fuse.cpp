@@ -1,6 +1,5 @@
-// Automatic single-pass WGSL fusion for contiguous pointwise effects.
-// Combines multiple 1-pixel-in / 1-pixel-out shaders (and optional leading
-// linear->sRGB / trailing sRGB->linear tone passes) into a single GPU pass.
+// Automatic single-pass WGSL fusion and static spill/bypass analysis.
+// 詳細: docs/design/effect_pipeline.md
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
