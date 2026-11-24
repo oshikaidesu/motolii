@@ -46,7 +46,7 @@ void outline_put(tvg::Shape* o, const std::vector<tvg::PathCommand>& c,
 std::atomic<size_t> cuts_held{0};
 constexpr size_t cuts_most = 256ull << 20;
 // Returns a hash of every input a cut depends on.
-uint64_t cut_key(float3 trim, const std::array<float, 10>& bend,
+uint64_t cut_key(float3 trim, const std::array<float, 11>& bend,
                  const std::vector<PathOpStep>& steps,
                  const Canvas2D::Other& join, const Canvas2D::Other& morph,
                  const Canvas2D::Other& trace) {
@@ -127,6 +127,11 @@ bool apply_path_steps(tvg::Shape* outShape,
           continue;
         }
         break;
+      case 7:  // smooth
+        if (st.a > 0.f)
+          ok = sk_smooth(pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
+                         st.a, nextBy, nextAt);
+        break;
     }
     if (ok) {
       pathBy = std::move(nextBy), pathAt = std::move(nextAt);
@@ -181,7 +186,7 @@ Canvas2D* flat_mesh(Stage& s, const char* form, float wide, const mat4f& place,
 }
 
 void cut_at(Stage& s, Canvas2D* d, float3 trim,
-            const std::array<float, 10>& bend, Canvas2D::Other join,
+            const std::array<float, 11>& bend, Canvas2D::Other join,
             Canvas2D::Other morph, Canvas2D::Other trace,
             const std::vector<PathOpStep>& steps) {
   if (join.how < 0 || join.by.empty()) join = {};
@@ -231,6 +236,13 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
           apply_path_steps(d->outline, std::move(pathBy), std::move(pathAt),
                            steps, d->plainSide, high, d->fine);
     } else {
+      if (bend[10] > 0.f) {
+        std::vector<tvg::PathCommand> c;
+        std::vector<tvg::Point> p;
+        if (sk_smooth(pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
+                      bend[10], c, p))
+          pathBy = std::move(c), pathAt = std::move(p);
+      }
       if (bend[8] >= 2.f) {
         std::vector<tvg::PathCommand> c;
         std::vector<tvg::Point> p;

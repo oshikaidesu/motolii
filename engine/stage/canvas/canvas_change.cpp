@@ -61,8 +61,8 @@ void trim_at(Stage& s, Canvas2D* d, float cut, float begin, float offset) {
 void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
              float ridges, float smooth, float offset,
              const std::vector<PathOpStep>& steps) {
-  const std::array<float, 10> is{round,  bloat, zigzag, ridges, smooth,
-                                 offset, 0.f,   0.f,    0.f,    0.f};
+  const std::array<float, 11> is{round,  bloat, zigzag, ridges, smooth, offset,
+                                 0.f,    0.f,   0.f,    0.f,    0.f};
   if (!d->shape || d->plain.empty() || (is == d->bent && steps == d->bentSteps))
     return;
   d->bent = is;

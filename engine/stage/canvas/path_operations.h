@@ -95,6 +95,14 @@ bool sk_stroke_align(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
                      int align, std::vector<tvg::PathCommand>& outCmds,
                      std::vector<tvg::Point>& outPts);
 
+// Smooths a path's outline by sampling and iteratively relaxing vertices
+// (Chaikin/Laplacian blend controlled by `amount` in 0..1). Returns false if
+// the result is empty.
+bool sk_smooth(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
+               const tvg::Point* pts, float amount,
+               std::vector<tvg::PathCommand>& outCmds,
+               std::vector<tvg::Point>& outPts);
+
 // The sk_svg_* functions read and edit SVG path data like a pen tool.
 // Writes the path's anchor points to `xy` as x, y pairs and returns how many
 // there are.
@@ -106,9 +114,11 @@ int sk_svg_anchors(const char* data, std::vector<float>& xy);
 int sk_svg_ends(const char* data, float& fx, float& fy, int& stretches);
 
 // Moves the nth anchor by dx, dy, together with its handles, and writes the new
-// path data to `out`. Returns false if `nth` is out of range.
+// path data to `out`. When `falloff > 0`, neighboring anchors and handles within
+// `falloff * diagonal` follow with a smooth cosine joint falloff. Returns false
+// if `nth` is out of range.
 bool sk_svg_move(const char* data, int nth, float dx, float dy,
-                 std::string& out);
+                 std::string& out, float falloff = 0.f);
 
 // Writes the curves' handles to `xy` as x, y pairs and returns how many there
 // are. If `of` is given, it receives the anchor each handle belongs to.
@@ -128,7 +138,8 @@ int sk_svg_edit(const char* data, float x, float y, float reach,
 
 // One step in an ordered path-operator stack (may repeat any operator).
 // kind: 0 round, 1 bloat, 2 zigzag (a=size, b=ridges, c=smooth), 3 offset,
-//       4 rough (a=far, b=apart), 5 resample (a=count), 6 voxel (a=cell).
+//       4 rough (a=far, b=apart), 5 resample (a=count), 6 voxel (a=cell),
+//       7 smooth (a=amount 0..1).
 struct PathOpStep {
   int kind = 0;
   float a = 0.f, b = 0.f, c = 0.f;

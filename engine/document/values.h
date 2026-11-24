@@ -162,6 +162,8 @@ inline const DocShown doc_shown[] = {
     {"mosh_at", "", "s", "From", 0, 10, nullptr},
     {"connect_to", "thing", "", "With", 0, 0, nullptr},
     {"resample", "", "", "Points", 0, 64, nullptr},
+    {"path_smooth", "share", "%", "Smooth", 0, 1, nullptr},
+    {"path_falloff", "share", "%", "Joint Falloff", 0, 1, nullptr},
     {"voxel", "share", "%", "Squares", 0, 0.2, nullptr},
     {"rough", "share", "%", "Rough", 0, 0.2, nullptr},
     {"rough_detail", "share", "%", "Detail", 0.005, 0.2, nullptr},

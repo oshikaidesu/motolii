@@ -204,6 +204,9 @@ std::vector<PathOpStep> doc_path_op_steps(Doc& d, int layer, double now,
     } else if (op == "voxel") {
       const float v = num(pfx + "voxel", 0);
       if (v > 0.f) steps.push_back({6, v, 0.f, 0.f});
+    } else if (op == "path_smooth") {
+      const float v = num(pfx + "path_smooth", 0);
+      if (v > 0.f) steps.push_back({7, v, 0.f, 0.f});
     } else if (op == "trim") {
       const float3 tr{num(pfx + "trim", 0), num(pfx + "trim_begin", 0),
                       num(pfx + "trim_offset", 0)};
@@ -263,7 +266,8 @@ void evaluate_cut_shape(Doc& d, int layer, DocShownLayer& t, double now) {
          {num("round", 0), num("bloat", 0), num("zigzag", 0),
           num("zigzag_ridges", 5), num("zigzag_smooth", 0), num("offset", 0),
           num("rough", 0), num("rough_detail", 0.03),
-          std::round(num("resample", 0)), num("voxel", 0)},
+          std::round(num("resample", 0)), num("voxel", 0),
+          num("path_smooth", 0)},
          join, morph, trace, opSteps);
 }
 

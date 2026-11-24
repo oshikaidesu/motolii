@@ -161,7 +161,28 @@ class OptionsStrip extends StatelessWidget {
   List<Widget> _cameraStrip(WorkspaceController ws) {
     final cam = stageCameraLayer(ws, ws.selected);
     if (cam == null) {
-      return const [_Field('Camera', value: 'None — add from Create › Layers')];
+      return [
+        Chip(
+          key: const ValueKey('ws-camera-add-chip'),
+          label: '+ Add Camera',
+          look: ChipLook.flat(WindowTokens.accent),
+          onTap: !stageConnected(ws)
+              ? null
+              : () {
+                  stageBeginUndoStep(ws);
+                  var made = 0;
+                  ws.after(
+                    stageAddLayer(ws, name: 'camera', word: 'camera'),
+                    null,
+                    (t) => made = t,
+                  );
+                  ws.after(stageEndUndoStep(ws), (done, _) {
+                    if (done && made > 0) ws.select(made);
+                  });
+                },
+        ),
+        const _Field('Stage', value: 'Click to place camera'),
+      ];
     }
     final targetId = cameraTargetOf(ws, cam);
     final targetLayer = targetId == null

@@ -294,6 +294,7 @@ double doc_usual(Doc& d, const char* name) {
              ? 1.0
          : !strcmp(name, "duration")     ? -1.0
          : !strcmp(name, "focal_length") ? 45.0
+         : !strcmp(name, "path_falloff") ? 0.35
          // CSS's usual line height: the 1.2 Blitz takes for line-height: normal
          // (blitz-dom stylo_to_parley.rs).
          : !strcmp(name, "line_spacing") ? 1.2

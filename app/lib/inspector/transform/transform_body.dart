@@ -111,8 +111,18 @@ class TransformBody extends StatelessWidget {
                   for (final id in scale)
                     field(
                       id,
-                      onSet: linked
-                          ? (v) => _scaleLinked(doc, scale, id, v, params)
+                      // Z scale (depth/thickness) stays independent even when X/Y are linked.
+                      onSet: linked && id != 'v_scale_z'
+                          ? (v) => _scaleLinked(
+                              doc,
+                              [
+                                for (final a in scale)
+                                  if (a != 'v_scale_z') a,
+                              ],
+                              id,
+                              v,
+                              params,
+                            )
                           : null,
                     ),
                 ],

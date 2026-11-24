@@ -109,9 +109,10 @@ inline const DocCard doc_cards[] = {
     // own points: the number of corners and how far in the star goes. Trim is
     // here too, for drawing a line along the path.
     {"Paths",
-     "points inner path_ops round bloat offset zigzag zigzag_ridges "
-     "zigzag_smooth trim trim_begin trim_offset morph morph_to morph_steps "
-     "resample rough rough_detail voxel fill_rule trail trail_length",
+     "points inner path_ops path_smooth path_falloff round bloat offset zigzag "
+     "zigzag_ridges zigzag_smooth trim trim_begin trim_offset morph morph_to "
+     "morph_steps resample rough rough_detail voxel fill_rule trail "
+     "trail_length",
      "kind", "text shape image"},
     // Alight Motion's Parenting Helper: how much of its parent's rotation and
     // size the layer takes,

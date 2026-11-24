@@ -237,7 +237,22 @@ class _StageState extends State<_Stage> {
                   children: [
                     _ToolColumn(
                       active: _tool,
-                      onChanged: (i) => setState(() => _tool = i),
+                      onChanged: (i) {
+                        setState(() => _tool = i);
+                        // Clicking the Camera icon when no camera layer exists creates one right away.
+                        if (i == 7 && stageConnected(ws) && !ws.hasCamera) {
+                          stageBeginUndoStep(ws);
+                          var made = 0;
+                          ws.after(
+                            stageAddLayer(ws, name: 'camera', word: 'camera'),
+                            null,
+                            (t) => made = t,
+                          );
+                          ws.after(stageEndUndoStep(ws), (done, _) {
+                            if (done && made > 0) ws.select(made);
+                          });
+                        }
+                      },
                       onTwice: (kind) => _whole(ws, kind),
                     ),
                     Expanded(

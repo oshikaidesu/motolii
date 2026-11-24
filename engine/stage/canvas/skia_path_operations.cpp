@@ -282,6 +282,65 @@ bool sk_resample(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
   return !outCmds.empty();
 }
 
+// Smooths each contour by sampling it evenly and applying iterative Laplacian
+// relaxation weighted by `amount` (0..1), then converting back to smooth
+// quadratic curves through midpoints so hand-drawn paths can be softened
+// non-destructively from the Inspector.
+bool sk_smooth(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
+               const tvg::Point* pts, float amount,
+               std::vector<tvg::PathCommand>& outCmds,
+               std::vector<tvg::Point>& outPts) {
+  outCmds.clear(), outPts.clear();
+  const float a = std::clamp(amount, 0.f, 1.f);
+  if (a <= 0.f) return false;
+  SkContourMeasureIter it(sk_of(cmds, cmdsCnt, pts), false);
+  while (const sk_sp<SkContourMeasure> c = it.next()) {
+    const bool closed = c->isClosed();
+    const float len = c->length();
+    if (len <= 1e-4f) continue;
+    const int samples = std::clamp((int)std::lround(len / 8.f), 16, 256);
+    std::vector<SkPoint> ring;
+    ring.reserve((size_t)samples + 1);
+    const int steps = closed ? samples : samples - 1;
+    for (int i = 0; i <= steps; ++i) {
+      if (closed && i == steps) break;
+      SkPoint p;
+      if (c->getPosTan(len * (float)i / (float)std::max(1, steps), &p, nullptr))
+        ring.push_back(p);
+    }
+    if (ring.size() < 3) continue;
+    // Scale iteration count quadratically so small values gently polish jitter
+    // while high values yield broad, organic curves.
+    const int passes = std::max(1, (int)std::lround(1.f + 48.f * a * a));
+    const float blend = std::min(0.5f, 0.25f + 0.25f * a);
+    std::vector<SkPoint> next(ring.size());
+    const size_t n = ring.size();
+    for (int pass = 0; pass < passes; ++pass) {
+      for (size_t i = 0; i < n; ++i) {
+        if (!closed && (i == 0 || i + 1 == n)) {
+          next[i] = ring[i];
+          continue;
+        }
+        const SkPoint& prev = ring[(i + n - 1) % n];
+        const SkPoint& cur = ring[i];
+        const SkPoint& fwd = ring[(i + 1) % n];
+        const float mx = 0.5f * (prev.fX + fwd.fX);
+        const float my = 0.5f * (prev.fY + fwd.fY);
+        next[i] = {cur.fX + (mx - cur.fX) * blend,
+                   cur.fY + (my - cur.fY) * blend};
+      }
+      ring.swap(next);
+    }
+    for (size_t i = 0; i < n; ++i) {
+      outCmds.push_back(i ? tvg::PathCommand::LineTo
+                          : tvg::PathCommand::MoveTo);
+      outPts.push_back({ring[i].fX, ring[i].fY});
+    }
+    if (closed) outCmds.push_back(tvg::PathCommand::Close);
+  }
+  return !outCmds.empty();
+}
+
 // Converts the part of each outline between `from` and `to` into short straight
 // pieces and closes it with a straight line across. `from` and `to` are
 // fractions of the outline length. On a closed outline, values outside 0 to 1

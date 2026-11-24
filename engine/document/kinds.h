@@ -230,6 +230,10 @@ inline const DocValue doc_values[] = {
     {"boolean_with", "shape", 0, 1e9, false, nullptr},
     // Re-walk the outline at this many points. 0 = as made.
     {"resample", "shape", 0, 2048, true, nullptr},
+    // Non-destructive post-smoothing of the outline (0..1).
+    {"path_smooth", "shape text image", 0, 1, true, nullptr},
+    // Proportional joint falloff radius (share of path diagonal) when dragging path anchors.
+    {"path_falloff", "shape", 0, 1, false, nullptr},
     // Snap to a grid of squares this large (share of height). 0 = as made.
     {"voxel", "shape", 0, 1, true, nullptr},
     // rough: displacement as share of height. rough_detail: point spacing.

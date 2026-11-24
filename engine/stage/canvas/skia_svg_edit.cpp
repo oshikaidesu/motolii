@@ -61,28 +61,54 @@ int sk_svg_ends(const char* data, float& fx, float& fy, int& stretches) {
 // points of a closed path, moves with it. The handles on both sides of a moved
 // anchor move too, as in a pen tool. Returns false if `nth` is out of range.
 bool sk_svg_move(const char* data, int nth, float dx, float dy,
-                 std::string& out) {
+                 std::string& out, float falloff) {
   std::vector<float> xy;
-  if (nth < 0 || nth >= sk_svg_anchors(data, xy)) return false;
+  const int anchorCount = sk_svg_anchors(data, xy);
+  if (nth < 0 || nth >= anchorCount) return false;
   const SkPoint was{xy[2 * nth], xy[2 * nth + 1]}, by{dx, dy};
-  const auto here = [&](SkPoint p) {
-    return SkPoint::Distance(p, was) < 1e-4f;
+  // Compute influence radius from the path's bounding diagonal so falloff feels
+  // consistent regardless of shape size (Blender Proportional Editing smooth
+  // cosine curve: w = 0.5 * (1 + cos(pi * d / R))).
+  float radius = 0.f;
+  if (falloff > 1e-4f && anchorCount > 2) {
+    float minX = xy[0], maxX = xy[0], minY = xy[1], maxY = xy[1];
+    for (int i = 1; i < anchorCount; ++i) {
+      minX = std::min(minX, xy[2 * i]), maxX = std::max(maxX, xy[2 * i]);
+      minY = std::min(minY, xy[2 * i + 1]), maxY = std::max(maxY, xy[2 * i + 1]);
+    }
+    const float diag = std::hypot(maxX - minX, maxY - minY);
+    radius = std::clamp(falloff, 0.f, 1.f) * std::max(diag, 1e-3f);
+  }
+  const auto weight_at = [&](SkPoint p) -> float {
+    const float d = SkPoint::Distance(p, was);
+    if (d < 1e-4f) return 1.f;
+    if (radius <= 1e-4f || d >= radius) return 0.f;
+    return 0.5f * (1.f + std::cos(3.14159265358979323846f * d / radius));
   };
   SkPathBuilder b;
-  // True on the segment after a moved anchor, whose first handle moves too.
-  bool after = false;
+  // Weight of the anchor that started the current segment (moves its outgoing handle).
+  float prevW = 0.f;
   // The iterator reads from this path, so it must stay alive while iterating.
   const SkPath path = *SkParsePath::FromSVGString(data);
   SkPathIter it = path.iter();
   while (const std::optional<SkPathIter::Rec> r = it.next()) {
     std::vector<SkPoint> p(r->fPoints.begin(), r->fPoints.end());
-    const bool moved = r->fVerb != SkPathVerb::kClose && here(p.back());
-    if (after && p.size() > 2) p[1] += by;
-    if (moved) {
-      p.back() += by;
-      if (r->fVerb == SkPathVerb::kCubic) p[2] += by;
+    const float curW =
+        r->fVerb != SkPathVerb::kClose ? weight_at(p.back()) : 0.f;
+    if (r->fVerb == SkPathVerb::kCubic) {
+      if (prevW > 0.f) p[1] += SkPoint{by.fX * prevW, by.fY * prevW};
+      if (curW > 0.f) {
+        p[2] += SkPoint{by.fX * curW, by.fY * curW};
+        p[3] += SkPoint{by.fX * curW, by.fY * curW};
+      }
+    } else if (r->fVerb == SkPathVerb::kQuad || r->fVerb == SkPathVerb::kConic) {
+      const float hw = 0.5f * (prevW + curW);
+      if (hw > 0.f) p[1] += SkPoint{by.fX * hw, by.fY * hw};
+      if (curW > 0.f) p[2] += SkPoint{by.fX * curW, by.fY * curW};
+    } else if (r->fVerb != SkPathVerb::kClose && curW > 0.f) {
+      p.back() += SkPoint{by.fX * curW, by.fY * curW};
     }
-    after = moved;
+    prevW = curW;
     switch (r->fVerb) {
       case SkPathVerb::kMove:
         b.moveTo(p[0]);

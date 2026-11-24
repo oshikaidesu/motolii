@@ -360,6 +360,20 @@ class _StageViewState extends State<StageView>
                       return; // A stroke is drawn, not clicked.
                     }
                     if (widget.tool.make == 'camera') {
+                      final ws = WorkspaceScope.read(context);
+                      if (stageConnected(ws) && !ws.hasCamera) {
+                        stageBeginUndoStep(ws);
+                        var made = 0;
+                        ws.after(
+                          stageAddLayer(ws, name: 'camera', word: 'camera'),
+                          null,
+                          (t) => made = t,
+                        );
+                        ws.after(stageEndUndoStep(ws), (done, _) {
+                          if (done && made > 0) ws.select(made);
+                        });
+                        return;
+                      }
                       _camera.tapLayer(_hitLocal(v, d.localPosition));
                       return;
                     }

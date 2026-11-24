@@ -14,12 +14,13 @@ class PathsPicker extends StatefulWidget {
   // Grouped path operators; fill_rule lives inside PathsPreview, and
   // Morph/Trail need another layer so they stay off the picker.
   static const _groups = [
-    ('Deform', ['round', 'bloat', 'offset', 'zigzag']),
+    ('Deform', ['path_smooth', 'round', 'bloat', 'offset', 'zigzag']),
     ('Texture', ['rough', 'resample', 'voxel']),
     ('Animate', ['trim']),
   ];
 
   static const _labels = <String, String>{
+    'path_smooth': 'Smooth',
     'round': 'Round',
     'bloat': 'Bloat',
     'offset': 'Offset',

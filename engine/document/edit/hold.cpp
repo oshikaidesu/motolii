@@ -266,10 +266,17 @@ bool doc_carry(Doc& d, const char* by, double a, double b) {
                         to = plane.own(h.from[" grip x"] + a,
                                        h.from[" grip y"] + b);
     std::string moved;
-    if (!plane.seen ||
-        !(h.from[" handle"] != 0.0 ? sk_svg_move_handle : sk_svg_move)(
-            h.said[" path"].c_str(), (int)h.from[" point"],
-            (float)(to.x - from.x), (float)(to.y - from.y), moved))
+    const float falloff = (float)doc_number(d, h.layer, "path_falloff", now, 0.35);
+    const bool didMove =
+        plane.seen &&
+        (h.from[" handle"] != 0.0
+             ? sk_svg_move_handle(h.said[" path"].c_str(), (int)h.from[" point"],
+                                  (float)(to.x - from.x), (float)(to.y - from.y),
+                                  moved)
+             : sk_svg_move(h.said[" path"].c_str(), (int)h.from[" point"],
+                           (float)(to.x - from.x), (float)(to.y - from.y), moved,
+                           falloff));
+    if (!didMove)
       return d.error = "its point could not be moved", false;
     h.said["path"] = moved;
     // Rebuild the canvas with the new path.

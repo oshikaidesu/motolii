@@ -61,7 +61,7 @@ Canvas2D* flat_mesh(Stage& s, const char* form, float wide,
 // the same struct. Finished cuts are cached by their inputs, within a limit
 // shared by all shapes.
 void cut_at(Stage& s, Canvas2D* d, filament::math::float3 trim,
-            const std::array<float, 10>& bend, Canvas2D::Other join = {},
+            const std::array<float, 11>& bend, Canvas2D::Other join = {},
             Canvas2D::Other morph = {}, Canvas2D::Other trace = {},
             const std::vector<PathOpStep>& steps = {});
 

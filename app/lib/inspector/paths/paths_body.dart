@@ -26,6 +26,8 @@ class PathsBody extends StatefulWidget {
     'points',
     'inner',
     'path_ops',
+    'path_smooth',
+    'path_falloff',
     'round',
     'bloat',
     'offset',
@@ -51,6 +53,7 @@ class PathsBody extends StatefulWidget {
   // Kept inside engine/document/values.h ranges (normalized shape units for
   // offset/zigzag; inspector display percentages for share params like round).
   static const _defaults = <String, double>{
+    'path_smooth': 35.0,
     'round': 15.0,
     'bloat': 0.25,
     'offset': 0.05,
@@ -81,6 +84,7 @@ class PathsBody extends StatefulWidget {
 
   // Stackable top-level operators in legacy default order.
   static const _stackable = [
+    'path_smooth',
     'round',
     'bloat',
     'offset',
@@ -205,6 +209,7 @@ class _PathsBodyState extends State<PathsBody> {
     final params = _params;
     final pointsP = params['points'];
     final innerP = params['inner'];
+    final falloffP = params['path_falloff'];
     final fillRuleP = params['fill_rule'];
 
     final listenables = <Listenable>[
@@ -241,7 +246,10 @@ class _PathsBodyState extends State<PathsBody> {
             ..endGesture();
         }
 
-        final hasGeom = pointsP != null || innerP != null;
+        final hasGeom =
+            pointsP != null ||
+            innerP != null ||
+            (shape == 'path' && falloffP != null);
 
         return Padding(
           padding: EdgeInsets.only(bottom: Shape.s(6)),
@@ -267,13 +275,18 @@ class _PathsBodyState extends State<PathsBody> {
                         onToggleFillRule: toggleFillRule,
                       ),
                     ),
-                    if (pointsP != null) ...[
+                    if (shape == 'path' && falloffP != null) ...[
                       SizedBox(width: InspectorSkin.tileGap),
-                      Expanded(child: ParameterTile(pointsP)),
-                    ],
-                    if (innerP != null) ...[
-                      SizedBox(width: InspectorSkin.tileGap),
-                      Expanded(child: ParameterTile(innerP)),
+                      Expanded(child: ParameterTile(falloffP)),
+                    ] else ...[
+                      if (pointsP != null) ...[
+                        SizedBox(width: InspectorSkin.tileGap),
+                        Expanded(child: ParameterTile(pointsP)),
+                      ],
+                      if (innerP != null) ...[
+                        SizedBox(width: InspectorSkin.tileGap),
+                        Expanded(child: ParameterTile(innerP)),
+                      ],
                     ],
                   ],
                 )

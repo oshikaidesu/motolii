@@ -262,9 +262,8 @@ struct Canvas2D {
   // 3D layer ids from a Lottie file; each gets its own sheet (canvas_deep).
   std::vector<uint32_t> deep;
   // Parameters as last applied by bend_at: round, bloat, zigzag, ridges,
-  // smooth, offset. The remaining four are for roughening: how far and how
-  // fine, the number of points walked again, and the square size.
-  std::array<float, 10> bent{};
+  // smooth, offset, rough, rough_detail, resample, voxel, path_smooth.
+  std::array<float, 11> bent{};
   // Ordered path-operator stack as last applied (supports reorder & repeats).
   std::vector<PathOpStep> bentSteps;
   // True when the last applied operator produced pure voxel squares.
