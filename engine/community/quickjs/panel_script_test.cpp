@@ -187,6 +187,27 @@ TEST(PanelScript, EvaluatesVismShowcaseAndNewUiPreludeHelpers) {
     ASSERT_TRUE(err.empty()) << rel << ": " << err;
     EXPECT_NE(act.find(expectedParam), std::string::npos) << rel << ": " << act;
   }
+
+  // Bundled Auto Lyric (Texflow-compatible Vism console) lists, renders all 4 modes, and emits ops.
+  EXPECT_NE(listed.find("Auto Lyric\t"), std::string::npos) << listed;
+  const auto lyricPath = doc_folders("panels").front() / "Auto Lyric.js";
+  for (int mode = 0; mode < 4; ++mode) {
+    const std::string ctx =
+        std::string(R"JSON({"selected":[1],"layers":[{"id":1,"name":"L1","kind":"text","text":"テスト"}],"state":{"mode":)JSON") +
+        std::to_string(mode) + R"JSON(}})JSON";
+    const std::string tree =
+        panel_eval_render(lyricPath.generic_string(), ctx, &err);
+    ASSERT_TRUE(err.empty()) << "Auto Lyric mode " << mode << ": " << err;
+    EXPECT_NE(tree.find("\"AUTO LYRIC\""), std::string::npos) << tree;
+  }
+  const std::string applyRes = panel_eval_action(
+      lyricPath.generic_string(), R"JSON({"id":"apply"})JSON",
+      R"JSON({"selected":[1],"layers":[{"id":1,"name":"L1","kind":"text","text":"テスト","fx":""}]})JSON",
+      &err);
+  ASSERT_TRUE(err.empty()) << err;
+  EXPECT_NE(applyRes.find("expressions/texflow.js"), std::string::npos)
+      << applyRes;
+  EXPECT_NE(applyRes.find("\"js_mode\""), std::string::npos) << applyRes;
 }
 
 }  // namespace

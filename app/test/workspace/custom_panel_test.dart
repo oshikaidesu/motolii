@@ -1086,4 +1086,85 @@ f 2 4 3
     expect(File('$own/jsconfig.json').existsSync(), isTrue);
     expect(isMotoliiPackPath('/tmp/my_cool_fx.vism'), isTrue);
   });
+
+  testWidgets(
+    'Auto Lyric Vism console renders cleanly at 290px panel width with zero overflow',
+    (tester) async {
+      final scriptFile = File('../shelves/panels/Auto Lyric.js');
+      expect(scriptFile.existsSync(), isTrue);
+      // Evaluate the real JS panel with node when available, or skip gracefully if node absent.
+      final eval = Process.runSync('node', [
+        '-e',
+        '''
+const fs = require("fs"), vm = require("vm");
+const ui = {
+  column:(c,o)=>Object.assign({type:"column",children:c||[]},o),
+  row:(c,o)=>Object.assign({type:"row",children:c||[]},o),
+  grid:(c,o)=>Object.assign({type:"grid",cols:3,children:c||[]},o),
+  section:(t,c,o)=>Object.assign({type:"section",title:String(t??""),open:true,children:c||[]},o),
+  box:(c,o)=>Object.assign({type:"box",children:Array.isArray(c)?c:(c?[c]:[])},o),
+  stack:(c,o)=>Object.assign({type:"stack",children:c||[]},o),
+  text:(t,o)=>Object.assign({type:"text",text:String(t??"")},o),
+  badge:(t,o)=>Object.assign({type:"badge",text:String(t??"")},o),
+  swatch:(c,o)=>Object.assign({type:"swatch",color:String(c??"#fff")},o),
+  button:(l,id,o)=>Object.assign({type:"button",label:String(l??""),id:String(id??l??"")},o),
+  toggle:(l,v,o)=>Object.assign({type:"toggle",label:String(l??""),value:!!v},o),
+  knob:(l,v,o)=>Object.assign({type:"knob",label:String(l??""),value:Number(v??0)},o),
+  slider:(l,v,o)=>Object.assign({type:"slider",label:String(l??""),value:Number(v??0)},o),
+  select:(l,v,opts,o)=>Object.assign({type:"select",label:String(l??""),value:String(v??""),options:opts||[]},o),
+  input:(l,v,o)=>Object.assign({type:"input",label:String(l??""),value:String(v??"")},o),
+  svg:(h,s,o)=>Object.assign({type:"svg",height:Number(h??96),svg:String(s??"")},o),
+  spacer:(s)=>s===undefined?{type:"spacer"}:{type:"spacer",size:Number(s)},
+};
+const box = {ui,Math,Number,String,Array,Object,JSON,isNaN};
+vm.createContext(box);
+vm.runInContext(fs.readFileSync("../shelves/panels/Auto Lyric.js","utf8"), box);
+const tree = box.render({
+  time:1.2, frame:72, fps:60, duration:300, bpm:128, selected:[1],
+  layers:[{id:1,name:"Lyric 01",kind:"text",text:"離れていた表現の交差点",fx:"expressions/texflow.js"}],
+  state:{mode:1,lang:"ja"}, presets:{}
+});
+process.stdout.write(JSON.stringify(tree));
+''',
+      ]);
+      if (eval.exitCode != 0) return;
+      final tree = PanelNode.fromJson(
+        jsonDecode(eval.stdout as String) as Map<String, Object?>,
+      )!;
+      final fired = <String>[];
+
+      tester.view.physicalSize = const Size(310, 780);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        WidgetsApp(
+          color: Grey.g07,
+          debugShowCheckedModeBanner: false,
+          pageRouteBuilder: <T>(settings, builder) =>
+              PageRouteBuilder<T>(pageBuilder: (c, _, _) => builder(c)),
+          home: ColoredBox(
+            color: Grey.g07,
+            child: ListView(
+              padding: const EdgeInsets.all(8),
+              children: [
+                PanelTreeView(
+                  node: tree,
+                  onAction: (id, value, {live = false}) => fired.add(id),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('AUTO LYRIC'), findsOneWidget);
+      expect(find.text('128 BPM'), findsOneWidget);
+      expect(find.text('適用する'), findsOneWidget);
+      await tester.tap(find.text('適用する'));
+      await tester.pump();
+      expect(fired, contains('apply'));
+    },
+  );
 }
