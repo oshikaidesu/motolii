@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
+[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml) [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/EFZQREAQ9g)
 
 **Where distant worlds of expression meet.**
 
@@ -155,5 +155,5 @@ Paste code (`⌘V`) or drop files into your shelf folders — formats are detect
 
 ## Contributing & License
 
-Questions are welcome in [Discussions](https://github.com/oshikaidesu/motolii/discussions) and bug reports in [Issues](https://github.com/oshikaidesu/motolii/issues) (English or Japanese).  
+Questions and dev updates are welcome on [Discord](https://discord.gg/EFZQREAQ9g) or [Discussions](https://github.com/oshikaidesu/motolii/discussions), and bug reports in [Issues](https://github.com/oshikaidesu/motolii/issues) (English or Japanese).  
 Dual-licensed under [Apache License 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at your option (see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for bundled third-party works).

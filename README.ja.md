@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
+[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml) [![Discord](https://img.shields.io/badge/Discord-コミュニティに参加-5865F2?logo=discord&logoColor=white)](https://discord.gg/EFZQREAQ9g)
 
 **離れていた表現の交差点。**
 
@@ -156,5 +156,5 @@ app/tool/live.sh
 
 ## コントリビューション & ライセンス
 
-質問や相談は [Discussions](https://github.com/oshikaidesu/motolii/discussions)、バグ報告や機能要望は [Issues](https://github.com/oshikaidesu/motolii/issues) へどうぞ（日本語・英語どちらも歓迎）。  
+開発進捗や質問・相談は [Discord](https://discord.gg/EFZQREAQ9g) や [Discussions](https://github.com/oshikaidesu/motolii/discussions)、バグ報告や機能要望は [Issues](https://github.com/oshikaidesu/motolii/issues) へどうぞ（日本語・英語どちらも歓迎）。  
 [Apache License 2.0](LICENSE-APACHE) または [MIT](LICENSE-MIT) のデュアルライセンスです（同梱サードパーティは [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) を参照）。
