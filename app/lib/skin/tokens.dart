@@ -101,7 +101,7 @@ abstract final class Grey {
       _p('Grey100', DarkGrey.g100, const Color(0xFF000000));
   static Color get bandA => ColorTheme.of('BandA', g10);
   static Color get bandB => ColorTheme.of('BandB', g13);
-  static Color get rowLine => ColorTheme.of('RowLine', g10);
+  static Color get rowLine => ColorTheme.of('RowLine', g07);
 }
 
 /// The colours for states.

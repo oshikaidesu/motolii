@@ -151,12 +151,16 @@ class TimelineTracksPainter extends CustomPainter {
     c.clipRect(Offset.zero & s);
     final p = Paint(), end = view.x(WorkspaceController.duration);
     c.drawRect(Offset.zero & s, p..color = WindowTokens.body);
-    for (var i = 0; i < rows.length; i++) {
+    // Extend the subtle horizontal row bands across the full canvas height so the vertical/horizontal zebra stays balanced.
+    final firstRow = math.max(0, (vscroll / TimelineMetrics.row).floor());
+    final lastRow = ((vscroll + s.height) / TimelineMetrics.row).ceil();
+    for (var i = firstRow; i <= lastRow; i++) {
       final top = i * TimelineMetrics.row - vscroll;
       if (top > s.height || top + TimelineMetrics.row < 0) continue;
+      final selected = i < rows.length && rows[i].selected;
       c.drawRect(
         Rect.fromLTWH(0, top, s.width, TimelineMetrics.row - 1),
-        p..color = Forms.worn.trackBand(i, rows[i].selected),
+        p..color = Forms.worn.trackBand(i, selected),
       );
       c.drawRect(
         Rect.fromLTWH(0, top + TimelineMetrics.row - 1, s.width, 1),
@@ -622,22 +626,26 @@ class TimelineTracksPainter extends CustomPainter {
     List<double> db,
   ) {
     final view = viewport.view;
-    final p = Paint()..color = Color.lerp(fill, ink, .7)!;
-    final h = bar.height - 4, cy = bar.center.dy;
-    for (var x = math.max(bar.left + 4, 0.0); x < bar.right - 4; x += 2) {
+    // Gapless 1px dark silhouette (Ableton Live style) avoids picket-fence stripes.
+    final p = Paint()..color = Color.lerp(fill, ink, .84)!;
+    final h = bar.height - 3, cy = bar.center.dy;
+    final left = math.max(bar.left + 5, 0.0).floorToDouble();
+    final right = bar.right - 5;
+    for (var x = left; x < right; x += 1) {
       final a0 = view.frameAt(x).floor() - inF,
-          a1 = view.frameAt(x + 2).ceil() - inF;
+          a1 = view.frameAt(x + 1).ceil() - inF;
       var loud = -100.0;
       for (var k = math.max(a0, 0); k <= a1 && k < db.length; k++) {
         if (db[k] > loud) loud = db[k];
       }
-      final a = ((loud + 60) / 60).clamp(0.0, 1.0);
-      if (a > 0) {
+      final norm = ((loud + 54) / 54).clamp(0.0, 1.0);
+      if (norm > 0) {
+        final a = math.pow(norm, 1.2).toDouble();
         c.drawRect(
           Rect.fromCenter(
-            center: Offset(x.roundToDouble(), cy),
+            center: Offset(x + 0.5, cy),
             width: 1,
-            height: (a * h).roundToDouble().clamp(1, h),
+            height: (a * h).clamp(1.0, h),
           ),
           p,
         );
