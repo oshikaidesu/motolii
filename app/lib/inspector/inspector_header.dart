@@ -90,6 +90,24 @@ class InspectorHeader extends StatelessWidget {
                       .copyWith(fontWeight: FontWeight.w600)
                 : TextStyles.label(Grey.g63),
           ),
+          SizedBox(width: Shape.s(4)),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: Shape.s(4),
+              vertical: Shape.s(1),
+            ),
+            decoration: BoxDecoration(
+              color: InspectorSkin.well,
+              borderRadius: Shape.round(3),
+              border: Border.all(color: Grey.g26),
+            ),
+            child: Text(
+              '⇧A',
+              style: TextStyles.micro(
+                doc.animateAll ? InspectorSkin.alert : Grey.g56,
+              ),
+            ),
+          ),
           SizedBox(width: Shape.s(6)),
           Forms.worn.onOff(
             context,
