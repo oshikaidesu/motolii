@@ -193,7 +193,12 @@ class _AgentPaneState extends State<AgentPane> {
               ShelfSearchField(controller: _find, hint: 'Search agents'),
               Expanded(child: _list()),
             ] else ...[
-              if (talk.needsSignIn) signInCard(context, talk),
+              if (talk.needsSignIn)
+                signInCard(
+                  context,
+                  talk,
+                  onSwitchAgent: () => setState(() => _choosing = true),
+                ),
               Expanded(child: _conversation(talk)),
               if (talk.asked case final r?) _question(context, talk, r),
               _with(context, talk),
@@ -483,9 +488,31 @@ class _AgentPaneState extends State<AgentPane> {
     ),
     Said.agent => MarkdownBody(data: e.text, styleSheet: _markdown),
     Said.tool => _tool(e.call),
-    Said.error => Text(
-      e.text,
-      style: TextStyles.name(Role.error, 11, null, 1.4),
+    Said.error => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(e.text, style: TextStyles.name(Role.error, 11, null, 1.4)),
+        if (_talk.value case final talk?
+            when !talk.ready && !talk.starting) ...[
+          SizedBox(height: Shape.s(6)),
+          Row(
+            children: [
+              Forms.worn.action(
+                context,
+                ActionSpec('Retry', () => talk.retry()),
+              ),
+              SizedBox(width: Shape.s(6)),
+              Forms.worn.action(
+                context,
+                ActionSpec(
+                  'Switch Agent',
+                  () => setState(() => _choosing = true),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
     ),
   };
 

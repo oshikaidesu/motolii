@@ -120,7 +120,11 @@ abstract final class RecipeMotions {
               bool edge,
             })
           >[];
-      for (final t in m.layers.where((t) => !before.contains(t))) {
+      final created = [
+        for (final t in m.layers)
+          if (!before.contains(t)) t,
+      ];
+      for (final t in created) {
         if (const {
           'behaviour',
           'camera',
@@ -147,6 +151,10 @@ abstract final class RecipeMotions {
           evenOdd: m.word(t, 'fill_rule') == 'evenodd',
           edge: edge,
         ));
+      }
+      // Clear each recipe's layers so later recipes do not evaluate stale layers.
+      for (final t in created) {
+        m.remove(t);
       }
       tell.send((r, parts));
     }

@@ -11,6 +11,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/stage/camera_gestures.dart'
     show cameraFrameRollKnob;
 import 'package:motolii/workspace/stage/selection_handles.dart';
+import 'package:motolii/workspace/stage/stage_drag.dart' show SnapGap;
 import 'package:motolii/workspace/stage/stage_tokens.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
@@ -47,6 +48,8 @@ class ViewPainter extends CustomPainter {
     this.part = ViewPart.all,
     this.pivots = false,
     this.met = (null, null),
+    this.gaps = const [],
+    this.hideGizmos = false,
     this.marked = false,
     this.trail,
     this.parent,
@@ -79,6 +82,12 @@ class ViewPainter extends CustomPainter {
 
   /// The snap lines (x, y) the dragged layer sits on, or null on an axis with none.
   final (double?, double?) met;
+
+  /// Equal-spacing smart guides active during a magnetic drag.
+  final List<SnapGap> gaps;
+
+  /// True while scrubbing an inspector parameter so overlays/gizmos stay out of the way.
+  final bool hideGizmos;
 
   /// The selected layer's path over time in canvas coordinates, or null if it does not move or is not read yet.
   final List<Offset>? trail;
@@ -152,6 +161,8 @@ class ViewPainter extends CustomPainter {
         linePaint(WindowTokens.accent),
       );
     }
+    if (gaps.isNotEmpty) _drawGaps(c);
+    if (hideGizmos) return c.restore();
     if (pivots) {
       for (final MapEntry(:key, :value) in scene.boxes.entries) {
         if (key == sel) continue;
@@ -274,6 +285,52 @@ class ViewPainter extends CustomPainter {
     for (final gy in scene.guidesY) {
       final y = v.toScreen(Offset(0, gy)).dy.roundToDouble() + .5;
       c.drawLine(Offset(v.area.left, y), Offset(v.area.right, y), p);
+    }
+  }
+
+  /// Draws equal-spacing smart guides (end ticks, connector line, and px badge)
+  /// like Google Slides / Illustrator / Figma.
+  void _drawGaps(Canvas c) {
+    final accent = WindowTokens.accent;
+    final stroke = linePaint(accent, 1.2);
+    final shadow = linePaint(Grey.g00, 3.0);
+    const cap = 4.5;
+    for (final g in gaps) {
+      final p0 = g.horizontal
+          ? v.toScreen(Offset(g.from, g.at))
+          : v.toScreen(Offset(g.at, g.from));
+      final p1 = g.horizontal
+          ? v.toScreen(Offset(g.to, g.at))
+          : v.toScreen(Offset(g.at, g.to));
+      final path = Path()
+        ..moveTo(p0.dx, p0.dy)
+        ..lineTo(p1.dx, p1.dy);
+      if (g.horizontal) {
+        path
+          ..moveTo(p0.dx, p0.dy - cap)
+          ..lineTo(p0.dx, p0.dy + cap)
+          ..moveTo(p1.dx, p1.dy - cap)
+          ..lineTo(p1.dx, p1.dy + cap);
+      } else {
+        path
+          ..moveTo(p0.dx - cap, p0.dy)
+          ..lineTo(p0.dx + cap, p0.dy)
+          ..moveTo(p1.dx - cap, p1.dy)
+          ..lineTo(p1.dx + cap, p1.dy);
+      }
+      c.drawPath(path, shadow);
+      c.drawPath(path, stroke);
+      final mid = (p0 + p1) / 2;
+      final label = '${g.size.round()}';
+      final tp = lineText(label, TextStyles.micro(WindowTokens.onAccent).bold);
+      final bw = tp.width + 8, bh = tp.height + 3;
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: mid, width: bw, height: bh),
+        Shape.r(3),
+      );
+      c.drawRRect(rect, Paint()..color = accent);
+      tp.paint(c, Offset(mid.dx - tp.width / 2, mid.dy - tp.height / 2));
+      tp.dispose();
     }
   }
 
@@ -550,6 +607,8 @@ class ViewPainter extends CustomPainter {
       o.part != part ||
       o.pivots != pivots ||
       o.met != met ||
+      !listEquals(o.gaps, gaps) ||
+      o.hideGizmos != hideGizmos ||
       o.marked != marked ||
       !identical(o.trail, trail) ||
       o.parent != parent ||

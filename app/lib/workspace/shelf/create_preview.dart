@@ -47,6 +47,14 @@ class RecipeMotionView extends StatelessWidget {
             when one.outline.isNotEmpty && one.copies.length <= 1) {
           return _Outline(one);
         }
+        // A single stationary non-path layer (e.g. a full-stage flash or sketch)
+        // has no meaningful point-cloud motion; show the centered tile mark instead.
+        if (motion case [final one]
+            when one.outline.isEmpty &&
+                one.copies.length <= 1 &&
+                _isStaticPoint(one.copies)) {
+          return fallback ?? const SizedBox.shrink();
+        }
         return ValueListenableBuilder<int>(
           valueListenable: _clock,
           builder: (context, k, _) => CustomPaint(
@@ -138,11 +146,26 @@ class _Outline extends StatelessWidget {
         ? 'fill="none" stroke="#$hex" stroke-width="${side * .08}" stroke-linecap="round"'
         : 'fill="#$hex"${part.evenOdd ? ' fill-rule="evenodd"' : ''}';
     return Padding(
-      // Leaves room for the tile's name below.
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(6),
       child: SvgPicture.string(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="${lo.$1 - pad} ${lo.$2 - pad} ${side + 2 * pad} ${side + 2 * pad}"><path d="${part.outline}" $paint/></svg>',
       ),
     );
   }
+}
+
+bool _isStaticPoint(List<Float32List> copies) {
+  if (copies.isEmpty) return true;
+  final c = copies.first;
+  if (c.length < 4) return true;
+  final x0 = c[0], y0 = c[1], z0 = c[2], s0 = c[3];
+  for (var i = 4; i + 3 < c.length; i += 4) {
+    if ((c[i] - x0).abs() > 1e-4 ||
+        (c[i + 1] - y0).abs() > 1e-4 ||
+        (c[i + 2] - z0).abs() > 1e-4 ||
+        (c[i + 3] - s0).abs() > 1e-4) {
+      return false;
+    }
+  }
+  return true;
 }

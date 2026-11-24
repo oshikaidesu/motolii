@@ -74,10 +74,22 @@ class AcpChatSession extends ChangeNotifier {
   final _toolAt = <String, Entry>{};
   Completer<RequestPermissionOutcome>? _answer;
 
-  /// Starts the agent and opens a session in [folder]. A failure is shown in the pane with the agent's last words.
-  Future<void> start() async {
+  /// Starts the agent and opens a session in [folder]. Auth failures open the
+  /// guided sign-in card instead of dumping raw errors.
+  Future<void> start({Map<String, String> extraEnv = const {}}) async {
+    starting = true;
+    notifyListeners();
     try {
-      final agent = _agent = await AcpAgent.start(_config);
+      final mergedEnv = {..._config.env, ...extraEnv};
+      final config = extraEnv.isEmpty
+          ? _config
+          : AcpAgentConfig(
+              command: _config.command,
+              args: _config.args,
+              env: mergedEnv,
+              workingDirectory: _config.workingDirectory,
+            );
+      final agent = _agent = await AcpAgent.start(config);
       final client = _client =
           (ClientRole()
                 ..handleNotification('session/update', (p, _) {
@@ -111,15 +123,78 @@ class AcpChatSession extends ChangeNotifier {
       ];
       await _open();
     } catch (e) {
-      entries.add(
-        Entry(
-          Said.error,
-          '$agentName did not start: $e\n${_agent?.stderrTail ?? ''}'.trim(),
-        ),
-      );
+      final tail = _agent?.stderrTail ?? '';
+      final full = '$e\n$tail'.trim();
+      if (_looksLikeAuthFailure(full)) {
+        needsSignIn = true;
+        signInWhy = _cleanAuthReason(full);
+      } else {
+        entries.add(Entry(Said.error, '$agentName did not start: $full'));
+      }
     }
     starting = false;
     notifyListeners();
+  }
+
+  /// Restarts the agent process (optionally with session-only [extraEnv], e.g. an API key).
+  Future<void> retry({Map<String, String> extraEnv = const {}}) async {
+    _session = null;
+    _client = null;
+    try {
+      await _agent?.close();
+    } catch (_) {}
+    _agent = null;
+    entries.removeWhere((e) => e.who == Said.error);
+    await start(extraEnv: extraEnv);
+  }
+
+  /// Opens a terminal running the agent's CLI command so the user can authenticate interactively,
+  /// then retries the ACP session once the terminal exits.
+  Future<void> signInWithTerminalFallback() async {
+    if (signingIn || line.isEmpty) return;
+    signingIn = true;
+    notifyListeners();
+    try {
+      final status = await signInInTerminal(
+        line,
+        env,
+        SignInWay({'id': 'cli-login', 'name': 'Terminal', 'type': 'terminal'}),
+        folder,
+        () => signingIn,
+      );
+      if (status == 0) {
+        await retry();
+      } else {
+        signInWhy = status == null
+            ? 'The terminal window was closed or could not be opened.'
+            : 'Terminal sign-in exited with status $status. Try again or retry after signing in.';
+      }
+    } finally {
+      signingIn = false;
+      notifyListeners();
+    }
+  }
+
+  static bool _looksLikeAuthFailure(String text) {
+    final s = text.toLowerCase();
+    return s.contains('auth') ||
+        s.contains('unauthoriz') ||
+        s.contains('401') ||
+        s.contains('api key') ||
+        s.contains('api_key') ||
+        s.contains('not logged in') ||
+        s.contains('sign in') ||
+        s.contains('login') ||
+        s.contains('credential') ||
+        s.contains('token');
+  }
+
+  static String _cleanAuthReason(String raw) {
+    final lines = [
+      for (final l in raw.split('\n'))
+        if (l.trim().isNotEmpty) l.trim(),
+    ];
+    return lines.isEmpty ? 'Authentication is required.' : lines.first;
   }
 
   bool get ready => !starting && _session != null && !needsSignIn;
@@ -136,16 +211,61 @@ class AcpChatSession extends ChangeNotifier {
       options = session.configOptions;
       needsSignIn = false;
     } on RpcError catch (e) {
-      if (e.code != ErrorCode.authRequired.code) rethrow;
+      if (e.code != ErrorCode.authRequired.code &&
+          !_looksLikeAuthFailure(e.message)) {
+        rethrow;
+      }
       needsSignIn = true;
-      signInWhy = e.message;
+      signInWhy = _cleanAuthReason(e.message);
     }
   }
 
   /// Signs in by [way], then opens the session (or carries on with the open one).
-  Future<void> signIn(SignInWay way) async {
+  Future<void> signIn(SignInWay way, {Map<String, String>? envValues}) async {
+    if (signingIn) return;
+    if (way.envVars.isNotEmpty && envValues != null && envValues.isNotEmpty) {
+      signingIn = true;
+      notifyListeners();
+      try {
+        await retry(extraEnv: envValues);
+        final again = _again;
+        if (!needsSignIn && again != null) {
+          _again = null;
+          unawaited(again());
+        }
+      } finally {
+        signingIn = false;
+        notifyListeners();
+      }
+      return;
+    }
     final client = _client;
-    if (client == null || signingIn) return;
+    if (client == null) {
+      if (way.terminal) {
+        signingIn = true;
+        notifyListeners();
+        try {
+          final status = await signInInTerminal(
+            line,
+            env,
+            way,
+            folder,
+            () => signingIn,
+          );
+          if (status == 0) {
+            await retry();
+          } else {
+            signInWhy = status == null
+                ? 'The sign-in window was closed or did not open.'
+                : 'Sign-in ended without signing in (exit status $status).';
+          }
+        } finally {
+          signingIn = false;
+          notifyListeners();
+        }
+      }
+      return;
+    }
     signingIn = true;
     notifyListeners();
     try {
@@ -177,7 +297,8 @@ class AcpChatSession extends ChangeNotifier {
         unawaited(again());
       }
     } catch (e) {
-      signInWhy = e is RpcError ? e.message : '$e';
+      final msg = e is RpcError ? e.message : '$e';
+      signInWhy = _cleanAuthReason(msg);
     } finally {
       signingIn = false;
       notifyListeners();
@@ -221,15 +342,22 @@ class AcpChatSession extends ChangeNotifier {
       );
     } on RpcError catch (e) {
       // Not signed in, or the sign-in ran out: the pane offers the ways, and the request goes again after.
-      if (e.code == ErrorCode.authRequired.code) {
+      if (e.code == ErrorCode.authRequired.code ||
+          _looksLikeAuthFailure(e.message)) {
         needsSignIn = true;
-        signInWhy = e.message;
+        signInWhy = _cleanAuthReason(e.message);
         _again = () => _prompt(text, more);
       } else {
         entries.add(Entry(Said.error, e.message));
       }
     } catch (e) {
-      entries.add(Entry(Said.error, '$e'));
+      if (_looksLikeAuthFailure('$e')) {
+        needsSignIn = true;
+        signInWhy = _cleanAuthReason('$e');
+        _again = () => _prompt(text, more);
+      } else {
+        entries.add(Entry(Said.error, '$e'));
+      }
     }
     settled?.call();
     sending = false;

@@ -194,22 +194,33 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
 // needs no scissor.
 void layer_scissored(Stage& s, DocShownLayer& t, bool shaped, bool clipped,
                      const double* box) {
+  const auto drop_scissor = [&](MaterialInstance* look) {
+    std::erase_if(
+        s.scissors,
+        [look](const Stage::Scissor& sc) { return sc.look == look; });
+    look->unsetScissor();
+  };
   if (shaped) {
     if (t.clipped)
-      doc_material_instances(
-          s, t, [](MaterialInstance* look) { look->unsetScissor(); }),
-          t.clipped = false;
+      doc_material_instances(s, t, drop_scissor), t.clipped = false;
   } else if (clipped || t.clipped) {
-    const uint32_t left = (uint32_t)std::clamp(box[0], 0.0, (double)s.w),
-                   bottom = (uint32_t)std::clamp(
-                       (double)s.h - (box[1] + box[3]), 0.0, (double)s.h);
     doc_material_instances(s, t, [&](MaterialInstance* look) {
-      if (clipped)
-        look->setScissor(left, bottom,
-                         (uint32_t)std::lround(std::max(box[2], 0.0)),
-                         (uint32_t)std::lround(std::max(box[3], 0.0)));
-      else
-        look->unsetScissor();
+      if (clipped) {
+        auto it = std::find_if(
+            s.scissors.begin(), s.scissors.end(),
+            [look](const Stage::Scissor& sc) { return sc.look == look; });
+        if (it == s.scissors.end()) {
+          Stage::Scissor sc;
+          sc.look = look;
+          for (int i = 0; i < 4; ++i) sc.box[i] = box[i];
+          s.scissors.push_back(sc);
+        } else {
+          for (int i = 0; i < 4; ++i) it->box[i] = box[i];
+        }
+        apply_scissor(s, look, box, false);
+      } else {
+        drop_scissor(look);
+      }
     });
     t.clipped = clipped;
   }

@@ -38,7 +38,13 @@ abstract final class CodeTiles {
     for (final f in files) {
       final to = home(f), written = writtenAt(f);
       bool since(String p) => existsFile(p) && writtenAt(p).isAfter(written);
-      if (!since(to) && !since('$to.trying')) {
+      // Treat a leftover .trying marker older than 2 minutes as stale so a prior crash can retry.
+      final trying = '$to.trying';
+      final busy =
+          since(trying) &&
+          DateTime.now().difference(writtenAt(trying)) <
+              const Duration(minutes: 2);
+      if (!since(to) && !busy) {
         _tiles.ask('$f $written', (f, to));
       }
     }

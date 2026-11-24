@@ -56,8 +56,9 @@ class CreateShelf extends StatelessWidget {
     ].where((e) => e.$2.isNotEmpty).toList();
     // A pasted code file's tile is drawn again when the file has changed since (code_tiles.dart).
     CodeTiles.ask([
-      for (final m in makes.last.$2)
-        if (m.pasted) m.file!,
+      for (final (_, items) in makes)
+        for (final m in items)
+          if (m.pasted) m.file!,
     ], () => codeTilesDrawn.value++);
     bool matchesTile(CreateTile m) {
       if (c.hit(m.name)) return true;
@@ -254,13 +255,8 @@ Widget _makeTile(
 
 /// A tile's art: a script's motion, an expression's copies, a material's ball, or otherwise its mark.
 Widget _makeArt(CreateTile m, ShelfContext c, bool sel) {
-  Widget mark() => Align(
-    alignment: Alignment.topLeft,
-    child: Glyph(
-      m.g,
-      size: Shape.z(26),
-      color: sel ? WindowTokens.onAccent : m.hue,
-    ),
+  Widget mark() => Center(
+    child: Glyph(m.g, size: Shape.z(26), color: m.hue),
   );
   if (m.recipe && _isRecipe(c, m.name)) {
     // A script: its motion as the engine computes it, drawn by the app, with the whole list moving at once.

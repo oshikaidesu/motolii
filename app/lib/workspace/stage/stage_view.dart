@@ -267,244 +267,261 @@ class _StageViewState extends State<StageView>
   final _menu = GlobalKey<ContextMenuState>();
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) {
-      final v = _shown = _view(box.biggest),
-          scene = widget.scene,
-          trail = trailOf.of(WorkspaceScope.read(context), widget.selected);
-      final wsNow = WorkspaceScope.read(context);
-      final activeCam = stageCameraLayer(wsNow, widget.selected);
-      final lockedTarget = activeCam == null
-          ? null
-          : cameraTargetOf(wsNow, activeCam);
-      // What the stage paints around and over the preview: the one painter, once for all of it or once for each side of the engine's image.
-      ViewPainter painter(ViewPart part, {bool marked = false}) => ViewPainter(
-        scene,
-        v,
-        widget.selected,
-        _hover == widget.selected ? null : _hover,
-        grid: widget.grid,
-        safe: widget.safe,
-        alpha: widget.alpha,
-        part: part,
-        pivots: widget.tool.pivots,
-        met: _drag.met,
-        marked: marked,
-        trail: trail,
-        parent: _parentOf(),
-        grip: _drag.heldGrip,
-        form: _formOf(),
-        crop: _cropOf(),
-        cameraTarget: lockedTarget,
-      );
-      desk.follow(
-        WorkspaceScope.read(context),
-        v,
-        dpr: MediaQuery.devicePixelRatioOf(context),
-        textured: widget.texture != null,
-      );
-      desk.pick(widget.selected, _hover);
-      return ContextMenu(
-        key: _menu,
-        child: TwoFingerGestures(
-          onWheel: (d) => widget.tool.make == 'camera'
-              ? _camera.dolly(d.dy)
-              : _panBy(-d, v),
-          onPan: (by, _) => _panBy(by, v),
-          child: MouseRegion(
-            onHover: (e) {
-              widget.cursor.value = v.toComposition(e.localPosition);
-              final h = _hitLocal(v, e.localPosition);
-              if (h != _hover) setState(() => _hover = h);
-            },
-            onExit: (_) {
-              widget.cursor.value = null;
-              if (_hover != null) setState(() => _hover = null);
-            },
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              supportedDevices: pressingDevices,
-              onSecondaryTapDown: (d) {
-                // Context menu for the layer under the pointer, same as on its bar.
-                final ws = WorkspaceScope.read(context),
-                    id = _hitLocal(v, d.localPosition),
-                    l = ws.layers.where((l) => l.id == id).firstOrNull;
-                // On the empty stage, what can be done there.
-                _menu.currentState?.show(
-                  d.localPosition,
-                  l != null
-                      ? layerContextMenu(context, ws, l)
-                      : emptyContextMenu(context, ws),
-                );
-              },
-              onTapUp: (d) {
-                widget.onPoke?.call();
-                if (widget.tool.make == 'pen') {
-                  return _draw.pen(
-                    v,
-                    d.localPosition,
-                    d.localPosition,
-                  ); // A click makes a corner point.
-                }
-                if (widget.tool.make == 'brush') {
-                  return; // A stroke is drawn, not clicked.
-                }
-                if (widget.tool.make == 'camera') {
-                  _camera.tapLayer(_hitLocal(v, d.localPosition));
-                  return;
-                }
-                if (widget.tool.make != null) {
-                  return _draw.drawAt(
-                    v,
-                    d.localPosition,
-                  ); // A click creates one layer there.
-                }
-                final hit = _hitLocal(v, d.localPosition),
-                    ws = WorkspaceScope.read(context);
-                final keys = clickKeys();
-                if (keys.add || keys.span) {
-                  return hit == null ? null : clickLayer(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
-                }
-                final twice = hit != null && hit == _tapped;
-                _tapWait?.cancel();
-                _tapped = twice ? null : hit;
-                if (!twice) {
-                  _tapWait = Timer(kDoubleTapTimeout, () => _tapped = null);
-                }
-                ws.select(hit);
-                final crop = twice && _croppable(hit) ? hit : null;
-                if (crop != _cropping) setState(() => _cropping = crop);
-              },
-              dragStartBehavior: DragStartBehavior.down, // Grab the layer where the pointer went down, not where it had got to when the drag was recognised.
-              onPanStart: (d) => pointer.start(v, d.localPosition),
-              onPanUpdate: (d) => pointer.update(v, d.localPosition),
-              onPanEnd: (_) => pointer.end(v),
-              onPanCancel: pointer.cancel,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  RepaintBoundary(
-                    child: CustomPaint(
-                      painter: painter(
-                        widget.texture == null ? ViewPart.all : ViewPart.under,
-                      ),
-                    ),
-                  ),
-                  if (desk.id case final deskId?
-                      when widget.texture != null) ...[
-                    // The whole pane as the engine draws it: the area off the stage is half covered and the selected layer is marked.
-                    Positioned.fromRect(
-                      rect: v.area,
-                      child: IgnorePointer(
-                        child: Texture(
-                          textureId: deskId,
-                          filterQuality: FilterQuality.medium,
+  Widget build(BuildContext context) {
+    final wsRoot = WorkspaceScope.read(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: wsRoot.live.scrubbing,
+      builder: (context, scrubbing, _) => LayoutBuilder(
+        builder: (context, box) {
+          final v = _shown = _view(box.biggest),
+              scene = widget.scene,
+              trail = trailOf.of(WorkspaceScope.read(context), widget.selected);
+          final wsNow = WorkspaceScope.read(context);
+          final activeCam = stageCameraLayer(wsNow, widget.selected);
+          final lockedTarget = activeCam == null
+              ? null
+              : cameraTargetOf(wsNow, activeCam);
+          // What the stage paints around and over the preview: the one painter, once for all of it or once for each side of the engine's image.
+          ViewPainter painter(ViewPart part, {bool marked = false}) =>
+              ViewPainter(
+                scene,
+                v,
+                widget.selected,
+                _hover == widget.selected ? null : _hover,
+                grid: widget.grid,
+                safe: widget.safe,
+                alpha: widget.alpha,
+                part: part,
+                pivots: widget.tool.pivots,
+                met: _drag.met,
+                gaps: _drag.gaps,
+                hideGizmos: scrubbing,
+                marked: marked,
+                trail: trail,
+                parent: _parentOf(),
+                grip: _drag.heldGrip,
+                form: _formOf(),
+                crop: _cropOf(),
+                cameraTarget: lockedTarget,
+              );
+          desk.follow(
+            WorkspaceScope.read(context),
+            v,
+            dpr: MediaQuery.devicePixelRatioOf(context),
+            textured: widget.texture != null,
+          );
+          desk.pick(
+            scrubbing ? null : widget.selected,
+            scrubbing ? null : _hover,
+          );
+          return ContextMenu(
+            key: _menu,
+            child: TwoFingerGestures(
+              onWheel: (d) => widget.tool.make == 'camera'
+                  ? _camera.dolly(d.dy)
+                  : _panBy(-d, v),
+              onPan: (by, _) => _panBy(by, v),
+              child: MouseRegion(
+                onHover: (e) {
+                  widget.cursor.value = v.toComposition(e.localPosition);
+                  final h = _hitLocal(v, e.localPosition);
+                  if (h != _hover) setState(() => _hover = h);
+                },
+                onExit: (_) {
+                  widget.cursor.value = null;
+                  if (_hover != null) setState(() => _hover = null);
+                },
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  supportedDevices: pressingDevices,
+                  onSecondaryTapDown: (d) {
+                    // Context menu for the layer under the pointer, same as on its bar.
+                    final ws = WorkspaceScope.read(context),
+                        id = _hitLocal(v, d.localPosition),
+                        l = ws.layers.where((l) => l.id == id).firstOrNull;
+                    // On the empty stage, what can be done there.
+                    _menu.currentState?.show(
+                      d.localPosition,
+                      l != null
+                          ? layerContextMenu(context, ws, l)
+                          : emptyContextMenu(context, ws),
+                    );
+                  },
+                  onTapUp: (d) {
+                    widget.onPoke?.call();
+                    if (widget.tool.make == 'pen') {
+                      return _draw.pen(
+                        v,
+                        d.localPosition,
+                        d.localPosition,
+                      ); // A click makes a corner point.
+                    }
+                    if (widget.tool.make == 'brush') {
+                      return; // A stroke is drawn, not clicked.
+                    }
+                    if (widget.tool.make == 'camera') {
+                      _camera.tapLayer(_hitLocal(v, d.localPosition));
+                      return;
+                    }
+                    if (widget.tool.make != null) {
+                      return _draw.drawAt(
+                        v,
+                        d.localPosition,
+                      ); // A click creates one layer there.
+                    }
+                    final hit = _hitLocal(v, d.localPosition),
+                        ws = WorkspaceScope.read(context);
+                    final keys = clickKeys();
+                    if (keys.add || keys.span) {
+                      return hit == null ? null : clickLayer(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
+                    }
+                    final twice = hit != null && hit == _tapped;
+                    _tapWait?.cancel();
+                    _tapped = twice ? null : hit;
+                    if (!twice) {
+                      _tapWait = Timer(kDoubleTapTimeout, () => _tapped = null);
+                    }
+                    ws.select(hit);
+                    final crop = twice && _croppable(hit) ? hit : null;
+                    if (crop != _cropping) setState(() => _cropping = crop);
+                  },
+                  dragStartBehavior: DragStartBehavior.down, // Grab the layer where the pointer went down, not where it had got to when the drag was recognised.
+                  onPanStart: (d) => pointer.start(v, d.localPosition),
+                  onPanUpdate: (d) => pointer.update(v, d.localPosition),
+                  onPanEnd: (_) => pointer.end(v),
+                  onPanCancel: pointer.cancel,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      RepaintBoundary(
+                        child: CustomPaint(
+                          painter: painter(
+                            widget.texture == null
+                                ? ViewPart.all
+                                : ViewPart.under,
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned.fromRect(
-                      rect: v.compositionRect,
-                      child: const IgnorePointer(
-                        child: SizedBox(key: ValueKey('ws-stage-comp')),
+                      if (desk.id case final deskId?
+                          when widget.texture != null) ...[
+                        // The whole pane as the engine draws it: the area off the stage is half covered and the selected layer is marked.
+                        Positioned.fromRect(
+                          rect: v.area,
+                          child: IgnorePointer(
+                            child: Texture(
+                              textureId: deskId,
+                              filterQuality: FilterQuality.medium,
+                            ),
+                          ),
+                        ),
+                        Positioned.fromRect(
+                          rect: v.compositionRect,
+                          child: const IgnorePointer(
+                            child: SizedBox(key: ValueKey('ws-stage-comp')),
+                          ),
+                        ), // Where the canvas lies inside it.
+                      ] else
+                        Positioned.fromRect(
+                          rect: v.compositionRect,
+                          child: IgnorePointer(
+                            child: widget.texture == null
+                                ? const SizedBox(key: ValueKey('ws-stage-comp'))
+                                : ClipRect(
+                                    key: const ValueKey('ws-stage-comp'),
+                                    child: Texture(
+                                      textureId: widget.texture!,
+                                      filterQuality: FilterQuality.medium,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      if (widget.snapshot case final shot?) // While Show Snapshot is held, the earlier frame is drawn over the canvas.
+                        Positioned.fromRect(
+                          rect: v.compositionRect,
+                          child: IgnorePointer(
+                            child: Image(
+                              image: snapshotImage(shot),
+                              key: const ValueKey('ws-stage-snapshot'),
+                              fit: BoxFit.fill,
+                              gaplessPlayback: true,
+                            ),
+                          ),
+                        ),
+                      if (!scrubbing &&
+                          widget.selected != null &&
+                          stageConnected(WorkspaceScope.read(context))) // The selected path's own points, so they can be grabbed.
+                        IgnorePointer(
+                          child: CustomPaint(
+                            size: Size.infinite,
+                            painter: PointsPainter(
+                              [
+                                for (final p in stagePathPoints(
+                                  WorkspaceScope.read(context),
+                                  widget.selected!,
+                                ))
+                                  v.toScreen(p),
+                              ],
+                              [
+                                for (final (h, o) in stagePathHandles(
+                                  WorkspaceScope.read(context),
+                                  widget.selected!,
+                                ))
+                                  (v.toScreen(h), v.toScreen(o)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ?stageDrawPreview(
+                        draw: _draw,
+                        last: pointer.last,
+                        make: widget.tool.make,
                       ),
-                    ), // Where the canvas lies inside it.
-                  ] else
-                    Positioned.fromRect(
-                      rect: v.compositionRect,
-                      child: IgnorePointer(
-                        child: widget.texture == null
-                            ? const SizedBox(key: ValueKey('ws-stage-comp'))
-                            : ClipRect(
-                                key: const ValueKey('ws-stage-comp'),
-                                child: Texture(
-                                  textureId: widget.texture!,
-                                  filterQuality: FilterQuality.medium,
-                                ),
-                              ),
-                      ),
-                    ),
-                  if (widget.snapshot case final shot?) // While Show Snapshot is held, the earlier frame is drawn over the canvas.
-                    Positioned.fromRect(
-                      rect: v.compositionRect,
-                      child: IgnorePointer(
-                        child: Image(
-                          image: snapshotImage(shot),
-                          key: const ValueKey('ws-stage-snapshot'),
-                          fit: BoxFit.fill,
-                          gaplessPlayback: true,
+                      ?stageHeldSays(drag: _drag, last: pointer.last),
+                      if (widget.texture != null)
+                        IgnorePointer(
+                          child: CustomPaint(
+                            painter: painter(
+                              ViewPart.over,
+                              marked: desk.id != null,
+                            ),
+                          ),
+                        ),
+                      IgnorePointer(
+                        child: CustomPaint(
+                          painter: RulerPainter(v, widget.cursor, scene),
                         ),
                       ),
-                    ),
-                  if (widget.selected case final picked?
-                      when stageConnected(WorkspaceScope.read(context))) // The selected path's own points, so they can be grabbed.
-                    IgnorePointer(
-                      child: CustomPaint(
-                        size: Size.infinite,
-                        painter: PointsPainter(
-                          [
-                            for (final p in stagePathPoints(
-                              WorkspaceScope.read(context),
-                              picked,
-                            ))
-                              v.toScreen(p),
-                          ],
-                          [
-                            for (final (h, o) in stagePathHandles(
-                              WorkspaceScope.read(context),
-                              picked,
-                            ))
-                              (v.toScreen(h), v.toScreen(o)),
-                          ],
+                      PickMarks(scene: scene, v: v, lasso: _draw.lasso),
+                      // The brush path so far, drawn thin; once released the stroke belongs to the engine.
+                      if (_draw.brush case final way?)
+                        IgnorePointer(
+                          child: CustomPaint(painter: BrushWay(way)),
                         ),
+                      Positioned(
+                        left: StageTokens.ruler + StageTokens.pad,
+                        bottom: StageTokens.pad,
+                        child: Hud(scale: v.scale, cursor: widget.cursor),
                       ),
-                    ),
-                  ?stageDrawPreview(
-                    draw: _draw,
-                    last: pointer.last,
-                    make: widget.tool.make,
-                  ),
-                  ?stageHeldSays(drag: _drag, last: pointer.last),
-                  if (widget.texture != null)
-                    IgnorePointer(
-                      child: CustomPaint(
-                        painter: painter(
-                          ViewPart.over,
-                          marked: desk.id != null,
+                      if (widget.zoom != 0 &&
+                          box.maxWidth > 360 &&
+                          box.maxHeight > 220)
+                        Positioned(
+                          right: StageTokens.pad,
+                          bottom: StageTokens.pad,
+                          child: StageNavigator(
+                            scene: scene,
+                            view: v,
+                            texture: widget.texture,
+                          ),
                         ),
-                      ),
-                    ),
-                  IgnorePointer(
-                    child: CustomPaint(
-                      painter: RulerPainter(v, widget.cursor, scene),
-                    ),
+                    ],
                   ),
-                  PickMarks(scene: scene, v: v, lasso: _draw.lasso),
-                  // The brush path so far, drawn thin; once released the stroke belongs to the engine.
-                  if (_draw.brush case final way?)
-                    IgnorePointer(child: CustomPaint(painter: BrushWay(way))),
-                  Positioned(
-                    left: StageTokens.ruler + StageTokens.pad,
-                    bottom: StageTokens.pad,
-                    child: Hud(scale: v.scale, cursor: widget.cursor),
-                  ),
-                  if (widget.zoom != 0 &&
-                      box.maxWidth > 360 &&
-                      box.maxHeight > 220)
-                    Positioned(
-                      right: StageTokens.pad,
-                      bottom: StageTokens.pad,
-                      child: StageNavigator(
-                        scene: scene,
-                        view: v,
-                        texture: widget.texture,
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-      );
-    },
-  );
+          );
+        },
+      ),
+    );
+  }
 }

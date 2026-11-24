@@ -16,6 +16,15 @@ import 'package:motolii/workspace/state/stage/stage_service.dart';
 /// `by`: the handle name, or null for a whole-layer move.
 typedef StageHold = ({Offset from, bool moved, String? by});
 
+/// An equal-spacing smart guide between two neighboring bounds along one axis.
+typedef SnapGap = ({
+  bool horizontal,
+  double from,
+  double to,
+  double at,
+  double size,
+});
+
 class StageDrag extends ChangeNotifier {
   StageDrag(this._stage);
 
@@ -26,12 +35,21 @@ class StageDrag extends ChangeNotifier {
   String? get heldGrip => _heldGrip;
   String? _heldGrip;
 
-  // Edges/centre of the dragged layer snap to other layers, the canvas, and
-  // guides within 6 screen points.
-  ({Rect box, List<(double, double)> xs, List<(double, double)> ys})? _snapTo;
+  // Edges/centre and equal-spacing targets collected on drag start so holding ⌘
+  // mid-drag activates snapping immediately.
+  ({
+    Rect box,
+    List<(double, double)> xs,
+    List<(double, double)> ys,
+    List<Rect> others,
+  })?
+  _snapTo;
 
   (double?, double?) get met => _met;
   (double?, double?) _met = (null, null);
+
+  List<SnapGap> get gaps => _gaps;
+  List<SnapGap> _gaps = const [];
 
   // A guide pulled from a ruler or dragged. Released over its ruler → deleted.
   ({String axis, double? was})? _pulling;
@@ -52,12 +70,13 @@ class StageDrag extends ChangeNotifier {
   void _snapFrom(int id) {
     final boxes = _stage.scene.boxes, ws = _stage.workspace;
     final grabbed = boxes[id];
-    if (!_stage.tool.snap || grabbed == null || !stageConnected(ws)) {
+    if (grabbed == null || !stageConnected(ws)) {
       return _snapTo = null;
     }
     final mine = stageOutermost(ws, id), c = ArtGeometry.comp;
     final xs = <(double, double)>[(0, c.width)],
         ys = <(double, double)>[(0, c.height)];
+    final others = <Rect>[];
     for (final g in _stage.scene.guidesX) {
       xs.add((g, g));
     }
@@ -67,44 +86,187 @@ class StageDrag extends ChangeNotifier {
     for (final MapEntry(:key, :value) in boxes.entries) {
       if (stageOutermost(ws, key) == mine) continue;
       final r = _bounds(value);
+      others.add(r);
       xs.add((r.left, r.right));
       ys.add((r.top, r.bottom));
     }
-    _snapTo = (box: _bounds(grabbed), xs: xs, ys: ys);
+    _snapTo = (box: _bounds(grabbed), xs: xs, ys: ys, others: others);
   }
 
-  /// Snaps [by] to the nearest snap line within tolerance. Records met lines for the painter.
+  /// Snaps [by] to edges/centres and equal-spacing gaps when magnet is active
+  /// (⌘+drag by default; ⌘ temporarily inverts when Snap option is toggled on).
   Offset _snapped(Offset by, double s) {
     final to = _snapTo;
-    if (to == null) return by;
-    (double, double?) one(
-      double lo,
-      double size,
-      double d,
-      List<(double, double)> lines,
-    ) {
-      (double, double)? best;
+    final keys = HardwareKeyboard.instance;
+    final cmd = keys.isMetaPressed || keys.isControlPressed;
+    final active = _stage.tool.snap ? !cmd : cmd;
+    if (to == null || !active) {
+      _met = (null, null);
+      _gaps = const [];
+      return by;
+    }
+    final tol = Gestures.snapStage / s;
+
+    (double, double?, List<SnapGap>) snapAxis({
+      required bool horizontal,
+      required double d,
+      required Rect moved,
+      required List<(double, double)> lines,
+    }) {
+      final lo = horizontal ? to.box.left : to.box.top;
+      final size = horizontal ? to.box.width : to.box.height;
+      double? bestDiff;
+      double? bestLine;
+      List<SnapGap> bestGaps = const [];
+
       for (final (a, b) in lines) {
         for (final line in [a, (a + b) / 2, b]) {
           for (final mine in [lo + d, lo + d + size / 2, lo + d + size]) {
             final diff = line - mine;
-            if (diff.abs() <= Gestures.snapStage / s &&
-                (best == null || diff.abs() < best.$1.abs())) {
-              best = (diff, line);
+            if (diff.abs() <= tol &&
+                (bestDiff == null || diff.abs() < bestDiff.abs())) {
+              bestDiff = diff;
+              bestLine = line;
+              bestGaps = const [];
             }
           }
         }
       }
-      return best == null ? (d, null) : (d + best.$1, best.$2);
+
+      // Equal-spacing (distribution) smart guides along this axis, filtering
+      // peers that overlap along the perpendicular band (or all if none do).
+      double pLo(Rect r) => horizontal ? r.top : r.left;
+      double pHi(Rect r) => horizontal ? r.bottom : r.right;
+      double aLo(Rect r) => horizontal ? r.left : r.top;
+      double aHi(Rect r) => horizontal ? r.right : r.bottom;
+      bool overlapsPerp(Rect a, Rect b) =>
+          math.min(pHi(a), pHi(b)) - math.max(pLo(a), pLo(b)) > -24.0;
+      double midPerp(Rect a, Rect b) {
+        final o0 = math.max(pLo(a), pLo(b));
+        final o1 = math.min(pHi(a), pHi(b));
+        return o1 >= o0
+            ? (o0 + o1) / 2
+            : (pLo(a) + pHi(a) + pLo(b) + pHi(b)) / 4;
+      }
+
+      final peers = [
+        for (final r in to.others)
+          if (overlapsPerp(r, moved)) r,
+      ]..sort((a, b) => aLo(a).compareTo(aLo(b)));
+
+      if (peers.length >= 2) {
+        final mLo = lo + d, mHi = lo + d + size;
+        // 1. Center between two neighboring peers (equal left & right gaps).
+        for (var i = 0; i + 1 < peers.length; i++) {
+          final a = peers[i], b = peers[i + 1];
+          final span = aLo(b) - aHi(a);
+          if (span < size + 2) continue;
+          if (mLo < aHi(a) - tol || mHi > aLo(b) + tol) continue;
+          final gap = (span - size) / 2;
+          final targetLo = aHi(a) + gap;
+          final diff = targetLo - mLo;
+          if (diff.abs() <= tol &&
+              (bestDiff == null || diff.abs() < bestDiff.abs())) {
+            final snappedRect = horizontal
+                ? Rect.fromLTWH(targetLo, moved.top, size, moved.height)
+                : Rect.fromLTWH(moved.left, targetLo, moved.width, size);
+            bestDiff = diff;
+            bestLine = null;
+            bestGaps = [
+              (
+                horizontal: horizontal,
+                from: aHi(a),
+                to: targetLo,
+                at: midPerp(a, snappedRect),
+                size: gap,
+              ),
+              (
+                horizontal: horizontal,
+                from: targetLo + size,
+                to: aLo(b),
+                at: midPerp(snappedRect, b),
+                size: gap,
+              ),
+            ];
+          }
+        }
+        // 2. Duplicate an existing gap between an adjacent peer pair (A, B).
+        for (var i = 0; i + 1 < peers.length; i++) {
+          final a = peers[i], b = peers[i + 1];
+          final gap = aLo(b) - aHi(a);
+          if (gap <= 1) continue;
+          // Place dragged object immediately after B by `gap`.
+          final afterLo = aHi(b) + gap;
+          final afterDiff = afterLo - mLo;
+          if (afterDiff.abs() <= tol &&
+              (bestDiff == null || afterDiff.abs() < bestDiff.abs())) {
+            final snappedRect = horizontal
+                ? Rect.fromLTWH(afterLo, moved.top, size, moved.height)
+                : Rect.fromLTWH(moved.left, afterLo, moved.width, size);
+            bestDiff = afterDiff;
+            bestLine = null;
+            bestGaps = [
+              (
+                horizontal: horizontal,
+                from: aHi(a),
+                to: aLo(b),
+                at: midPerp(a, b),
+                size: gap,
+              ),
+              (
+                horizontal: horizontal,
+                from: aHi(b),
+                to: afterLo,
+                at: midPerp(b, snappedRect),
+                size: gap,
+              ),
+            ];
+          }
+          // Place dragged object immediately before A by `gap`.
+          final beforeLo = aLo(a) - gap - size;
+          final beforeDiff = beforeLo - mLo;
+          if (beforeDiff.abs() <= tol &&
+              (bestDiff == null || beforeDiff.abs() < bestDiff.abs())) {
+            final snappedRect = horizontal
+                ? Rect.fromLTWH(beforeLo, moved.top, size, moved.height)
+                : Rect.fromLTWH(moved.left, beforeLo, moved.width, size);
+            bestDiff = beforeDiff;
+            bestLine = null;
+            bestGaps = [
+              (
+                horizontal: horizontal,
+                from: beforeLo + size,
+                to: aLo(a),
+                at: midPerp(snappedRect, a),
+                size: gap,
+              ),
+              (
+                horizontal: horizontal,
+                from: aHi(a),
+                to: aLo(b),
+                at: midPerp(a, b),
+                size: gap,
+              ),
+            ];
+          }
+        }
+      }
+
+      return bestDiff == null
+          ? (d, null, const [])
+          : (d + bestDiff, bestLine, bestGaps);
     }
 
-    final (x, mx) = _stage.tool.axis == 2
-        ? (by.dx, null)
-        : one(to.box.left, to.box.width, by.dx, to.xs);
-    final (y, my) = _stage.tool.axis == 1
-        ? (by.dy, null)
-        : one(to.box.top, to.box.height, by.dy, to.ys);
+    final moved = to.box.shift(by);
+    final (x, mx, gx) = _stage.tool.axis == 2
+        ? (by.dx, null, const <SnapGap>[])
+        : snapAxis(horizontal: true, d: by.dx, moved: moved, lines: to.xs);
+    final movedX = to.box.shift(Offset(x, by.dy));
+    final (y, my, gy) = _stage.tool.axis == 1
+        ? (by.dy, null, const <SnapGap>[])
+        : snapAxis(horizontal: false, d: by.dy, moved: movedX, lines: to.ys);
     _met = (mx, my);
+    _gaps = [...gx, ...gy];
     return Offset(x, y);
   }
 
@@ -365,8 +527,9 @@ class StageDrag extends ChangeNotifier {
       _heldGrip = null;
       notifyListeners();
     }
-    if (_met != (null, null)) {
+    if (_met != (null, null) || _gaps.isNotEmpty) {
       _met = (null, null);
+      _gaps = const [];
       notifyListeners();
     }
     if (h == null || !stageConnected(ws) || free) return;

@@ -175,7 +175,7 @@ void edged_photo(LayerBuild& build, float aspect, bool cropped, double cl,
       0.5 - std::min(cb, 0.95 - ct), aspect * (cl - 0.5),
       0.5 - std::min(cb, 0.95 - ct));
   made.drawn = flat(s, cropped ? cut : "rect", aspect, mat4f{}, 1.f,
-                    float3{1.f}, lay, edge, own.over(1.f), 4, 0.5f,
+                    float3{1.f}, lay, edge, own.over(1.f), 4, 0.f,
                     (float)doc_number(d, layer, "round", 0, 0));
 }
 

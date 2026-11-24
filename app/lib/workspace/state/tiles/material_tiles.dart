@@ -53,7 +53,7 @@ abstract final class MaterialTiles {
         '$motoliiDir/out/filament_webgpu/${_filamat[wears] ?? wears}.filamat';
     return tileHome(
       'material',
-      'material|$wears|${_shows[wears]}|${existsFile(f) ? writtenAt(f).microsecondsSinceEpoch : 0}',
+      'material2|$wears|${_shows[wears]}|${existsFile(f) ? writtenAt(f).microsecondsSinceEpoch : 0}',
     );
   }
 

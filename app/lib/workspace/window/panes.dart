@@ -2,6 +2,7 @@
 // A tab can be dragged onto another strip or split off to a side, and every divider can be resized.
 // A tab cannot be detached into its own window, because that needs the native shell.
 // Colors come from WindowTokens, so both the light and dark shades apply.
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:docking/docking.dart';
@@ -79,7 +80,14 @@ class _PanesState extends State<Panes> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _layout.addListener(_onLayoutChanged);
+  }
+
+  @override
   void dispose() {
+    _layout.removeListener(_onLayoutChanged);
     _ws?.on[WorkspaceAspect.fronted]!.removeListener(_follow);
     _ws?.on[WorkspaceAspect.view]!.removeListener(_switch);
     super.dispose();
@@ -88,6 +96,94 @@ class _PanesState extends State<Panes> {
   (String, int)? _fronted;
   (Pane, String?, int)? _dockOpened;
   final _dynamicPanes = <String, Pane>{};
+  // Measured width of each pane's enclosing strip so tab labels adapt dynamically
+  // without hardcoded icon-only vs named disparities.
+  final _stripWidths = <String, double>{};
+  bool _syncScheduled = false;
+
+  void _onLayoutChanged() => _scheduleLabelSync();
+
+  void _recordWidth(String paneName, double width) {
+    final prev = _stripWidths[paneName];
+    if (prev != null && (prev - width).abs() < 2) return;
+    _stripWidths[paneName] = width;
+    _scheduleLabelSync();
+  }
+
+  void _scheduleLabelSync() {
+    if (_syncScheduled) return;
+    _syncScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _syncScheduled = false;
+      if (mounted) _syncTabLabels();
+    });
+  }
+
+  /// Dynamically assigns each [DockingItem.name] from its enclosing strip width:
+  /// - Room for every tab's label -> all tabs show icon + name.
+  /// - Tighter strip -> selected tab keeps its name, inactive tabs compact to icon-only.
+  /// - Very narrow -> all tabs compact to icon-only.
+  void _syncTabLabels() {
+    var changed = false;
+    double fullWidth(String label, bool closable) =>
+        Shape.z(closable ? 48 : 34) + label.length * Shape.z(6.4);
+    final iconWidth = Shape.z(28);
+
+    void walk(DockingArea? area) {
+      if (area == null) return;
+      if (area is DockingItem) {
+        final want = '${area.id}';
+        if (area.name != want) {
+          area.name = want;
+          changed = true;
+        }
+        return;
+      }
+      if (area is DockingTabs) {
+        final count = area.childrenCount;
+        double? width;
+        for (var i = 0; i < count; i++) {
+          if (_stripWidths['${area.childAt(i).id}'] case final w?) {
+            width = w;
+            break;
+          }
+        }
+        final selIdx = area.selectedIndex.clamp(0, count - 1);
+        final totalFull = [
+          for (var i = 0; i < count; i++)
+            fullWidth('${area.childAt(i).id}', area.childAt(i).closable),
+        ].fold<double>(0, (a, b) => a + b);
+        final showAll = count <= 1 || (width != null && width >= totalFull + 8);
+        final selItem = area.childAt(selIdx);
+        final showSelected =
+            !showAll &&
+            width != null &&
+            width >=
+                fullWidth('${selItem.id}', selItem.closable) +
+                    (count - 1) * iconWidth +
+                    8;
+        for (var i = 0; i < count; i++) {
+          final item = area.childAt(i);
+          final want = (showAll || (showSelected && i == selIdx))
+              ? '${item.id}'
+              : null;
+          if (item.name != want) {
+            item.name = want;
+            changed = true;
+          }
+        }
+        return;
+      }
+      if (area is DockingParentArea) {
+        for (var i = 0; i < area.childrenCount; i++) {
+          walk(area.childAt(i));
+        }
+      }
+    }
+
+    walk(_layout.root);
+    if (changed) _layout.rebuild();
+  }
 
   void _follow() {
     if (_ws!.fronted case final f? when f != _fronted) {
@@ -241,78 +337,89 @@ class _PanesState extends State<Panes> {
     bool closable = false,
   }) {
     final name = p.name;
-    return DockingItem(
+    final canClose =
+        closable ||
+        (p.at != PaneStrip.shelves &&
+            !p.iconOnly &&
+            name != 'Stage' &&
+            name != 'Tool Panel');
+    late final DockingItem item;
+    item = DockingItem(
       id: name,
-      name: p.iconOnly ? null : name,
-      leading: (context, status) => Semantics(
-        label: name,
-        button: true,
-        child: Padding(
-          padding: EdgeInsets.only(right: p.iconOnly ? Shape.s(0) : Shape.s(5)),
-          child: Forms.worn.paneMark(
-            context,
-            selected: status == TabStatus.selected,
-            mark: p.glyph == null
-                ? Text(
-                    p.name.characters.first,
-                    style: TextStyles.micro(
-                      status == TabStatus.selected ? Grey.g95 : Grey.g56,
-                    ),
-                  )
-                : Glyph(
-                    p.glyph!,
-                    size: Shape.z(12),
-                    color: status == TabStatus.selected ? Grey.g95 : Grey.g56,
-                  ),
+      name: p.at == PaneStrip.shelves ? null : name,
+      leading: (context, status) {
+        final hasName = item.name != null && item.name!.isNotEmpty;
+        final selected = status == TabStatus.selected;
+        final ink = selected
+            ? Grey.g95
+            : (status == TabStatus.highlighted ? Grey.g91 : Grey.g56);
+        return Semantics(
+          label: name,
+          button: true,
+          child: Padding(
+            padding: EdgeInsets.only(right: hasName ? Shape.s(5) : Shape.s(0)),
+            child: Forms.worn.paneMark(
+              context,
+              selected: selected,
+              mark: p.glyph == null
+                  ? Text(p.name.characters.first, style: TextStyles.micro(ink))
+                  : Glyph(p.glyph!, size: Shape.z(12), color: ink),
+            ),
           ),
-        ),
-      ),
-      widget: DragTarget<Pane>(
-        onWillAcceptWithDetails: (d) =>
-            d.data.name != name && name != 'Tool Panel',
-        onAcceptWithDetails: (d) => _ws?.openDockTab(d.data, onPane: name),
-        builder: (context, incoming, _) => Stack(
-          fit: StackFit.expand,
-          children: [
-            Panel(child: p.build()),
-            if (incoming.isNotEmpty)
-              IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: WindowTokens.accent.withValues(alpha: 0.10),
-                    border: Border.all(color: WindowTokens.accent, width: 2),
+        );
+      },
+      widget: LayoutBuilder(
+        builder: (context, box) {
+          _recordWidth(name, box.maxWidth);
+          return DragTarget<Pane>(
+            onWillAcceptWithDetails: (d) =>
+                d.data.name != name && name != 'Tool Panel',
+            onAcceptWithDetails: (d) => _ws?.openDockTab(d.data, onPane: name),
+            builder: (context, incoming, _) => Stack(
+              fit: StackFit.expand,
+              children: [
+                Panel(child: p.build()),
+                if (incoming.isNotEmpty)
+                  IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: WindowTokens.accent.withValues(alpha: 0.10),
+                        border: Border.all(
+                          color: WindowTokens.accent,
+                          width: 2,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Shape.s(10),
+                          vertical: Shape.s(5),
+                        ),
+                        decoration: BoxDecoration(
+                          color: WindowTokens.card,
+                          borderRadius: Shape.round(6),
+                          border: Border.all(color: WindowTokens.accent),
+                        ),
+                        child: Text(
+                          'Drop to dock "${incoming.first!.name}" here',
+                          style: TextStyles.name(Grey.g95),
+                        ),
+                      ),
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: Shape.s(10),
-                      vertical: Shape.s(5),
-                    ),
-                    decoration: BoxDecoration(
-                      color: WindowTokens.card,
-                      borderRadius: Shape.round(6),
-                      border: Border.all(color: WindowTokens.accent),
-                    ),
-                    child: Text(
-                      'Drop to dock "${incoming.first!.name}" here',
-                      style: TextStyles.name(Grey.g95),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+              ],
+            ),
+          );
+        },
       ),
       size: size,
       weight: weight,
       minimalSize: p.minSize,
       keepAlive: true,
-      // Stage, Tool Panel, and compact icon-only shelf tabs stay clean without inline close icons;
-      // every named pane and Vism tab can be closed freely and restored anytime via Tools.
-      closable:
-          closable || (!p.iconOnly && name != 'Stage' && name != 'Tool Panel'),
+      closable: canClose,
       maximizable: false,
     );
+    return item;
   }
 
   @override

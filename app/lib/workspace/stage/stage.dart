@@ -299,7 +299,7 @@ class _StageState extends State<_Stage> {
                                         (_opts[_tool == 0
                                                     ? 'sel.snap'
                                                     : 'move.snap'] ??
-                                                1) ==
+                                                0) ==
                                             1,
                                     pivots: (_opts['sel.pivot'] ?? 0) == 1,
                                     group:

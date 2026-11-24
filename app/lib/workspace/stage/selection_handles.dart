@@ -46,18 +46,29 @@ Map<String, Offset> selectionHandles(
     if (knob) 'turn': top + n * StageTokens.stem,
     'anchor': scr(b.anchor),
     'body': scr(b.c),
-    if (crop.length == 4) ...{
-      'crop 0': (c[0] + c[3]) / 2 + (c[1] - c[0]) * crop[0],
-      'crop 1': (c[0] + c[1]) / 2 + (c[3] - c[0]) * crop[1],
-      'crop 2': (c[1] + c[2]) / 2 - (c[1] - c[0]) * crop[2],
-      'crop 3': (c[3] + c[2]) / 2 - (c[3] - c[0]) * crop[3],
-      // The corners of the cut rectangle, to move two sides at once, as Google Slides' crop corners.
-      'crop c0': c[0] + (c[1] - c[0]) * crop[0] + (c[3] - c[0]) * crop[1],
-      'crop c1': c[0] + (c[1] - c[0]) * (1 - crop[2]) + (c[3] - c[0]) * crop[1],
-      'crop c2':
-          c[0] + (c[1] - c[0]) * (1 - crop[2]) + (c[3] - c[0]) * (1 - crop[3]),
-      'crop c3': c[0] + (c[1] - c[0]) * crop[0] + (c[3] - c[0]) * (1 - crop[3]),
-    },
+    if (crop.length == 4)
+      ...() {
+        // Corners of the kept rectangle, then side bars centered along the kept edges.
+        final c0 = c[0] + (c[1] - c[0]) * crop[0] + (c[3] - c[0]) * crop[1];
+        final c1 =
+            c[0] + (c[1] - c[0]) * (1 - crop[2]) + (c[3] - c[0]) * crop[1];
+        final c2 =
+            c[0] +
+            (c[1] - c[0]) * (1 - crop[2]) +
+            (c[3] - c[0]) * (1 - crop[3]);
+        final c3 =
+            c[0] + (c[1] - c[0]) * crop[0] + (c[3] - c[0]) * (1 - crop[3]);
+        return {
+          'crop 0': (c0 + c3) / 2,
+          'crop 1': (c0 + c1) / 2,
+          'crop 2': (c1 + c2) / 2,
+          'crop 3': (c3 + c2) / 2,
+          'crop c0': c0,
+          'crop c1': c1,
+          'crop c2': c2,
+          'crop c3': c3,
+        };
+      }(),
   };
 }
 

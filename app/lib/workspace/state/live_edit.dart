@@ -4,6 +4,7 @@
 // (move, resize, rotate, crop), bar drag/trim/slip and depth.
 // Live writes: each step writes to SQLite and `show`s the result. Used by keyframe slide, Ease, colours, inspector
 // words and the transform pad.
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 
@@ -19,6 +20,10 @@ class LiveEdit {
 
   bool _open = false, _going = false, _carry = false, _keysOnly = false;
   LiveWrites? _waiting;
+
+  /// True while a live-writes scrub (inspector slider, dial, colour, ease) is
+  /// active, so the stage hides gizmos and selection chrome to keep the picture clear.
+  final scrubbing = ValueNotifier<bool>(false);
 
   /// Whether a gesture's undo step is open.
   bool get isOpen => _open;
@@ -67,6 +72,7 @@ class LiveEdit {
     if (!_open) {
       m.later('together', number: 1);
       _open = true;
+      scrubbing.value = true;
     }
     _going = true;
     var shown = 0;
@@ -98,6 +104,7 @@ class LiveEdit {
     if (!_open && last == null) return;
     if (!_open) m.later('together', number: 1);
     _open = false;
+    scrubbing.value = false;
     last?.call(m);
     ws.after(m.later('together'), (done, why) => then?.call(done ? null : why));
   }
@@ -118,6 +125,7 @@ class LiveEdit {
     }
     _open = false;
     _going = false;
+    scrubbing.value = false;
     ws.after(m.later('together', number: -1));
     return true;
   }

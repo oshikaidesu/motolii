@@ -130,12 +130,6 @@ inline const DocCard doc_cards[] = {
      "cap join dash dash_gap dash_offset heads head_shape head_start "
      "head_size",
      nullptr, nullptr, true},
-    // Cut the layer in from its sides; what is left stays where it was, as
-    // Alight Motion's crop. Any placed layer is cut, by Filament's scissor on
-    // its own box (evaluate_clipping); a photo is cut to a rectangle its file
-    // fills, see doc_match, so its rounded corners (round, on the Paths card)
-    // follow the cut.
-    {"Crop", "crop_left crop_top crop_right crop_bottom"},
     {"Bevel", "bevel bevel_depth bevel_color bevel_metallic bevel_roughness",
      nullptr, nullptr, true},
     // After Effects' Side and Back Color: the other faces of a thick layer.

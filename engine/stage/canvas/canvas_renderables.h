@@ -125,7 +125,7 @@ Canvas2D* flat(Stage& s, const char* form, float wide,
                const filament::math::mat4f& place, float high,
                filament::math::float3 colour, const char* lay = nullptr,
                filament::math::float4 edge = filament::math::float4{0.f},
-               const Canvas2DFx& fx = {}, int points = 6, float inner = 0.5f,
+               const Canvas2DFx& fx = {}, int points = 4, float inner = 0.f,
                float round = 0.f);
 
 }  // namespace motolii

@@ -461,8 +461,10 @@ void take_off(Stage& s, const Mesh* m) {
     s.renderables.erase(s.renderables.begin() + (long)i);
   }
   if (!look) return;
-  // No matte camera matrix is set on it any more.
+  // No matte camera matrix or scissor is set on it any more.
   std::erase_if(s.cuts, [look](const Stage::Cut& c) { return c.look == look; });
+  std::erase_if(
+      s.scissors, [look](const Stage::Scissor& sc) { return sc.look == look; });
   // The material instance goes with its entities.
   s.engine->destroy(look);
 }

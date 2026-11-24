@@ -170,28 +170,24 @@ class TimelinePlayheadPainter extends CustomPainter {
     final view = viewport.view;
     final frame = moment?.value ?? this.frame;
     final x = view.x(frame).roundToDouble();
-    if (x < -40 || x > s.width + 40) return;
+    final w = Shape.z(9);
+    final cx = x + .5;
+    if (cx + w / 2 < 0 || cx - w / 2 > s.width) return;
     final p = Paint()..color = WindowTokens.playhead;
-    // A small head with no number on it, like the playhead of Premiere Pro, After Effects, Ableton and Alight Motion.
-    // The frame is shown in the header's time. A head that carried the frame number hid marker names under it.
-    // Blender and Cavalry number their playheads, but they put markers on a row of their own.
-    final w = Shape.z(9), cx = (x + .5).clamp(w / 2, s.width - w / 2);
+    final pillH = Shape.z(12);
+    final pillCenterY = headTop + pillH / 2 + 1;
     final pill = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(cx, headTop + 8),
-        width: w,
-        height: Shape.z(15),
-      ),
+      Rect.fromCenter(center: Offset(cx, pillCenterY), width: w, height: pillH),
       Shape.r(4),
     );
-    c.drawRect(Rect.fromLTWH(x, headTop + 8, 1, s.height - headTop - 8), p);
+    c.drawRect(Rect.fromLTWH(x, pillCenterY, 1, s.height - pillCenterY), p);
     p.color = WindowTokens.accent;
     c.drawRRect(pill, p);
     c.drawPath(
       Path()
-        ..moveTo(x + .5 - 4, pill.bottom)
-        ..lineTo(x + 4.5, pill.bottom)
-        ..lineTo(x + .5, pill.bottom + 4)
+        ..moveTo(cx - 4, pill.bottom)
+        ..lineTo(cx + 4, pill.bottom)
+        ..lineTo(cx, pill.bottom + 3.5)
         ..close(),
       p,
     );

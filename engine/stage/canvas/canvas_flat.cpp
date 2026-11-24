@@ -425,7 +425,12 @@ void canvas_off(Stage& s, Canvas2D* d) {
   // next frame, after those are destroyed.
   filament::MaterialInstance* const edge = d->edgeLook;
   take_off(s, d->sheet);
-  if (edge) s.engine->destroy(edge);
+  if (edge) {
+    std::erase_if(
+        s.scissors,
+        [edge](const Stage::Scissor& sc) { return sc.look == edge; });
+    s.engine->destroy(edge);
+  }
   d->look = nullptr, d->edgeLook = nullptr;
   cache_drop(s, d);
   // ThorVG releases its texture before Filament destroys it.

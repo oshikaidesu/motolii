@@ -221,7 +221,7 @@ const shadingOfTile = {
 };
 
 /// The layer kinds that are visible, and so can wear a material.
-const kindsThatWear = {'film', 'picture', 'text', 'shape', 'solid'};
+const kindsThatWear = {'video', 'image', 'text', 'shape', 'solid'};
 
 /// Tile name to the (kind, shape) of the layer it creates.
 final layerOfTile = {

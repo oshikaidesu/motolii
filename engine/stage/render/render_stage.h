@@ -213,6 +213,13 @@ struct Stage {
   void* solidTextures = nullptr;
   // All entities on stage. `move` repositions them.
   std::vector<Renderable> renderables;
+  // Active scissor rects (in composition pixels from top-left) per material so
+  // desk_lay can transform them into the preview panel viewport and back.
+  struct Scissor {
+    filament::MaterialInstance* look = nullptr;
+    double box[4] = {0, 0, 0, 0};
+  };
+  std::vector<Scissor> scissors;
   // Preview panel state: viewport (w/h/x/y/scale) and selection/hover marks.
   // point: panel pixels per screen point. 0×0 = no panel.
   struct {
@@ -259,6 +266,11 @@ void close_stage(Stage& s);
 // Switches viewports between the preview panel (on=true) and the stage
 // (on=false). Matte cameras are left as they are.
 void desk_lay(Stage& s, bool on);
+
+// Applies a composition-space scissor box (x, y, w, h from top-left) to `look`
+// in either the preview panel viewport (`desk=true`) or stage pixels.
+void apply_scissor(Stage& s, filament::MaterialInstance* look,
+                   const double* box, bool desk);
 
 // Sets the environment light that the glass mirrors and is lit by: one of the
 // studios that come with Filament, converted to a .ktx by cmgen. Returns false

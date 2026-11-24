@@ -12,7 +12,7 @@ import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
-/// Header of the name column: layer count and the visibility, solo and lock icons.
+/// Header of the name column: layer count.
 class TimelineLabelHeader extends StatelessWidget {
   const TimelineLabelHeader({
     super.key,
@@ -44,26 +44,6 @@ class TimelineLabelHeader extends StatelessWidget {
         ),
       ],
     ),
-    trailing: [
-      for (final g in const [
-        TimelineGlyphs.eye,
-        TimelineGlyphs.solo,
-        TimelineGlyphs.lock,
-        TimelineGlyphs.clip,
-      ])
-        SizedBox(
-          width: Shape.z(20),
-          child: Center(
-            child: Glyph(
-              g,
-              size: 10,
-              color: g == TimelineGlyphs.solo && solo
-                  ? WindowTokens.accent
-                  : Grey.g56,
-            ),
-          ),
-        ),
-    ],
   );
 }
 

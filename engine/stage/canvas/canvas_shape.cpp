@@ -148,18 +148,16 @@ void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, int h,
     }
     shape->close();
   } else if (!strcmp(form, "polygon") || !strcmp(form, "star") ||
-             !strcmp(form, "rect")) {
-    // polygon, star and rect are all this one ring of points: a form with
-    // inner > 0 is a star, and a four-point shape that is not a star is turned
-    // half a step so its points land as an upright square, not a diamond.
+             (!strcmp(form, "rect") && (points != 4 || inner > 0.f))) {
+    // rect with points != 4 is a polygon; with inner > 0 it is a star.
+    // Plain rect (points == 4, inner == 0) falls through to appendRect so it
+    // fills the full bounding box instead of the inscribed 1/sqrt(2) square.
     const bool star =
         !strcmp(form, "star") || (!strcmp(form, "rect") && inner > 0.f);
     const int n = std::clamp(points, 3, 100) * (star ? 2 : 1);
-    const float turn = !star && points == 4 ? TAU / (2.f * (float)n) : 0.f;
     for (int k = 0; k < n; ++k) {
-      // The first point is straight up (a square turns its points to the
-      // corners).
-      const float a = -0.5f * TAU / 2.f + turn + TAU * (float)k / (float)n,
+      // The first point is straight up.
+      const float a = -0.5f * TAU / 2.f + TAU * (float)k / (float)n,
                   r = star && (k & 1) ? std::clamp(inner, 0.01f, 1.f) : 1.f;
       k ? shape->lineTo(cx + rx * r * std::cos(a), cy + ry * r * std::sin(a))
         : shape->moveTo(cx + rx * r * std::cos(a), cy + ry * r * std::sin(a));

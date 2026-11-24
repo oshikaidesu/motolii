@@ -164,11 +164,32 @@ void close_stage(Stage& s) {
   Engine::destroy(&e);
 }
 
+void apply_scissor(Stage& s, MaterialInstance* look, const double* box,
+                   bool desk) {
+  if (!look) return;
+  const double viewW = desk ? (double)s.desk.w : (double)s.w;
+  const double viewH = desk ? (double)s.desk.h : (double)s.h;
+  const double x0 = desk ? s.desk.x + box[0] * s.desk.scale : box[0];
+  const double y0 = desk ? s.desk.y + box[1] * s.desk.scale : box[1];
+  const double w = desk ? box[2] * s.desk.scale : box[2];
+  const double h = desk ? box[3] * s.desk.scale : box[3];
+  const uint32_t left = (uint32_t)std::clamp(std::floor(x0), 0.0, viewW);
+  const uint32_t right =
+      (uint32_t)std::clamp(std::ceil(x0 + w), (double)left, viewW);
+  const uint32_t top = (uint32_t)std::clamp(std::floor(y0), 0.0, viewH);
+  const uint32_t low =
+      (uint32_t)std::clamp(std::ceil(y0 + h), (double)top, viewH);
+  const uint32_t bottom = (uint32_t)viewH - low;
+  look->setScissor(left, bottom, right - left, low - top);
+}
+
 void desk_lay(Stage& s, bool on) {
   const Viewport at = on ? Viewport{0, 0, s.desk.w, s.desk.h}
                          : Viewport{0, 0, (uint32_t)s.w, (uint32_t)s.h};
   for (View* v : {s.view, s.view_behind, s.view_through})
     if (v) v->setViewport(at);
+  for (const Stage::Scissor& sc : s.scissors)
+    apply_scissor(s, sc.look, sc.box, on);
   const double near = s.camera->getNear(), far = s.camera->getCullingFar();
   if (!on)
     return s.camera->setCustomProjection(s.desk.was, s.desk.wasCulled, near,

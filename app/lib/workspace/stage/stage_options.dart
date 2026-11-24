@@ -213,12 +213,12 @@ class OptionsStrip extends StatelessWidget {
   ) => switch (tool) {
     0 => [
       _seg(c, 'sel.level', const ['Layer', 'Group']),
-      _flag('sel.snap', 'Snap', initial: true),
+      _flag('sel.snap', 'Snap (⌘)', initial: false),
       _flag('sel.pivot', 'Pivots'),
     ],
     1 => [
       _seg(c, 'move.axis', const ['Free', 'X', 'Y']),
-      _flag('move.snap', 'Snap', initial: true),
+      _flag('move.snap', 'Snap (⌘)', initial: false),
     ],
     2 => [
       _Field('Fill', swatch: p.fill ?? WindowTokens.body),

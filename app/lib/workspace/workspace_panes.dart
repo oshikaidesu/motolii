@@ -24,7 +24,6 @@ final workspacePanes = [
     () => const ShelfPane('Media', 'Search files and media'),
     at: PaneStrip.shelves,
     minSize: 240,
-    iconOnly: true,
   ),
   Pane(
     'Effects',
@@ -32,7 +31,6 @@ final workspacePanes = [
     () => const ShelfPane('Effects', 'Search effects and features'),
     at: PaneStrip.shelves,
     minSize: 240,
-    iconOnly: true,
   ),
   Pane(
     'Fonts',
@@ -40,7 +38,6 @@ final workspacePanes = [
     () => const ShelfPane('Fonts', 'Search fonts'),
     at: PaneStrip.shelves,
     minSize: 240,
-    iconOnly: true,
   ),
   Pane(
     'Colors',
@@ -48,7 +45,6 @@ final workspacePanes = [
     () => const ShelfPane('Colors', 'Search palettes'),
     at: PaneStrip.shelves,
     minSize: 240,
-    iconOnly: true,
   ),
   Pane(
     'Create',
@@ -56,7 +52,6 @@ final workspacePanes = [
     () => const ShelfPane('Create', 'Search layers and shapes'),
     at: PaneStrip.shelves,
     minSize: 240,
-    iconOnly: true,
   ),
   Pane(
     'Looks',
@@ -64,7 +59,6 @@ final workspacePanes = [
     () => const ShelfPane('Looks', 'Search looks'),
     at: PaneStrip.shelves,
     minSize: 240,
-    iconOnly: true,
   ),
   Pane(
     'Stage',
