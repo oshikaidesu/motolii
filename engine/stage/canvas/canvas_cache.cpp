@@ -8,6 +8,7 @@
 #include "base/cache_folder.h"
 #include "base/hash.h"
 #include "gpu/gpu_interop.h"
+#include "gpu/screen_interop.h"
 #include "stage/canvas/canvas_sketch.h"
 
 namespace motolii {
@@ -343,6 +344,7 @@ void cache_drop(Stage& s, Canvas2D* d) {
   const size_t one = d->target ? 4 * (size_t)wgpuTextureGetWidth(d->target) *
                                      wgpuTextureGetHeight(d->target)
                                : 0;
+  if (!d->cached.empty()) interop::invalidate_textures(s.engine);
   for (auto& [at, texture] : d->cached) {
     if (texture) s.engine->destroy(texture);
     cache_bytes -= one;

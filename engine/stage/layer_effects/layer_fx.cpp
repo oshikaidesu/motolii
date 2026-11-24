@@ -129,33 +129,18 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
       });
 }
 
-void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
+void thing_fx_textures(Stage& s, ScreenStack& st, View* v, bool needShot) {
   const Viewport vp = v->getViewport();
   const uint32_t w = (uint32_t)std::max(1, vp.left + (int)vp.width),
                  h = (uint32_t)std::max(1, vp.bottom + (int)vp.height);
   const bool needOut = !st.steps.empty();
-  // Each layer keeps `st.shot` (rendered via Filament's Renderer::render(v),
-  // which must not alias another view's target in the same frame) plus
-  // `st.between[0]` when effects run. Depth (`DEPTH24`) and ping-pong scratch
-  // (`between[1]`) are shared across all layers via StageFxCache.
-  if (st.shot && st.shot->getWidth() == w && st.shot->getHeight() == h &&
-      (!needOut || (st.between[0] && st.between[0]->getWidth() == w &&
-                    st.between[0]->getHeight() == h)))
-    return;
-
-  st.seen = nullptr;
-  for (Texture*& t : {std::ref(st.shot), std::ref(st.depth),
-                      std::ref(st.between[0]), std::ref(st.between[1])})
-    if (t) s.engine->destroy(t), t = nullptr;
-  for (RenderTarget*& r : {std::ref(st.target), std::ref(st.betweenTarget[0]),
-                           std::ref(st.betweenTarget[1])})
-    if (r) s.engine->destroy(r), r = nullptr;
-  interop::on_driver(s.engine,
-                     [built = std::vector<void*>(st.device, st.device + 3)] {
-                       for (void* t : built)
-                         if (t) wgpuTextureRelease((WGPUTexture)t);
-                     });
-  st.device[0] = st.device[1] = st.device[2] = nullptr;
+  const bool wantShot = needShot || !needOut;
+  const bool shotOk = !wantShot || (st.shot && st.shot->getWidth() == w &&
+                                    st.shot->getHeight() == h);
+  const bool outOk =
+      !needOut || (st.between[0] && st.between[0]->getWidth() == w &&
+                   st.between[0]->getHeight() == h);
+  if (shotOk && outOk) return;
 
   const auto newTexture = [&](int slot, const char* label) {
     WGPUTextureDescriptor like{};
@@ -180,13 +165,43 @@ void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
         .build(*s.engine);
   };
 
-  st.shot = newTexture(0, "thing shot");
-  // Depth is shared across all layers of size w x h via StageFxCache.
-  st.target = RenderTarget::Builder()
-                  .texture(RenderTarget::AttachmentPoint::COLOR, st.shot)
-                  .texture(RenderTarget::AttachmentPoint::DEPTH,
-                           screen_pool_depth(s, w, h))
-                  .build(*s.engine);
+  // Lazily add `st.shot` without reallocating `st.between[0]` when a previously
+  // flat-bypassed layer falls back to Filament rendering at the same size.
+  if (wantShot && !st.shot && outOk && st.between[0]) {
+    st.shot = newTexture(0, "thing shot");
+    st.target = RenderTarget::Builder()
+                    .texture(RenderTarget::AttachmentPoint::COLOR, st.shot)
+                    .texture(RenderTarget::AttachmentPoint::DEPTH,
+                             screen_pool_depth(s, w, h))
+                    .build(*s.engine);
+    return;
+  }
+
+  if (st.shot || st.between[0] || st.between[1])
+    interop::invalidate_textures(s.engine);
+  st.seen = nullptr;
+  for (Texture*& t : {std::ref(st.shot), std::ref(st.depth),
+                      std::ref(st.between[0]), std::ref(st.between[1])})
+    if (t) s.engine->destroy(t), t = nullptr;
+  for (RenderTarget*& r : {std::ref(st.target), std::ref(st.betweenTarget[0]),
+                           std::ref(st.betweenTarget[1])})
+    if (r) s.engine->destroy(r), r = nullptr;
+  interop::on_driver(s.engine,
+                     [built = std::vector<void*>(st.device, st.device + 3)] {
+                       for (void* t : built)
+                         if (t) wgpuTextureRelease((WGPUTexture)t);
+                     });
+  st.device[0] = st.device[1] = st.device[2] = nullptr;
+
+  if (wantShot) {
+    st.shot = newTexture(0, "thing shot");
+    // Depth is shared across all layers of size w x h via StageFxCache.
+    st.target = RenderTarget::Builder()
+                    .texture(RenderTarget::AttachmentPoint::COLOR, st.shot)
+                    .texture(RenderTarget::AttachmentPoint::DEPTH,
+                             screen_pool_depth(s, w, h))
+                    .build(*s.engine);
+  }
   if (needOut) {
     st.between[0] = newTexture(1, "thing out");
     st.betweenTarget[0] =
@@ -208,7 +223,9 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
                         const ScreenTextures& textures, ThingFx* owner) {
   if (owner && owner->culled) return;
   screen_frame_begin(s);
-  thing_fx_textures(s, st, v);
+  const bool useFlat =
+      owner && owner->flatBypass && owner->flatTex && !st.steps.empty();
+  thing_fx_textures(s, st, v, !useFlat);
   const Viewport vp = v->getViewport();
   const uint32_t w = (uint32_t)std::max(1, vp.left + (int)vp.width),
                  h = (uint32_t)std::max(1, vp.bottom + (int)vp.height);
@@ -332,8 +349,13 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
     }
   }
   if (active.empty()) {
-    renderLayer(st.target);
-    screen_place(s, st.shot, st.betweenTarget[0], w, h, nullptr);
+    if (useFlat) {
+      screen_blit_flat(s, owner->flatTex, st.betweenTarget[0], w, h,
+                       owner->flatRect, owner->flatWash, /*toLinear=*/true);
+    } else {
+      renderLayer(st.target);
+      screen_place(s, st.shot, st.betweenTarget[0], w, h, nullptr);
+    }
     st.seen = st.between[0];
     if (canCache) {
       owner->cacheValid = true;
@@ -345,10 +367,10 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
   }
 
   struct PlanStep {
-    enum Kind { ToSrgb, Fused, Gpu, Aviutl, AePlugin, ToLinear } kind;
+    enum Kind { ToSrgb, FlatBlit, Fused, Gpu, Aviutl, AePlugin, ToLinear } kind;
     std::vector<ScreenFx*> fusedNodes;
     size_t fxIdx = 0;
-    bool foldSrgb = false, foldLinear = false;
+    bool foldSrgb = false, foldLinear = false, foldFlat = false;
     size_t subIdx = 0;
   };
   std::vector<PlanStep> plan;
@@ -367,31 +389,38 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
       if (atStart || atEnd || nodes.size() >= 2) {
         if (atStart) srgbFolded = true;
         if (atEnd) linearFolded = true;
-        PlanStep ps{PlanStep::Fused, std::move(nodes), 0, atStart, atEnd, 0};
+        PlanStep ps{PlanStep::Fused, std::move(nodes),   0, atStart && !useFlat,
+                    atEnd,           atStart && useFlat, 0};
         plan.push_back(std::move(ps));
       } else {
         for (size_t k = i; k < j; ++k)
-          plan.push_back({PlanStep::Gpu, {}, active[k].idx, false, false, 0});
+          plan.push_back(
+              {PlanStep::Gpu, {}, active[k].idx, false, false, false, 0});
       }
       i = j;
       continue;
     }
     if (active[i].kind == 0)
-      plan.push_back({PlanStep::Gpu, {}, active[i].idx, false, false, 0});
+      plan.push_back(
+          {PlanStep::Gpu, {}, active[i].idx, false, false, false, 0});
     else if (active[i].kind == 'a')
-      plan.push_back({PlanStep::Aviutl, {}, 0, false, false, active[i].idx});
+      plan.push_back(
+          {PlanStep::Aviutl, {}, 0, false, false, false, active[i].idx});
     else if (active[i].kind == 'p')
-      plan.push_back({PlanStep::AePlugin, {}, 0, false, false, active[i].idx});
+      plan.push_back(
+          {PlanStep::AePlugin, {}, 0, false, false, false, active[i].idx});
     ++i;
   }
-  if (!srgbFolded) plan.insert(plan.begin(), {PlanStep::ToSrgb});
+  if (!srgbFolded)
+    plan.insert(plan.begin(),
+                {useFlat ? PlanStep::FlatBlit : PlanStep::ToSrgb});
   if (!linearFolded) plan.push_back({PlanStep::ToLinear});
 
-  renderLayer(st.target);
+  if (!useFlat) renderLayer(st.target);
   PooledLayerSlot* scratchSlot =
       plan.size() > 1 ? screen_pool_acquire_layer(s, w, h, false) : nullptr;
 
-  Texture* cur = st.shot;
+  Texture* cur = useFlat ? owner->flatTex : st.shot;
   // Choose the first output target by parity so the final pass always lands
   // directly in `st.between[0]` (the layer's single owned output texture).
   const size_t total = plan.size();
@@ -405,21 +434,28 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
       case PlanStep::ToSrgb:
         screen_tone(s, cur, destRt, w, h, true);
         break;
+      case PlanStep::FlatBlit:
+        screen_blit_flat(s, cur, destRt, w, h, owner->flatRect, owner->flatWash,
+                         /*toLinear=*/false);
+        break;
       case PlanStep::ToLinear:
         screen_tone(s, cur, destRt, w, h, false);
         break;
       case PlanStep::Fused: {
         const size_t n = step.fusedNodes.size();
         if (!screen_draw_fused(s, st, step.fusedNodes.data(), n, step.foldSrgb,
-                               step.foldLinear, cur, destRt, numbers, w, h)) {
+                               step.foldLinear, cur, destRt, numbers, w, h,
+                               false, step.foldFlat ? owner->flatRect : nullptr,
+                               step.foldFlat ? owner->flatWash : nullptr)) {
           // Rare fallback if Dawn rejects the fused shader: run nodes cleanly
           // through ping-pong scratch and land in `destRt`.
           PooledLayerSlot* tmp =
               scratchSlot ? nullptr : screen_pool_acquire_layer(s, w, h, false);
           PooledLayerSlot* alt = scratchSlot ? scratchSlot : tmp;
           Texture* fCur = cur;
-          const size_t subTotal =
-              n + (step.foldSrgb ? 1 : 0) + (step.foldLinear ? 1 : 0);
+          const size_t subTotal = n +
+                                  ((step.foldSrgb || step.foldFlat) ? 1 : 0) +
+                                  (step.foldLinear ? 1 : 0);
           size_t subIdx = 0;
           const auto subDest = [&]() -> std::pair<RenderTarget*, Texture*> {
             const bool landOnDest = ((subTotal - subIdx) % 2) == 1;
@@ -429,7 +465,12 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
                        ? std::make_pair(alt->colorTarget, alt->tex)
                        : std::make_pair(st.betweenTarget[0], st.between[0]);
           };
-          if (step.foldSrgb) {
+          if (step.foldFlat) {
+            auto [rt, tx] = subDest();
+            screen_blit_flat(s, fCur, rt, w, h, owner->flatRect,
+                             owner->flatWash, /*toLinear=*/false);
+            fCur = tx;
+          } else if (step.foldSrgb) {
             auto [rt, tx] = subDest();
             screen_tone(s, fCur, rt, w, h, true);
             fCur = tx;

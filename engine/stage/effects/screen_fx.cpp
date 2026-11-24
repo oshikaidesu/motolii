@@ -112,6 +112,7 @@ void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx, Texture* from,
                        (uint32_t)std::max(2L, std::lround(h * fx.historyShare));
     // The image has a new size: the history starts again.
     if (fx.history && (fx.hw != hw || fx.hh != hh)) {
+      interop::invalidate_textures(s.engine);
       for (RenderTarget* r : fx.historyInto) s.engine->destroy(r);
       fx.historyInto.clear();
       s.engine->destroy(fx.history), fx.history = nullptr;
@@ -442,6 +443,7 @@ void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
 
 void screen_stack_off(Stage& s, ScreenStack& st) {
   if (!s.engine) return;
+  interop::invalidate_textures(s.engine);
   for (auto& [key, fx] : st.built) {
     if (!fx) continue;
     if (fx->interop && !fx->sharedInterop) interop::drop(s.engine, fx->interop);

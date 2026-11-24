@@ -48,6 +48,7 @@ AviutlBuf aviutl_bytes(AviutlRun& r, uint32_t w, uint32_t h) {
 }
 // Destroys a buffer made by aviutl_bytes.
 void aviutl_let_go(AviutlRun& r, const AviutlBuf& b) {
+  if (b.t) interop::invalidate_textures(r.s->engine);
   r.s->engine->destroy(b.rt), r.s->engine->destroy(b.t);
 }
 // Swaps the red and blue bytes of every pixel, converting between rgba and

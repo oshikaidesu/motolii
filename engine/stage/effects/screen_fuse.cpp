@@ -195,9 +195,10 @@ bool emit_node_wgsl(const ScreenFx& fx, size_t k, std::string& outBody,
 }
 
 FusedScreen* get_or_build_fused(Stage& s, ScreenFx* const* nodes, size_t count,
-                                bool foldToSrgb, bool foldToLinear) {
+                                bool foldToSrgb, bool foldToLinear,
+                                bool foldFlat) {
   StageFxCache& cache = screen_cache(s);
-  std::string key = foldToSrgb ? "S" : "0";
+  std::string key = foldFlat ? "F" : (foldToSrgb ? "S" : "0");
   for (size_t k = 0; k < count; ++k) key += "|" + nodes[k]->file;
   key += foldToLinear ? "|L" : "|0";
 
@@ -211,7 +212,7 @@ FusedScreen* get_or_build_fused(Stage& s, ScreenFx* const* nodes, size_t count,
       "@group(0) @binding(1) var _m_samp: sampler;\n"
       "var<private> _m_in: vec4<f32>;\n";
 
-  if (foldToSrgb) {
+  if (foldToSrgb || foldFlat) {
     wgsl +=
         "fn _m_to_srgb(p: vec4<f32>) -> vec4<f32> {\n"
         "  if (p.a <= 0.0) { return vec4<f32>(0.0); }\n"
@@ -221,7 +222,7 @@ FusedScreen* get_or_build_fused(Stage& s, ScreenFx* const* nodes, size_t count,
         "  return vec4<f32>(t * p.a, p.a);\n"
         "}\n";
   }
-  if (foldToLinear) {
+  if (foldToLinear || foldFlat) {
     wgsl +=
         "fn _m_to_linear(p: vec4<f32>) -> vec4<f32> {\n"
         "  if (p.a <= 0.0) { return vec4<f32>(0.0); }\n"
@@ -237,6 +238,12 @@ FusedScreen* get_or_build_fused(Stage& s, ScreenFx* const* nodes, size_t count,
   entry.offsets.assign(count, 0u);
   entry.files.clear();
   uint32_t offset = 0;
+  if (foldFlat) {
+    uniformFields +=
+        "  @align(16) _flat_rect: vec4<f32>,\n"
+        "  @align(16) _flat_wash: vec4<f32>,\n";
+    offset = 32u;
+  }
 
   for (size_t k = 0; k < count; ++k) {
     std::string nodeBody, structType;
@@ -263,9 +270,33 @@ FusedScreen* get_or_build_fused(Stage& s, ScreenFx* const* nodes, size_t count,
   }
   wgsl +=
       "@fragment fn main(@builtin(position) _frag: vec4<f32>, @location(0) "
-      "_uv: vec2<f32>) -> @location(0) vec4<f32> {\n"
-      "  var _c: vec4<f32> = textureSampleLevel(_m_tex, _m_samp, _uv, 0.0);\n";
-  if (foldToSrgb) wgsl += "  _c = _m_to_srgb(_c);\n";
+      "_uv: vec2<f32>) -> @location(0) vec4<f32> {\n";
+  if (foldFlat) {
+    // Directly read straight-sRGB Canvas2D pixels inside the layer's sheet
+    // rectangle, skipping Renderer::render(v) and linear->sRGB round-trip.
+    wgsl +=
+        "  let _luv = (_uv - _m_u._flat_rect.xy) * _m_u._flat_rect.zw;\n"
+        "  var _c: vec4<f32> = vec4<f32>(0.0);\n"
+        "  if (_luv.x >= 0.0 && _luv.x <= 1.0 && _luv.y >= 0.0 && _luv.y <= "
+        "1.0) {\n"
+        "    let _d = textureSampleLevel(_m_tex, _m_samp, _luv, 0.0);\n"
+        "    if (_d.a >= 0.004) {\n"
+        "      if (_m_u._flat_wash.a > 0.0) {\n"
+        "        let _lin = _m_to_linear(vec4<f32>(_d.rgb * _d.a, _d.a));\n"
+        "        let _mix = mix(_lin.rgb, _m_u._flat_wash.rgb * _d.a, "
+        "_m_u._flat_wash.a);\n"
+        "        _c = _m_to_srgb(vec4<f32>(_mix, _d.a));\n"
+        "      } else {\n"
+        "        _c = vec4<f32>(_d.rgb * _d.a, _d.a);\n"
+        "      }\n"
+        "    }\n"
+        "  }\n";
+  } else {
+    wgsl +=
+        "  var _c: vec4<f32> = textureSampleLevel(_m_tex, _m_samp, _uv, "
+        "0.0);\n";
+    if (foldToSrgb) wgsl += "  _c = _m_to_srgb(_c);\n";
+  }
   for (size_t k = 0; k < count; ++k) {
     wgsl += "  _m_in = _c; _c = clamp(_n" + std::to_string(k) +
             "_run(_frag, _uv), vec4<f32>(0.0), vec4<f32>(1.0));\n";
@@ -563,17 +594,23 @@ bool screen_draw_fused(Stage& s, ScreenStack& st, ScreenFx* const* nodes,
                        size_t count, bool foldToSrgb, bool foldToLinear,
                        filament::Texture* from, filament::RenderTarget* to,
                        const ScreenNumbers& numbers, uint32_t w, uint32_t h,
-                       bool over) {
+                       bool over, const float* flatRect,
+                       const float* flatWash) {
   if (count == 0) return false;
   if (!w) w = (uint32_t)s.w, h = (uint32_t)s.h;
+  const bool foldFlat = flatRect != nullptr;
   FusedScreen* fused =
-      get_or_build_fused(s, nodes, count, foldToSrgb, foldToLinear);
+      get_or_build_fused(s, nodes, count, foldToSrgb, foldToLinear, foldFlat);
   if (!fused || !fused->interop) return false;
 
   // Pack all fused nodes' uniforms into one contiguous buffer and upload once.
   int slot = 0;
   if (fused->totalBytes > 0) {
     std::vector<float> packed(fused->totalBytes / 4, 0.f);
+    if (foldFlat) {
+      std::memcpy(packed.data(), flatRect, 4 * sizeof(float));
+      if (flatWash) std::memcpy(packed.data() + 4, flatWash, 4 * sizeof(float));
+    }
     for (size_t k = 0; k < count; ++k) {
       ScreenFx& fx = *nodes[k];
       std::copy(fx.source ? st.own : st.frame,

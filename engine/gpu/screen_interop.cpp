@@ -1,6 +1,7 @@
 // Implements screen_interop.h.
 #include "screen_interop.h"
 
+#include <backend/DescriptorSetOffsetArray.h>
 #include <backend/PipelineState.h>
 #include <backend/Program.h>
 #include <filament/Engine.h>
@@ -11,10 +12,14 @@
 #include <webgpu/webgpu.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
+#include <mutex>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "details/Engine.h"
@@ -57,6 +62,78 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
 }
 )";
 
+// Thread-safe freelist for uniform upload staging blocks so per-pass parameter
+// writes avoid repeated calloc/free while remaining safe across Screen drop.
+struct ParamPool {
+  uint32_t bytes = 0;
+  std::mutex lock;
+  std::vector<void*> freeList;
+  explicit ParamPool(uint32_t b) : bytes(b) {}
+  ~ParamPool() {
+    for (void* p : freeList) std::free(p);
+  }
+  void* acquire() {
+    std::lock_guard<std::mutex> hold(lock);
+    if (!freeList.empty()) {
+      void* p = freeList.back();
+      freeList.pop_back();
+      return p;
+    }
+    return std::malloc(bytes);
+  }
+  void release(void* p) {
+    std::lock_guard<std::mutex> hold(lock);
+    if (freeList.size() < 512) {
+      freeList.push_back(p);
+      return;
+    }
+    std::free(p);
+  }
+};
+
+// Key for per-Screen descriptor set caching (uniform offset is supplied
+// dynamically via DYNAMIC_OFFSET, so one set serves every pass using the same
+// textures, sampler, and parameter buffer).
+struct SetKey {
+  static constexpr int kInline = 8;
+  int count = 0;
+  int sampler = 0;
+  uint32_t bufId = 0;
+  uintptr_t ptrs[kInline] = {};
+  uint32_t ids[kInline] = {};
+  uint32_t dims[kInline] = {};
+  bool operator==(const SetKey& o) const {
+    if (count != o.count || sampler != o.sampler || bufId != o.bufId)
+      return false;
+    for (int i = 0; i < count; ++i)
+      if (ptrs[i] != o.ptrs[i] || ids[i] != o.ids[i] || dims[i] != o.dims[i])
+        return false;
+    return true;
+  }
+};
+
+struct SetKeyHash {
+  size_t operator()(const SetKey& k) const {
+    uint64_t h = 14695981039346656037ull;
+    const auto mix = [&](uint64_t v) { h = (h ^ v) * 1099511628211ull; };
+    mix((uint64_t)k.count);
+    mix((uint64_t)k.sampler);
+    mix((uint64_t)k.bufId);
+    for (int i = 0; i < k.count; ++i) {
+      mix((uint64_t)k.ptrs[i]);
+      mix(((uint64_t)k.ids[i] << 32) | k.dims[i]);
+    }
+    return (size_t)h;
+  }
+};
+
+// Global generation bumped whenever Motolii destroys textures so cached
+// descriptor sets can never alias a recycled 4-bit-age Filament handle.
+static std::atomic<uint64_t> gTextureGen{1};
+// Tracks destroyed descriptor sets to prevent HandleAllocator overflow during
+// heavy script bursts (e.g. 30,000 uncached draws/frame).
+static uint32_t gDestroyedSince = 0;
+
 // A compiled shader with the buffers its passes share.
 struct Screen {
   ProgramHandle program;
@@ -74,6 +151,9 @@ struct Screen {
   // the device's uniform offset alignment.
   uint32_t parameterRoom = 0, parameterStride = 0;
   uint32_t parameterBytes = 0;
+  std::shared_ptr<ParamPool> paramPool;
+  uint64_t cacheGen = 0;
+  std::unordered_map<SetKey, DescriptorSetHandle, SetKeyHash> setCache;
   // Vertex and index buffers and the render primitive made from them, with the
   // number of corners they have room for.
   struct Mesh {
@@ -95,6 +175,20 @@ struct Screen {
 // Returns the driver command stream of `engine`.
 static DriverApi& driver(Engine* engine) {
   return downcast(engine)->getDriverApi();
+}
+
+static void destroySet(Engine* engine, DriverApi& d,
+                       DescriptorSetHandle&& set) {
+  d.destroyDescriptorSet(std::move(set));
+  if (++gDestroyedSince >= 1024) gDestroyedSince = 0, engine->flushAndWait();
+}
+
+static void clearSetCache(Engine* engine, Screen* s) {
+  if (s->setCache.empty()) return;
+  DriverApi& d = driver(engine);
+  for (auto& [k, handle] : s->setCache)
+    destroySet(engine, d, std::move(handle));
+  s->setCache.clear();
 }
 
 // Returns whether Dawn accepts the fragment shader. The shader module is
@@ -180,11 +274,13 @@ Screen* screen(Engine* engine, const char* name, const char* fragment,
         {kind, ShaderStageFlags::FRAGMENT, descriptor_binding_t(i)});
   }
   if (s->parameterBytes) {
+    s->paramPool = std::make_shared<ParamPool>(s->parameterBytes);
     bindings.push_back({utils::CString("knobs"), DescriptorType::UNIFORM_BUFFER,
                         descriptor_binding_t(s->textureCount)});
     layout.descriptors.push_back({DescriptorType::UNIFORM_BUFFER,
                                   ShaderStageFlags::FRAGMENT,
-                                  descriptor_binding_t(s->textureCount)});
+                                  descriptor_binding_t(s->textureCount),
+                                  DescriptorFlags::DYNAMIC_OFFSET});
   }
   p.descriptorBindings(0, std::move(bindings));
   s->program = d.createProgram(std::move(p), utils::ImmutableCString{name});
@@ -202,8 +298,10 @@ static BufferObjectHandle parametersOf(Engine* engine, Screen* s, int pass) {
     s->parameterStride = (s->parameterBytes + align - 1) / align * align;
   }
   if ((uint32_t)pass >= s->parameterRoom) {
-    // Grow by doubling. The old buffer is released in command order, after the
-    // draws already queued that read it.
+    // Grow by doubling. Clear cached descriptor sets referencing the old buffer
+    // before releasing it; the old buffer is freed in command order after draws
+    // already queued that read it.
+    clearSetCache(engine, s);
     if (s->parameterRoom) d.destroyBufferObject(s->parameters);
     uint32_t room = std::max(s->parameterRoom, 16u);
     while (room <= (uint32_t)pass) room *= 2;
@@ -222,12 +320,21 @@ void parameters(Engine* engine, Screen* s, const void* data, uint32_t bytes,
   if (!s->parameterBytes || !bytes) return;
   const BufferObjectHandle to = parametersOf(engine, s, pass);
   bytes = bytes < s->parameterBytes ? bytes : s->parameterBytes;
-  void* copy = std::calloc(1, s->parameterBytes);
+  void* copy = s->paramPool->acquire();
   std::memcpy(copy, data, bytes);
+  if (bytes < s->parameterBytes)
+    std::memset((uint8_t*)copy + bytes, 0, s->parameterBytes - bytes);
+  auto* keep = new std::shared_ptr<ParamPool>(s->paramPool);
   driver(engine).updateBufferObject(
       to,
-      BufferDescriptor(copy, s->parameterBytes,
-                       [](void* p, size_t, void*) { std::free(p); }),
+      BufferDescriptor(
+          copy, s->parameterBytes,
+          [](void* p, size_t, void* user) {
+            auto* pool = static_cast<std::shared_ptr<ParamPool>*>(user);
+            (*pool)->release(p);
+            delete pool;
+          },
+          keep),
       (uint32_t)pass * s->parameterStride);
 }
 
@@ -295,12 +402,10 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to,
   const RenderPrimitiveHandle primitive =
       s->mesh ? meshOf(engine, s, pass, corners, count, &first)
               : downcast(engine)->getFullScreenRenderPrimitive();
-  // Make a new descriptor set for every draw, as Filament's
-  // DescriptorSet::commitSlow does when its inputs change. Filament's WebGPU
-  // backend caches what it builds from a set, so changing a used set is not
-  // seen. Caching sets by the handles they read would also be wrong, because a
-  // reused handle could pick up another image's old contents. Handles carry
-  // only 4 bits of age; see HandleAllocator.h.
+  // Reuse cached descriptor sets keyed by texture pointers + handles + dims +
+  // sampler + parameter buffer ID, invalidated whenever textures are destroyed
+  // (gTextureGen) or the parameter buffer grows. The uniform buffer uses
+  // DYNAMIC_OFFSET so one bind group serves all passes of a shared shader.
   SamplerParams linear{};
   linear.filterMag =
       sampler == 1 ? SamplerMagFilter::NEAREST : SamplerMagFilter::LINEAR,
@@ -310,16 +415,51 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to,
                                 : sampler == 3
                                     ? SamplerWrapMode::MIRRORED_REPEAT
                                     : SamplerWrapMode::CLAMP_TO_EDGE;
-  DescriptorSetHandle set =
-      d.createDescriptorSet(s->layout, utils::ImmutableCString{"screen"});
-  for (int i = 0; i < s->textureCount; ++i)
-    d.updateDescriptorSetTexture(set, descriptor_binding_t(i),
-                                 downcast(from[i])->getHwHandle(), linear);
-  if (s->parameterBytes)
-    d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->textureCount),
-                                parametersOf(engine, s, pass),
-                                (uint32_t)pass * s->parameterStride,
-                                s->parameterBytes);
+  const BufferObjectHandle paramBuf =
+      s->parameterBytes ? parametersOf(engine, s, pass) : BufferObjectHandle{};
+  const uint64_t gen = gTextureGen.load(std::memory_order_relaxed);
+  if (s->cacheGen != gen) {
+    clearSetCache(engine, s);
+    s->cacheGen = gen;
+  }
+  DescriptorSetHandle set;
+  bool cached = false;
+  if (s->textureCount <= SetKey::kInline) {
+    SetKey key;
+    key.count = s->textureCount;
+    key.sampler = sampler;
+    key.bufId = s->parameterBytes ? paramBuf.getId() : 0u;
+    for (int i = 0; i < s->textureCount; ++i) {
+      key.ptrs[i] = reinterpret_cast<uintptr_t>(from[i]);
+      key.ids[i] = downcast(from[i])->getHwHandle().getId();
+      key.dims[i] = ((uint32_t)from[i]->getWidth() << 16) ^
+                    (uint32_t)from[i]->getHeight();
+    }
+    auto it = s->setCache.find(key);
+    if (it != s->setCache.end()) {
+      set = it->second;
+      cached = true;
+    } else {
+      if (s->setCache.size() >= 512) clearSetCache(engine, s);
+      set = d.createDescriptorSet(s->layout, utils::ImmutableCString{"screen"});
+      for (int i = 0; i < s->textureCount; ++i)
+        d.updateDescriptorSetTexture(set, descriptor_binding_t(i),
+                                     downcast(from[i])->getHwHandle(), linear);
+      if (s->parameterBytes)
+        d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->textureCount),
+                                    paramBuf, 0u, s->parameterBytes);
+      s->setCache.emplace(key, set);
+      cached = true;
+    }
+  } else {
+    set = d.createDescriptorSet(s->layout, utils::ImmutableCString{"screen"});
+    for (int i = 0; i < s->textureCount; ++i)
+      d.updateDescriptorSetTexture(set, descriptor_binding_t(i),
+                                   downcast(from[i])->getHwHandle(), linear);
+    if (s->parameterBytes)
+      d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->textureCount),
+                                  paramBuf, 0u, s->parameterBytes);
+  }
   RenderPassParams params{};
   params.viewport =
       at ? backend::Viewport{at[0], at[1], (uint32_t)at[2], (uint32_t)at[3]}
@@ -374,7 +514,13 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to,
     if (blend == 6)
       pipeline.rasterState.blendFunctionSrcRGB = BlendFunction::DST_COLOR;
   }
-  d.bindDescriptorSet(set, 0, {});
+  if (s->parameterBytes) {
+    d.bindDescriptorSet(
+        set, 0,
+        DescriptorSetOffsetArray({(uint32_t)pass * s->parameterStride}, d));
+  } else {
+    d.bindDescriptorSet(set, 0, {});
+  }
   // A null target means the screen, as with the frame's swap chain.
   d.beginRenderPass(to ? downcast(to)->getHwHandle()
                        : downcast(engine)->getDefaultRenderTarget(),
@@ -382,18 +528,19 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to,
   d.draw(pipeline, primitive, first, s->mesh ? count : 3, 1);
   d.endRenderPass();
   d.bindDescriptorSet({}, 0, {});
-  d.destroyDescriptorSet(std::move(set));
-  // A destroyed set is only freed when the driver thread reaches the command. A
-  // script that draws 30,000 times a frame would hold that many sets at once,
-  // which exceeds Filament's handle arena (HandleAllocator, 8 MB on WebGPU).
-  // Every 1024 draws, flush and wait so the sets are freed as the frame goes.
-  static uint32_t since = 0;
-  if (++since >= 1024) since = 0, engine->flushAndWait();
+  if (!cached) destroySet(engine, d, std::move(set));
+}
+
+// Invalidates cached descriptor sets across all Screens when textures are
+// destroyed.
+void invalidate_textures(Engine*) {
+  gTextureGen.fetch_add(1, std::memory_order_relaxed);
 }
 
 // Destroys the GPU objects of `s` and deletes it.
 void drop(Engine* engine, Screen* s) {
   DriverApi& d = driver(engine);
+  clearSetCache(engine, s);
   if (s->parameterRoom) d.destroyBufferObject(s->parameters);
   if (const Screen::Mesh& m = s->corners; m.vb)
     d.destroyRenderPrimitive(m.primitive), engine->destroy(m.vb),

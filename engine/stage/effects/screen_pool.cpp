@@ -30,6 +30,7 @@ uint64_t size_key(uint32_t w, uint32_t h) {
 }
 
 void destroy_layer_slot(Stage& s, PooledLayerSlot& slot) {
+  if (slot.tex) interop::invalidate_textures(s.engine);
   if (slot.depthTarget) s.engine->destroy(slot.depthTarget);
   if (slot.colorTarget) s.engine->destroy(slot.colorTarget);
   if (slot.tex) s.engine->destroy(slot.tex);
@@ -42,6 +43,7 @@ void destroy_layer_slot(Stage& s, PooledLayerSlot& slot) {
 }
 
 void destroy_target(Stage& s, PooledTarget& t) {
+  if (t.tex) interop::invalidate_textures(s.engine);
   if (t.rt) s.engine->destroy(t.rt);
   if (t.tex) s.engine->destroy(t.tex);
   t = PooledTarget{};
@@ -100,10 +102,15 @@ void screen_cache_off(Stage& s) {
   StageFxCache* cache = s.fxCache;
   s.fxCache = nullptr;
   if (s.engine) {
+    interop::invalidate_textures(s.engine);
     for (auto& [k, sh] : cache->compiled)
       if (sh.interop) interop::drop(s.engine, sh.interop), sh.interop = nullptr;
     for (auto& [k, f] : cache->fused)
       if (f.interop) interop::drop(s.engine, f.interop), f.interop = nullptr;
+    for (int k = 0; k < 2; ++k)
+      if (cache->flatBlit[k])
+        interop::drop(s.engine, cache->flatBlit[k]),
+            cache->flatBlit[k] = nullptr;
     for (PooledLayerSlot& slot : cache->layerSlots) destroy_layer_slot(s, slot);
     for (PooledTarget& t : cache->targets) destroy_target(s, t);
     for (auto& [k, d] : cache->depths)
@@ -298,8 +305,10 @@ Texture* screen_pool_sound(Stage& s, const std::string& key, bool fft, int wide,
     return entry.tex;
   std::vector<float> v = read ? read() : std::vector<float>();
   if (v.empty()) v.assign((size_t)std::max(wide, 1), fft ? 0.f : 0.5f);
-  if (entry.tex && entry.w != v.size())
+  if (entry.tex && entry.w != v.size()) {
+    interop::invalidate_textures(s.engine);
     s.engine->destroy(entry.tex), entry.tex = nullptr;
+  }
   if (!entry.tex) {
     entry.w = (uint32_t)v.size();
     entry.tex = Texture::Builder()
@@ -406,6 +415,74 @@ Texture* screen_pool_audiolink(
           halves));
   al.frame = s.frameCount;
   return al.tex;
+}
+
+void screen_blit_flat(Stage& s, Texture* from, RenderTarget* to, uint32_t w,
+                      uint32_t h, const float rect[4], const float wash[4],
+                      bool toLinear) {
+  if (!from || !to) return;
+  StageFxCache& cache = screen_cache(s);
+  const int mode = toLinear ? 1 : 0;
+  interop::Screen*& sh = cache.flatBlit[mode];
+  if (!sh) {
+    // Matches flat.mat's straight-sRGB sample, 0.004 alpha cutoff, and linear
+    // wash blend, skipping linear->sRGB round-trip when `toLinear` is false.
+    const std::string code =
+        "@group(0) @binding(0) var source: texture_2d<f32>;\n"
+        "@group(0) @binding(1) var near: sampler;\n"
+        "struct FlatU { rect: vec4<f32>, wash: vec4<f32> };\n"
+        "@group(0) @binding(2) var<uniform> u: FlatU;\n"
+        "fn to_lin(c: vec3<f32>) -> vec3<f32> {\n"
+        "  return select(pow((c + 0.055) / 1.055, vec3<f32>(2.4)), c / 12.92, "
+        "c <= vec3<f32>(0.04045));\n"
+        "}\n"
+        "fn to_srgb(c: vec3<f32>) -> vec3<f32> {\n"
+        "  return select(1.055 * pow(c, vec3<f32>(1.0 / 2.4)) - 0.055, c * "
+        "12.92, c <= vec3<f32>(0.0031308));\n"
+        "}\n"
+        "@fragment fn main(@builtin(position) frag: vec4<f32>, @location(0) "
+        "uv: vec2<f32>) -> @location(0) vec4<f32> {\n"
+        "  let luv = (uv - u.rect.xy) * u.rect.zw;\n"
+        "  if (luv.x < 0.0 || luv.x > 1.0 || luv.y < 0.0 || luv.y > 1.0) {\n"
+        "    return vec4<f32>(0.0);\n"
+        "  }\n"
+        "  let d = textureSampleLevel(source, near, luv, 0.0);\n"
+        "  if (d.a < 0.004) { return vec4<f32>(0.0); }\n" +
+        std::string(
+            toLinear
+                ? "  var lin = to_lin(d.rgb) * d.a;\n"
+                  "  if (u.wash.a > 0.0) { lin = mix(lin, u.wash.rgb * d.a, "
+                  "u.wash.a); }\n"
+                  "  return vec4<f32>(lin, d.a);\n"
+                : "  if (u.wash.a > 0.0) {\n"
+                  "    let lin = mix(to_lin(d.rgb) * d.a, u.wash.rgb * d.a, "
+                  "u.wash.a);\n"
+                  "    let rgb = clamp(lin / d.a, vec3<f32>(0.0), "
+                  "vec3<f32>(1.0));\n"
+                  "    return vec4<f32>(to_srgb(rgb) * d.a, d.a);\n"
+                  "  }\n"
+                  "  return vec4<f32>(d.rgb * d.a, d.a);\n") +
+        "}\n";
+    sh = interop::screen(s.engine,
+                         toLinear ? "flat_blit_linear" : "flat_blit_srgb",
+                         code.c_str(), 32);
+  }
+  if (!sh) return;
+  if (cache.flatBlitFrame[mode] != s.frameCount) {
+    cache.flatBlitFrame[mode] = s.frameCount;
+    cache.flatBlitSlot[mode] = 0;
+  }
+  const int slot = (int)cache.flatBlitSlot[mode]++;
+  float u[8] = {rect[0],
+                rect[1],
+                rect[2],
+                rect[3],
+                wash ? wash[0] : 0.f,
+                wash ? wash[1] : 0.f,
+                wash ? wash[2] : 0.f,
+                wash ? wash[3] : 0.f};
+  interop::parameters(s.engine, sh, u, sizeof u, slot);
+  interop::draw(s.engine, sh, &from, to, w, h, slot);
 }
 
 }  // namespace motolii

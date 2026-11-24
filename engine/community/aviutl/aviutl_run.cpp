@@ -251,7 +251,8 @@ void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget* to,
   r.pixelFrom = "object", r.pixelType = "col", r.pixelRead = false;
   for (auto at = r.loaded.begin(); at != r.loaded.end();)
     if (at->first.rfind("text|", 0) == 0 && !r.worded.count(at->first))
-      s.engine->destroy(at->second.t), at = r.loaded.erase(at);
+      interop::invalidate_textures(s.engine), s.engine->destroy(at->second.t),
+          at = r.loaded.erase(at);
     else
       ++at;
   r.worded.clear();

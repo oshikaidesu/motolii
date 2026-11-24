@@ -126,6 +126,7 @@ void thing_fx_stand(Stage& s, ThingFx& e, const math::mat4& place, float2 half,
   const double c[4] = {std::max(wide, e.sides[0]), std::max(wide, e.sides[1]),
                        std::max(high, e.sides[2]), std::max(high, e.sides[3])},
                across = c[0] + c[1], tall = c[2] + c[3];
+  std::copy(c, c + 4, e.ortho);
   // At most 4096 pixels.
   const double point =
       std::min(std::max(usual, seen), 4096.0 / (ppp * std::max(across, tall)));

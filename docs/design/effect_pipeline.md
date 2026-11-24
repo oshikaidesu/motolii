@@ -40,23 +40,30 @@
 - `// --sound@audioLink:AudioLink,audiolink,128`（ISF は `"TYPE": "audioLink"`）で、Stage 全体で 1 フレーム 1 回だけ更新される共有 `128×8 R16F` テクスチャ（4 バンド時間履歴・FFT・波形・RMS・ビート検出パルス）を供給。音声レイヤー未選択時はステージ全体の音ミックスへ自動接続する。
 - `screen_framed` は `@binding(0)` の主入力テクスチャのみを `frameRect` 変換するため、AudioLink や LUT 等の補助テクスチャは `[0, 1]` UV のまま自然に読める。
 
+### 6. フラット 2D 単体レイヤーの `renderLayer` バイパス
+- **対象条件**（`moment_fx.cpp` で安全判定）：単一コピー（`doc_members == 1`）かつ正対配置（`e.world == true`）のフラット 2D `Canvas2D` レイヤーで、3D 厚み・ライト・wear マテリアル・三角形カット（`cut`）・別シート輪郭（`edgeLook`）・文字分割・エミッシブ・シザー・グループマスク親・斜行（skew）のいずれも無い場合（Live2D / PSD パーツ立ち絵・PNG / SVG / テキスト等の大半が該当）。
+- **仕組み**：Filament の 3D `Renderer::render(v)` と per-layer `st.shot` テクスチャ確保を丸ごと省略し、ThorVG のストレート sRGB `Canvas2D::texture` を正規化矩形 `flatRect`（`flatWash` 対応）から WGSL 側へ直接読み込む。
+  - 先頭が融合可能ポイントワイズ列なら `screen_draw_fused`（`foldFlat`）へ直接畳み込み、**`Renderer::render(v)` も `linear → sRGB` も `scratch` も無しで 1 パス完結**。
+  - 先頭が非ポイントワイズ（ブラー等）なら Stage 共有の `screen_blit_flat` で sRGB へ 1 パス展開し、`toSrgb` を省く。
+  - 全ステップが `--bypass` でスキップされた場合は `screen_blit_flat(..., toLinear=true)` で `st.between[0]` へ直接書き出す。
+  - 8bit リニア中間テクスチャ（`st.shot`）を経由しないため、暗部アンチエイリアス縁の量子化劣化も消える。
+
+### 7. `engine/gpu/screen_interop.cpp` の DescriptorSet キャッシュと動的オフセット
+- ユニフォームバッファのバインディングに `DescriptorFlags::DYNAMIC_OFFSET` を付与し、描画時に `DescriptorSetOffsetArray({pass * parameterStride})` で動的オフセットを渡すことで、**同一テクスチャ・サンプラ・バッファの組に対する `DescriptorSet`（`WGPUBindGroup`）を全パス・全フレームで再利用**する。
+- **4bit ハンドル世代衝突への安全対策**：テクスチャ破棄箇所（プール回収・リサイズ・レイヤー／キャッシュ破棄）で `interop::invalidate_textures` がグローバル世代（`gTextureGen`）を単調増加させ、キャッシュキーにも `Texture*`・`HwTexture` ID・寸法・バッファ ID を含めることで、再利用ハンドルによる誤参照を構造的に防ぐ。
+- **ストールとヒープ確保の排除**：定常フレームでは `DescriptorSet` 破棄が 0 回になるため、従来の 1024 描画ごとの `engine->flushAndWait()` パイプライン停止が発生しなくなる。さらに `interop::parameters` の毎パス `calloc`/`free` を `std::shared_ptr<ParamPool>` のフリーリストへ置き換え、`Screen` 破棄後のドライバスレッド遅延コールバックでも安全に再利用する。
+
 ---
 
 ## 実装マップ
 
 | 領域 | 主なファイル | 役割 |
 |---|---|---|
-| GPU 共有キャッシュ・プール・音バス | `engine/stage/effects/screen_pool.h` / `.cpp` | `StageFxCache`・共有シェーダー・テクスチャプール・共有 AudioLink |
-| WGSL 解析・自動融合 | `engine/stage/effects/screen_fuse.cpp` | ポイントワイズ検出・1 パス融合・`usesTime`・`SpillKind`・`--pad`/`--bypass` |
+| GPU インターオプ | `engine/gpu/screen_interop.h` / `.cpp` | `DYNAMIC_OFFSET`・`DescriptorSet` キャッシュ・`ParamPool`・`invalidate_textures` |
+| GPU 共有キャッシュ・プール・音バス | `engine/stage/effects/screen_pool.h` / `.cpp` | `StageFxCache`・共有シェーダー・`screen_blit_flat`・テクスチャプール・共有 AudioLink |
+| WGSL 解析・自動融合 | `engine/stage/effects/screen_fuse.cpp` | ポイントワイズ検出・1 パス融合（`foldFlat` 対応）・`usesTime`・`SpillKind`・`--pad`/`--bypass` |
 | 読み込み・ISF 変換 | `engine/stage/effects/screen_read.cpp`, `engine/community/isf/isf_translate.cpp` | ディレクティブ解釈・`FieldKind` 事前解決・`screen_framed` 主入力限定化 |
-| 実行・カリング・一括評価 | `engine/stage/layer_effects/layer_fx.cpp`, `engine/document/evaluate/moment_fx.cpp` | 融合実行プラン・ゼロ強度バイパス・静止キャッシュ・ドメインカリング |
-| タイト領域配置 | `engine/stage/layer_effects/layer_fx_place.cpp` | `boundPadPx` に基づく `room` / `e.sides` 計算 |
+| 実行・カリング・一括評価 | `engine/stage/layer_effects/layer_fx.cpp`, `engine/document/evaluate/moment_fx.cpp` | フラット 2D バイパス判定・遅延 `st.shot`・融合実行プラン・ゼロ強度バイパス・静止キャッシュ・ドメインカリング |
+| タイト領域配置 | `engine/stage/layer_effects/layer_fx_place.cpp` | `boundPadPx` に基づく `room` / `e.sides` / `ortho` 計算 |
 | モダン棚シェーダー | `shelves/effects/blur/Dual Kawase Blur.fs`, `Physical Bloom.fs`, `shelves/effects/stylize/AudioLink Pulse.wgsl` | SIGGRAPH 2015 Kawase・SIGGRAPH 2014 Jimenez Bloom・AudioLink 実装例 |
 | 単体テスト | `engine/stage/effects/screen_fuse_test.cpp` | 解析・分類・ディレクティブ・ユーザー WGSL 自動融合の検証 |
-
----
-
-## 将来の余地（必要になった時に切るカード）
-
-1. **フラット 2D 単体レイヤーの `renderLayer` バイパス**：30〜50 レイヤー以上を同時稼働させる案件が出てきた場合、単純な 2D 平面レイヤーの `Renderer::render(v)` を省略し、元テクスチャから直接エフェクト段へ入れる余地がある（3D 傾き・マスク・クリッピングとの整合に注意）。
-2. **`screen_interop.cpp` の DescriptorSet / Uniform 最適化**：現状は `engine/gpu/`（Filament/Dawn ビルドツリー）に触れずに 60fps 圏内を達成しているため据え置き。さらにパス数が数百/フレームを超える段階でのみ検討する。

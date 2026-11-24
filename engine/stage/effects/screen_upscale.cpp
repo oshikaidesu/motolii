@@ -205,16 +205,18 @@ void screen_upscale(Stage& s, Texture* from, RenderTarget* to, uint32_t w,
 
   if (!s.fsr_mid_tex || s.fsr_mid_w != w || s.fsr_mid_h != h) {
     if (s.fsr_mid_rt) s.engine->destroy(s.fsr_mid_rt), s.fsr_mid_rt = nullptr;
-    if (s.fsr_mid_tex)
+    if (s.fsr_mid_tex) {
+      interop::invalidate_textures(s.engine);
       s.engine->destroy(s.fsr_mid_tex), s.fsr_mid_tex = nullptr;
-    s.fsr_mid_tex =
-        Texture::Builder()
-            .width(w)
-            .height(h)
-            .levels(1)
-            .format(Texture::InternalFormat::RGBA8)
-            .usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE)
-            .build(*s.engine);
+    }
+    s.fsr_mid_tex = Texture::Builder()
+                        .width(w)
+                        .height(h)
+                        .levels(1)
+                        .format(Texture::InternalFormat::RGBA8)
+                        .usage(Texture::Usage::COLOR_ATTACHMENT |
+                               Texture::Usage::SAMPLEABLE)
+                        .build(*s.engine);
     s.fsr_mid_rt =
         RenderTarget::Builder()
             .texture(RenderTarget::AttachmentPoint::COLOR, s.fsr_mid_tex)

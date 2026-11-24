@@ -95,4 +95,7 @@ inline void draw(filament::Engine* e, Screen* s, filament::Texture* from,
 }
 // Releases the Screen and its GPU objects.
 void drop(filament::Engine*, Screen*);
+// Invalidates cached descriptor sets after textures are destroyed so reused
+// handle IDs never alias stale bindings.
+void invalidate_textures(filament::Engine*);
 }  // namespace interop

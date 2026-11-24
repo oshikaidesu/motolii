@@ -4,6 +4,7 @@
 
 #include "base/hash.h"
 #include "gpu/gpu_interop.h"
+#include "gpu/screen_interop.h"
 #include "stage/canvas/canvas_edge.h"
 #include "stage/canvas/canvas_renderables.h"
 #include "stage/canvas/path_operations.h"
@@ -438,9 +439,8 @@ void canvas_off(Stage& s, Canvas2D* d) {
   filament::MaterialInstance* const edge = d->edgeLook;
   take_off(s, d->sheet);
   if (edge) {
-    std::erase_if(
-        s.scissors,
-        [edge](const Stage::Scissor& sc) { return sc.look == edge; });
+    std::erase_if(s.scissors,
+                  [edge](const Stage::Scissor& sc) { return sc.look == edge; });
     s.engine->destroy(edge);
   }
   d->look = nullptr, d->edgeLook = nullptr;
@@ -451,7 +451,10 @@ void canvas_off(Stage& s, Canvas2D* d) {
     delete d->film;
     d->canvas = nullptr, d->film = nullptr;
   });
-  if (d->texture) s.engine->destroy(d->texture);
+  if (d->texture) {
+    interop::invalidate_textures(s.engine);
+    s.engine->destroy(d->texture);
+  }
   interop::on_driver(s.engine, [d] { delete d; });
 }
 

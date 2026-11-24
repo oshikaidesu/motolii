@@ -407,8 +407,76 @@ void doc_layers_fx(Doc& d) {
         } else {
           e.hasCachedLayerRect = false;
         }
+        // Flat 2D single-layer renderLayer bypass: when a standing flat
+        // Canvas2D layer has no 3D/lit/wear/cut/copy/emissive/scissor/mask-top
+        // modifiers, feed its straight-sRGB Canvas2D::texture directly into
+        // the effect chain, skipping Filament's 3D Renderer::render(v) and
+        // per-layer st.shot allocation.
+        e.flatBypass = false;
+        e.flatTex = nullptr;
+        const auto shownIt = d.on_stage.shown.find(layer);
+        const int parentLayer =
+            (int)std::lround(doc_number(d, layer, "parent", 0, 0));
+        const std::string parentMask =
+            parentLayer > 0 ? doc_word(d, parentLayer, "group_mask")
+                            : std::string();
+        const bool isGroupMask =
+            parentMask == "mask" || parentMask == "exclude";
+        if (e.world && !e.shell && e.solidFile.empty() && !e.st.steps.empty() &&
+            !isGroupMask && shownIt != d.on_stage.shown.end() &&
+            doc_members(d, layer) == 1 &&
+            doc_sheet_material(d, layer).empty() &&
+            doc_word(d, layer, "fill") != "behind" &&
+            doc_number(d, layer, "emissive", d.stage->now, 0) == 0.0 &&
+            e.look && e.look->getMaterial()->hasParameter("opacity")) {
+          const DocShownLayer& sh = shownIt->second;
+          if (sh.drawn && sh.drawn->texture && sh.drawn->sheet &&
+              sh.drawn->sheet->pos.size() >= 4 && !sh.video && !sh.sketch &&
+              !sh.solid && !sh.grains && sh.deep.empty() && !sh.clipped) {
+            const Canvas2D& c = *sh.drawn;
+            if (!c.cut && !c.inLight && c.boxed.z == 0.f && c.fx.wear.empty() &&
+                !c.edgeLook && c.letters.empty()) {
+              const math::mat4 place = doc_shown_at(d, layer, d.stage->now);
+              const double sx = length(place[0].xyz), sy = length(place[1].xyz);
+              const double across = e.ortho[0] + e.ortho[1],
+                           tall = e.ortho[2] + e.ortho[3];
+              if (sx > 1e-6 && sy > 1e-6 && across > 1e-9 && tall > 1e-9 &&
+                  std::fabs(dot(place[0].xyz, place[1].xyz)) <=
+                      1e-5 * sx * sy) {
+                float2 shHalf{0.f};
+                for (const float3& p : c.sheet->pos) {
+                  shHalf.x = std::max(shHalf.x, std::fabs(p.x));
+                  shHalf.y = std::max(shHalf.y, std::fabs(p.y));
+                }
+                const double hx = shHalf.x * sx, hy = shHalf.y * sy;
+                const double u0 = (e.ortho[0] - hx) / across;
+                const double v0 = (e.ortho[3] - hy) / tall;
+                const double uw = (2.0 * hx) / across;
+                const double vh = (2.0 * hy) / tall;
+                if (uw > 1e-6 && vh > 1e-6) {
+                  Texture* tex = c.texture;
+                  if (c.shownAt >= 0) {
+                    if (const auto k = c.cached.find(c.shownAt);
+                        k != c.cached.end() && k->second)
+                      tex = k->second;
+                  }
+                  e.flatBypass = true;
+                  e.flatTex = tex;
+                  e.flatRect[0] = (float)u0;
+                  e.flatRect[1] = (float)v0;
+                  e.flatRect[2] = (float)(1.0 / uw);
+                  e.flatRect[3] = (float)(1.0 / vh);
+                  e.flatWash[0] = c.wash.x;
+                  e.flatWash[1] = c.wash.y;
+                  e.flatWash[2] = c.wash.z;
+                  e.flatWash[3] = c.wash.w;
+                }
+              }
+            }
+          }
+        }
       }
-      thing_fx_textures(s, e.st, e.view);
+      thing_fx_textures(s, e.st, e.view, !e.flatBypass);
       // Compute static-layer cache eligibility and base fingerprint under lock
       // so `thing_effects_draw` can skip re-rendering unchanged layers safely.
       {

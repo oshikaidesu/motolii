@@ -29,7 +29,9 @@ namespace motolii {
 // (0 = GPU effect, 'a' = AviUtl2). Sets st.readsBehind and st.wide.
 void thing_effects(Stage& s, ScreenStack& st, const std::string& files);
 // Creates offscreen textures sized to the view. Called before the frame.
-void thing_fx_textures(Stage& s, ScreenStack& st, filament::View* v);
+// When `needShot` is false (flat 2D bypass), skips allocating `st.shot`.
+void thing_fx_textures(Stage& s, ScreenStack& st, filament::View* v,
+                       bool needShot = true);
 // The layer's image after effects (or its own image if none).
 inline filament::Texture* thing_fx_seen(const ScreenStack& st) {
   return st.steps.empty() ? st.shot : st.between[0];
@@ -60,8 +62,16 @@ struct ThingFx {
   double box[4] = {0, 0, 0, 0};
   // Extents left, right, down, up along the layer's face, in world units.
   double sides[4] = {0, 0, 0, 0};
+  // Ortho frustum extents {left, right, bottom, top} from thing_fx_stand.
+  double ortho[4] = {0, 0, 0, 0};
   // True: image filmed square to the layer's face. False: screen-aligned.
   bool world = false;
+  // Flat 2D single-layer bypass: read Canvas2D::texture directly in WGSL
+  // instead of running Filament's 3D Renderer::render(v) + st.shot + toSrgb.
+  bool flatBypass = false;
+  filament::Texture* flatTex = nullptr;
+  float flatRect[4] = {0.f, 0.f, 1.f, 1.f};
+  float flatWash[4] = {0.f, 0.f, 0.f, 0.f};
   // Center, width, height (layer points), points per world unit.
   double own[5] = {0, 0, 0, 0, 0};
   // Per-frame cached values populated in `s.aim` under `d.lock` so `numbers`

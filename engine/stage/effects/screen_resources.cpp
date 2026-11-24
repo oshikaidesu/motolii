@@ -243,8 +243,10 @@ void screen_targets(Stage& s, ScreenFx& fx, bool drop, uint32_t pw,
       if (drop) {
         for (int k = 0; k < 2; ++k) {
           if (t.into[k]) s.engine->destroy(t.into[k]), t.into[k] = nullptr;
-          if (t.textures[k])
+          if (t.textures[k]) {
+            interop::invalidate_textures(s.engine);
             s.engine->destroy(t.textures[k]), t.textures[k] = nullptr;
+          }
         }
       }
       continue;
@@ -252,8 +254,10 @@ void screen_targets(Stage& s, ScreenFx& fx, bool drop, uint32_t pw,
     for (int k = 0; k < 2; ++k) {
       if (drop || (t.textures[k] && (t.w != w || t.h != h))) {
         if (t.into[k]) s.engine->destroy(t.into[k]), t.into[k] = nullptr;
-        if (t.textures[k])
+        if (t.textures[k]) {
+          interop::invalidate_textures(s.engine);
           s.engine->destroy(t.textures[k]), t.textures[k] = nullptr;
+        }
         if (drop) continue;
       }
       if (t.textures[k]) continue;

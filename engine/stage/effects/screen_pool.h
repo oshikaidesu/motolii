@@ -102,6 +102,11 @@ struct StageFxCache {
   std::deque<PooledTarget> targets;
   std::map<std::string, SharedSoundTex> sounds;
   SharedAudioLink audioLink;
+  // Stage-shared flat 2D Canvas2D blit shaders ([0] = sRGB out, [1] = linear
+  // out) for bypassing Filament's 3D View render on simple flat layers.
+  interop::Screen* flatBlit[2] = {nullptr, nullptr};
+  uint64_t flatBlitFrame[2] = {0, 0};
+  uint32_t flatBlitSlot[2] = {0, 0};
 };
 
 // Returns (creating on first use) the Stage's shared GPU effect cache.
@@ -147,14 +152,23 @@ filament::Texture* screen_pool_sound(
 // and its fusion metadata when the shader strictly samples only its own pixel.
 void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl);
 
+// Blits a straight-sRGB flat Canvas2D texture directly into `to` at normalized
+// rectangle `rect` = {u0, v0, 1/uw, 1/vh} with optional linear `wash`,
+// bypassing Filament's 3D Renderer::render(v). Outputs premultiplied sRGB when
+// `toLinear` is false, or premultiplied linear when `toLinear` is true.
+void screen_blit_flat(Stage& s, filament::Texture* from,
+                      filament::RenderTarget* to, uint32_t w, uint32_t h,
+                      const float rect[4], const float wash[4], bool toLinear);
+
 // Draws a contiguous run of pointwise effects (optionally folding linear->sRGB
-// at entry and sRGB->linear at exit) in a single GPU pass. Returns false if the
-// fused shader could not be compiled (caller falls back to individual passes).
+// or a direct flat-2D Canvas2D blit at entry, and sRGB->linear at exit) in a
+// single GPU pass. Returns false if the fused shader could not be compiled.
 bool screen_draw_fused(Stage& s, ScreenStack& st, ScreenFx* const* nodes,
                        size_t count, bool foldToSrgb, bool foldToLinear,
                        filament::Texture* from, filament::RenderTarget* to,
                        const ScreenNumbers& numbers, uint32_t w, uint32_t h,
-                       bool over = false);
+                       bool over = false, const float* flatRect = nullptr,
+                       const float* flatWash = nullptr);
 
 }  // namespace motolii
 
