@@ -69,7 +69,8 @@ struct ThingFx {
   double cachedLayerRect[4] = {0, 0, 0, 0};
   bool hasCachedLayerRect = false;
   double cachedClipTime = 0.0, cachedClipLength = 0.0;
-  // Static-layer output cache state (skips re-rendering unchanged layers).
+  // Static-layer output cache & off-screen culling state.
+  bool culled = false;
   bool cacheEligible = false;
   bool cacheValid = false;
   uint64_t cacheBaseKey = 0;

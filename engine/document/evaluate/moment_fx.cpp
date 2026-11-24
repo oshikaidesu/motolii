@@ -324,6 +324,10 @@ void doc_layers_fx(Doc& d) {
           if (!bounded) continue;
           if (fx->spillKind == ScreenFx::SpillKind::Zero) {
             continue;
+          } else if (fx->spillKind == ScreenFx::SpillKind::FixedPx) {
+            double pad = fx->spillBase;
+            if (fx->spillCap > 0.f) pad = std::min(pad, (double)fx->spillCap);
+            totalPadPx += pad;
           } else if (fx->spillKind == ScreenFx::SpillKind::ParamPx &&
                      fx->spillField >= 0 &&
                      (size_t)fx->spillField < fx->fields.size() &&
@@ -341,6 +345,43 @@ void doc_layers_fx(Doc& d) {
         }
         e.st.boundPadPx = bounded ? totalPadPx : -1.0;
         e.st.anyHasFrameRect = anyFrame;
+        // Domain culling: skip all offscreen rendering & effect passes when the
+        // layer is invisible (opacity <= 0) or its bounded effect footprint
+        // lies completely outside the visible stage work box (unless used as
+        // matte).
+        bool isMatteSource = false;
+        for (const auto& [cutLayer, cut] : d.on_stage.cuts)
+          if (cut.from == layer) isMatteSource = true;
+        bool cull = false;
+        if (!isMatteSource && !e.shell && e.solidFile.empty() &&
+            d.held.layer != layer) {
+          const double op = doc_number(d, layer, "opacity", now, 1.0);
+          if (op <= 0.0) {
+            cull = true;
+          } else if (bounded) {
+            double seenNow[4];
+            if (!doc_holds_fx(d, layer) &&
+                doc_seen_box(d, layer, now, seenNow)) {
+              const double padPts = (totalPadPx + 16.0) / thing_fx_ppp(s);
+              if (seenNow[2] + padPts < work[0] ||
+                  seenNow[0] - padPts > work[2] ||
+                  seenNow[3] + padPts < work[1] ||
+                  seenNow[1] - padPts > work[3])
+                cull = true;
+            }
+          }
+        }
+        e.culled = cull;
+      }
+      if (e.culled) {
+        // Hide the layer's result sheet so culled layers draw nothing even
+        // before their first on-screen frame.
+        if (e.world && e.sheet)
+          move(s, e.sheet,
+               [](int, const mat4f&) { return mat4f::scaling(float3{0.f}); });
+        else if (!e.world && e.look)
+          e.look->setParameter("place", mat4f::scaling(float3{0.f}));
+        return;
       }
       if (e.world)
         doc_layer_stand(d, layer, e);

@@ -206,6 +206,7 @@ inline void fnv_mix(uint64_t& h, const void* data, size_t n) {
 void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
                         const ScreenNumbers& numbers,
                         const ScreenTextures& textures, ThingFx* owner) {
+  if (owner && owner->culled) return;
   screen_frame_begin(s);
   thing_fx_textures(s, st, v);
   const Viewport vp = v->getViewport();
@@ -295,48 +296,92 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
     owner->cacheValid = false;
   }
 
-  // Build an ordered list of logical passes:
+  // Build an ordered list of logical passes, skipping GPU steps whose
+  // zero-strength bypass condition (`--bypass:<param>`) holds this frame:
   // - Contiguous pointwise GPU steps are fused into a single WGSL shader pass.
   // - If step 0 is pointwise, linear->sRGB is folded into that pass.
   // - If the final step is pointwise, sRGB->linear is folded into that pass.
+  const auto is_bypassed = [&](const ScreenFx& fx) -> bool {
+    if (fx.bypassField < 0 || (size_t)fx.bypassField >= fx.fields.size())
+      return false;
+    const ScreenFx::Field& f = fx.fields[(size_t)fx.bypassField];
+    const float val =
+        (fx.paramValsFrame == s.frameCount && f.useCachedVal)
+            ? f.paramVal[0]
+            : (float)numbers(fx.numbers_key(), f.paramNames[0], f.usual[0]);
+    return val <= fx.bypassBelow;
+  };
+  struct ActiveStep {
+    char kind = 0;
+    size_t idx = 0;
+  };
+  std::vector<ActiveStep> active;
+  active.reserve(st.steps.size());
+  {
+    size_t fi = 0, ai = 0, pi = 0;
+    for (char stepKind : st.steps) {
+      if (stepKind == 0) {
+        if (fi < st.fx.size() && !is_bypassed(*st.fx[fi]))
+          active.push_back({0, fi});
+        ++fi;
+      } else if (stepKind == 'a') {
+        active.push_back({'a', ai++});
+      } else if (stepKind == 'p') {
+        active.push_back({'p', pi++});
+      }
+    }
+  }
+  if (active.empty()) {
+    renderLayer(st.target);
+    screen_place(s, st.shot, st.betweenTarget[0], w, h, nullptr);
+    st.seen = st.between[0];
+    if (canCache) {
+      owner->cacheValid = true;
+      owner->cacheLastKey = fullKey;
+      owner->cacheW = w;
+      owner->cacheH = h;
+    }
+    return;
+  }
+
   struct PlanStep {
     enum Kind { ToSrgb, Fused, Gpu, Aviutl, AePlugin, ToLinear } kind;
-    size_t fxBegin = 0, fxEnd = 0;
+    std::vector<ScreenFx*> fusedNodes;
+    size_t fxIdx = 0;
     bool foldSrgb = false, foldLinear = false;
     size_t subIdx = 0;
   };
   std::vector<PlanStep> plan;
-  size_t fi = 0, ai = 0, pi = 0;
   bool srgbFolded = false, linearFolded = false;
-  for (size_t i = 0; i < st.steps.size();) {
-    if (st.steps[i] == 0 && fi < st.fx.size() && st.fx[fi]->pointwise) {
-      const size_t fxStart = fi;
+  for (size_t i = 0; i < active.size();) {
+    if (active[i].kind == 0 && st.fx[active[i].idx]->pointwise) {
+      std::vector<ScreenFx*> nodes;
       size_t j = i;
-      while (j < st.steps.size() && st.steps[j] == 0 && fi < st.fx.size() &&
-             st.fx[fi]->pointwise) {
-        ++j, ++fi;
+      while (j < active.size() && active[j].kind == 0 &&
+             st.fx[active[j].idx]->pointwise) {
+        nodes.push_back(st.fx[active[j].idx]);
+        ++j;
       }
       const bool atStart = (i == 0);
-      const bool atEnd = (j == st.steps.size());
-      if (atStart || atEnd || (fi - fxStart) >= 2) {
+      const bool atEnd = (j == active.size());
+      if (atStart || atEnd || nodes.size() >= 2) {
         if (atStart) srgbFolded = true;
         if (atEnd) linearFolded = true;
-        plan.push_back({PlanStep::Fused, fxStart, fi, atStart, atEnd, 0});
+        PlanStep ps{PlanStep::Fused, std::move(nodes), 0, atStart, atEnd, 0};
+        plan.push_back(std::move(ps));
       } else {
-        for (size_t f = fxStart; f < fi; ++f)
-          plan.push_back({PlanStep::Gpu, f, f + 1, false, false, 0});
+        for (size_t k = i; k < j; ++k)
+          plan.push_back({PlanStep::Gpu, {}, active[k].idx, false, false, 0});
       }
       i = j;
       continue;
     }
-    if (st.steps[i] == 0) {
-      plan.push_back({PlanStep::Gpu, fi, fi + 1, false, false, 0});
-      ++fi;
-    } else if (st.steps[i] == 'a') {
-      plan.push_back({PlanStep::Aviutl, 0, 0, false, false, ai++});
-    } else if (st.steps[i] == 'p') {
-      plan.push_back({PlanStep::AePlugin, 0, 0, false, false, pi++});
-    }
+    if (active[i].kind == 0)
+      plan.push_back({PlanStep::Gpu, {}, active[i].idx, false, false, 0});
+    else if (active[i].kind == 'a')
+      plan.push_back({PlanStep::Aviutl, {}, 0, false, false, active[i].idx});
+    else if (active[i].kind == 'p')
+      plan.push_back({PlanStep::AePlugin, {}, 0, false, false, active[i].idx});
     ++i;
   }
   if (!srgbFolded) plan.insert(plan.begin(), {PlanStep::ToSrgb});
@@ -364,10 +409,9 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
         screen_tone(s, cur, destRt, w, h, false);
         break;
       case PlanStep::Fused: {
-        const size_t n = step.fxEnd - step.fxBegin;
-        if (!screen_draw_fused(s, st, st.fx.data() + step.fxBegin, n,
-                               step.foldSrgb, step.foldLinear, cur, destRt,
-                               numbers, w, h)) {
+        const size_t n = step.fusedNodes.size();
+        if (!screen_draw_fused(s, st, step.fusedNodes.data(), n, step.foldSrgb,
+                               step.foldLinear, cur, destRt, numbers, w, h)) {
           // Rare fallback if Dawn rejects the fused shader: run nodes cleanly
           // through ping-pong scratch and land in `destRt`.
           PooledLayerSlot* tmp =
@@ -390,11 +434,10 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
             screen_tone(s, fCur, rt, w, h, true);
             fCur = tx;
           }
-          for (size_t f = step.fxBegin; f < step.fxEnd; ++f) {
+          for (ScreenFx* node : step.fusedNodes) {
             auto [rt, tx] = subDest();
-            ScreenFx& one = *st.fx[f];
-            one.othersNow.clear();
-            screen_draw(s, st, one, fCur, rt, numbers, w, h);
+            node->othersNow.clear();
+            screen_draw(s, st, *node, fCur, rt, numbers, w, h);
             fCur = tx;
           }
           if (step.foldLinear) {
@@ -407,7 +450,7 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
         break;
       }
       case PlanStep::Gpu: {
-        ScreenFx& one = *st.fx[step.fxBegin];
+        ScreenFx& one = *st.fx[step.fxIdx];
         one.othersNow.clear();
         for (const std::string& nm : one.others)
           one.othersNow.push_back(textures ? textures(one.file, nm) : nullptr);

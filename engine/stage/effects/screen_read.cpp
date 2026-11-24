@@ -62,10 +62,26 @@ void screen_framed(std::string& code) {
             ".resolution, frag_on.zw);\n";
   const size_t at = (size_t)way.position(), end = at + (size_t)way.length();
   std::string out = code.substr(0, at) + head + code.substr(end);
-  out = std::regex_replace(
-      std::regex_replace(out, std::regex(R"(\btextureSampleLevel\s*\()"),
-                         "frame_level("),
-      std::regex(R"(\btextureSample\s*\()"), "frame_sample(");
+  // Only rewrite sampling calls on the primary input texture (binding 0) so
+  // secondary data textures (AudioLink, FFT, LUTs, pictures) keep [0, 1] UVs.
+  std::smatch primaryTex;
+  if (std::regex_search(
+          out, primaryTex,
+          std::regex(
+              R"(@binding\(\s*0u?\s*\)\s*var\s+(\w+)\s*:\s*texture_2d<)"))) {
+    const std::string t0 = primaryTex[1];
+    out = std::regex_replace(
+        std::regex_replace(
+            out, std::regex(R"(\btextureSampleLevel\s*\(\s*)" + t0 + R"(\b)"),
+            "frame_level(" + t0),
+        std::regex(R"(\btextureSample\s*\(\s*)" + t0 + R"(\b)"),
+        "frame_sample(" + t0);
+  } else {
+    out = std::regex_replace(
+        std::regex_replace(out, std::regex(R"(\btextureSampleLevel\s*\()"),
+                           "frame_level("),
+        std::regex(R"(\btextureSample\s*\()"), "frame_sample(");
+  }
   out = std::regex_replace(out, std::regex("struct\\s+" + built + "\\s*\\{"),
                            "struct " + built + " {\n    frameRect: vec4f,");
   std::smatch line;
@@ -177,6 +193,20 @@ bool screen_read(ScreenFx& fx, std::string& code) {
       fx.alpha = true;
       continue;
     }
+    if (const size_t pad = line.find("--pad:"); pad != std::string::npos) {
+      fx.padSpec = line.substr(pad + 6);
+      while (!fx.padSpec.empty() &&
+             std::isspace((unsigned char)fx.padSpec.back()))
+        fx.padSpec.pop_back();
+      continue;
+    }
+    if (const size_t bp = line.find("--bypass:"); bp != std::string::npos) {
+      fx.bypassParam = line.substr(bp + 9);
+      while (!fx.bypassParam.empty() &&
+             std::isspace((unsigned char)fx.bypassParam.back()))
+        fx.bypassParam.pop_back();
+      continue;
+    }
     const size_t p = line.find("--pass@"), colon = line.find(':', p);
     if (p == std::string::npos || colon == std::string::npos) continue;
     const std::string name = line.substr(p + 7, colon - p - 7);
@@ -219,9 +249,15 @@ bool screen_read(ScreenFx& fx, std::string& code) {
   for (const ScriptParameter& k : declared)
     if (k.kind == "picture" || k.kind == "sound") {
       fx.others.push_back(k.name), fx.sounds.push_back({});
-      if (k.kind == "sound")
-        fx.sounds.back() = {true, k.words.rfind("fft", 0) == 0,
-                            std::atoi(k.words.c_str() + k.words.find(' ') + 1)};
+      if (k.kind == "sound") {
+        const bool isLink = k.words.rfind("audiolink", 0) == 0;
+        const bool isFft = k.words.rfind("fft", 0) == 0;
+        const size_t sp = k.words.find(' ');
+        const int wide = sp != std::string::npos
+                             ? std::atoi(k.words.c_str() + sp + 1)
+                             : (isLink ? 128 : 0);
+        fx.sounds.back() = {true, isFft, isLink, wide};
+      }
     }
   fx.images.assign(fx.others.size(), "");
   std::istringstream head(code);

@@ -465,10 +465,11 @@ std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& file,
   // heard now, like AviUtl2's "audiobuffer", which is the mix of every item.
   // Each layer is read at its own time, as below. Waveforms are added.
   // bands take the maximum.
-  if (name == "aviutl.audiobuffer") {
+  const auto mixAll = [&]() {
     std::vector<float> all;
     for (const int t : doc_laid(d)) {
-      if (doc_word(d, t, "kind") != "video" ||
+      const std::string kind = doc_word(d, t, "kind");
+      if ((kind != "video" && kind != "sound") ||
           doc_number(d, t, "volume", now, 1) <= 0)
         continue;
       const double start = doc_number(d, t, "start", 0, 0),
@@ -489,10 +490,16 @@ std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& file,
                        : std::clamp(all[i] + one[i] - 0.5f, 0.f, 1.f);
     }
     return all;
-  }
+  };
+  if (name == "aviutl.audiobuffer") return mixAll();
   const int t = (int)doc_number(
       d, layer, doc_screen_parameter(file, name).c_str(), now, 0);
-  if (t <= 0 || !doc_knows(d, t, nullptr, nullptr, nullptr, false)) return {};
+  if (t <= 0 || !doc_knows(d, t, nullptr, nullptr, nullptr, false)) {
+    // AudioLink inputs default to the stage's master audio mix when no
+    // individual audio layer is picked on the effect card.
+    if (name == "audioLink" || name == "audiolink") return mixAll();
+    return {};
+  }
   const std::string heard = doc_word(d, t, "file");
   if (heard.empty()) return {};
   const SoundRead* read = sound_of(heard);

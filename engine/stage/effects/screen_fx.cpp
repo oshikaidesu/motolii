@@ -273,6 +273,10 @@ void sync_from_shared(Stage& s, ScreenFx& fx, SharedScreen& sh) {
   fx.spillScale = sh.proto.spillScale;
   fx.spillBase = sh.proto.spillBase;
   fx.spillCap = sh.proto.spillCap;
+  fx.padSpec = sh.proto.padSpec;
+  fx.bypassParam = sh.proto.bypassParam;
+  fx.bypassField = sh.proto.bypassField;
+  fx.bypassBelow = sh.proto.bypassBelow;
   // Precompute document parameter keys ("js_<stem>_<param>" with optional
   // instance prefix) once so per-frame evaluation never parses paths.
   std::string stem = std::filesystem::path(fx.file).stem().generic_string();

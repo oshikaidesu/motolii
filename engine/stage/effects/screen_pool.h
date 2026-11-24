@@ -67,6 +67,30 @@ struct PooledTarget {
   filament::RenderTarget* rt = nullptr;
 };
 
+// Stage-shared 1D sound texture (deduplicates identical FFT/wave uploads per
+// frame across all layers reading the same audio source).
+struct SharedSoundTex {
+  uint64_t frame = 0;
+  uint32_t w = 0;
+  filament::Texture* tex = nullptr;
+};
+
+// VRChat AudioLink-style stage-wide 128x8 R16F audio bus texture shared by all
+// audio-reactive shaders (updated at most once per frame):
+//   Row 0..3: Bass / Low-Mid / High-Mid / Treble history (col 0 = now, right =
+//   past) Row 4:    128-bin live FFT spectrum (0..1) Row 5:    128-sample live
+//   waveform (0..1, centered at 0.5) Row 6:    Overall RMS energy history Row
+//   7:    Beat / onset pulse history (transient detector)
+struct SharedAudioLink {
+  static constexpr uint32_t kCols = 128, kRows = 8;
+  uint64_t frame = 0;
+  double lastNow = -1e9;
+  float smooth[4] = {0, 0, 0, 0};
+  float prevEnergy = 0.f;
+  float grid[kRows * kCols] = {};
+  filament::Texture* tex = nullptr;
+};
+
 struct StageFxCache {
   uint64_t lastFrame = 0;
   std::map<std::string, SharedScreen> compiled;
@@ -76,6 +100,8 @@ struct StageFxCache {
   // Deques preserve pointer stability across push_back while slots are lent.
   std::deque<PooledLayerSlot> layerSlots;
   std::deque<PooledTarget> targets;
+  std::map<std::string, SharedSoundTex> sounds;
+  SharedAudioLink audioLink;
 };
 
 // Returns (creating on first use) the Stage's shared GPU effect cache.
@@ -105,6 +131,17 @@ void screen_pool_release_layer(Stage& s, PooledLayerSlot* slot);
 PooledTarget* screen_pool_acquire_target(Stage& s, uint32_t w, uint32_t h,
                                          bool fine);
 void screen_pool_release_target(Stage& s, PooledTarget* t);
+
+// Returns the Stage-wide 128x8 AudioLink bus texture, updating it at most once
+// per frame from `fft` (128 bins) and `wave` (128 samples).
+filament::Texture* screen_pool_audiolink(
+    Stage& s,
+    const std::function<std::vector<float>(bool fft, int wide)>& read);
+// Returns a Stage-shared 1D R16F sound texture updated at most once per frame
+// for `key`.
+filament::Texture* screen_pool_sound(
+    Stage& s, const std::string& key, bool fft, int wide,
+    const std::function<std::vector<float>()>& read);
 
 // Analyzes normalized WGSL produced by `screen_read` and sets `fx.pointwise`
 // and its fusion metadata when the shader strictly samples only its own pixel.

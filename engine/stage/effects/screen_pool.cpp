@@ -1,13 +1,18 @@
 // Stage-wide shared compiled shaders and transient GPU render-target pool.
 #include "stage/effects/screen_pool.h"
 
+#include <backend/DriverEnums.h>
+#include <backend/PixelBufferDescriptor.h>
 #include <filament/Engine.h>
 #include <filament/RenderTarget.h>
 #include <filament/Texture.h>
+#include <math/half.h>
 #include <webgpu/webgpu.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <cstring>
 
 #include "gpu/gpu_interop.h"
 #include "gpu/screen_interop.h"
@@ -103,6 +108,9 @@ void screen_cache_off(Stage& s) {
     for (PooledTarget& t : cache->targets) destroy_target(s, t);
     for (auto& [k, d] : cache->depths)
       if (d) s.engine->destroy(d);
+    for (auto& [k, snd] : cache->sounds)
+      if (snd.tex) s.engine->destroy(snd.tex);
+    if (cache->audioLink.tex) s.engine->destroy(cache->audioLink.tex);
   }
   delete cache;
 }
@@ -280,6 +288,124 @@ PooledTarget* screen_pool_acquire_target(Stage& s, uint32_t w, uint32_t h,
 
 void screen_pool_release_target(Stage&, PooledTarget* t) {
   if (t) t->inUse = false;
+}
+
+Texture* screen_pool_sound(Stage& s, const std::string& key, bool fft, int wide,
+                           const std::function<std::vector<float>()>& read) {
+  StageFxCache& cache = screen_cache(s);
+  SharedSoundTex& entry = cache.sounds[key];
+  if (entry.tex && entry.frame == s.frameCount && s.frameCount != 0)
+    return entry.tex;
+  std::vector<float> v = read ? read() : std::vector<float>();
+  if (v.empty()) v.assign((size_t)std::max(wide, 1), fft ? 0.f : 0.5f);
+  if (entry.tex && entry.w != v.size())
+    s.engine->destroy(entry.tex), entry.tex = nullptr;
+  if (!entry.tex) {
+    entry.w = (uint32_t)v.size();
+    entry.tex = Texture::Builder()
+                    .width(entry.w)
+                    .height(1)
+                    .levels(1)
+                    .format(Texture::InternalFormat::R16F)
+                    .build(*s.engine);
+  }
+  auto* halves = new std::vector<filament::math::half>(v.begin(), v.end());
+  entry.tex->setImage(
+      *s.engine, 0,
+      filament::backend::PixelBufferDescriptor(
+          halves->data(), halves->size() * sizeof(filament::math::half),
+          filament::backend::PixelDataFormat::R,
+          filament::backend::PixelDataType::HALF,
+          [](void*, size_t, void* user) {
+            delete (std::vector<filament::math::half>*)user;
+          },
+          halves));
+  entry.frame = s.frameCount;
+  return entry.tex;
+}
+
+Texture* screen_pool_audiolink(
+    Stage& s,
+    const std::function<std::vector<float>(bool fft, int wide)>& read) {
+  StageFxCache& cache = screen_cache(s);
+  SharedAudioLink& al = cache.audioLink;
+  if (al.tex && al.frame == s.frameCount && s.frameCount != 0) return al.tex;
+  constexpr uint32_t W = SharedAudioLink::kCols;
+  constexpr uint32_t H = SharedAudioLink::kRows;
+  if (!al.tex) {
+    al.tex = Texture::Builder()
+                 .width(W)
+                 .height(H)
+                 .levels(1)
+                 .format(Texture::InternalFormat::R16F)
+                 .build(*s.engine);
+    std::fill(al.grid, al.grid + W * H, 0.f);
+    // Neutral waveform row (0.5 = silence).
+    std::fill(al.grid + 5 * W, al.grid + 6 * W, 0.5f);
+  }
+  std::vector<float> fft = read ? read(true, (int)W) : std::vector<float>();
+  std::vector<float> wave = read ? read(false, (int)W) : std::vector<float>();
+  if (fft.size() < W) fft.resize(W, 0.f);
+  if (wave.size() < W) wave.resize(W, 0.5f);
+
+  // Split 128-bin FFT into 4 musical bands matching AudioLink's 4-band split:
+  // Bass (0..7), Low-Mid (8..23), High-Mid (24..63), Treble (64..127).
+  const auto band_avg = [&](uint32_t a, uint32_t b) {
+    float sum = 0.f, peak = 0.f;
+    for (uint32_t i = a; i < b && i < W; ++i)
+      sum += fft[i], peak = std::max(peak, fft[i]);
+    const float avg = b > a ? sum / (float)(b - a) : 0.f;
+    return std::clamp(0.6f * avg + 0.4f * peak, 0.f, 1.f);
+  };
+  const float raw[4] = {band_avg(0, 8), band_avg(8, 24), band_avg(24, 64),
+                        band_avg(64, 128)};
+  const bool stepped = std::fabs(s.now - al.lastNow) > 1e-5;
+  // Reset history cleanly on large seek jumps backwards or forwards (> 0.5s).
+  if (std::fabs(s.now - al.lastNow) > 0.5) {
+    for (int r = 0; r < 4; ++r) al.smooth[r] = raw[r];
+    al.prevEnergy = 0.f;
+    for (int r : {0, 1, 2, 3, 6, 7})
+      std::fill(al.grid + r * W, al.grid + (r + 1) * W, r < 4 ? raw[r] : 0.f);
+  }
+  al.lastNow = s.now;
+
+  // Fast attack / smooth release per band, plus RMS energy & onset pulse.
+  float energy = 0.f;
+  for (int b = 0; b < 4; ++b) {
+    const float k = raw[b] > al.smooth[b] ? 0.55f : 0.18f;
+    al.smooth[b] += (raw[b] - al.smooth[b]) * k;
+    energy += al.smooth[b] * (b == 0 ? 0.4f : 0.2f);
+  }
+  const float onset = std::clamp((energy - al.prevEnergy) * 5.0f, 0.f, 1.f);
+  al.prevEnergy = al.prevEnergy * 0.7f + energy * 0.3f;
+
+  // Shift temporal history rows right by 1 column only when playback advances.
+  if (stepped) {
+    for (int r : {0, 1, 2, 3, 6, 7}) {
+      float* row = al.grid + r * W;
+      std::memmove(row + 1, row, (W - 1) * sizeof(float));
+    }
+  }
+  for (int b = 0; b < 4; ++b) al.grid[b * W + 0] = al.smooth[b];
+  std::memcpy(al.grid + 4 * W, fft.data(), W * sizeof(float));
+  std::memcpy(al.grid + 5 * W, wave.data(), W * sizeof(float));
+  al.grid[6 * W + 0] = std::clamp(energy, 0.f, 1.f);
+  al.grid[7 * W + 0] = std::max(onset, al.grid[7 * W + 1] * 0.78f);
+
+  auto* halves =
+      new std::vector<filament::math::half>(al.grid, al.grid + W * H);
+  al.tex->setImage(
+      *s.engine, 0,
+      filament::backend::PixelBufferDescriptor(
+          halves->data(), halves->size() * sizeof(filament::math::half),
+          filament::backend::PixelDataFormat::R,
+          filament::backend::PixelDataType::HALF,
+          [](void*, size_t, void* user) {
+            delete (std::vector<filament::math::half>*)user;
+          },
+          halves));
+  al.frame = s.frameCount;
+  return al.tex;
 }
 
 }  // namespace motolii

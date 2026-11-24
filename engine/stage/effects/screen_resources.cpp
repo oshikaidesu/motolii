@@ -93,31 +93,19 @@ void screen_sounds(Stage& s, ScreenStack& st, ScreenFx& fx) {
   for (size_t k = 0; k < fx.sounds.size(); ++k) {
     ScreenFx::Sound& one = fx.sounds[k];
     if (!one.is) continue;
-    std::vector<float> v =
-        st.sounds ? st.sounds(fx.file, fx.others[k], one.fft, one.wide)
-                  : std::vector<float>();
-    if (v.empty())
-      v.assign((size_t)std::max(one.wide, 1), one.fft ? 0.f : 0.5f);
-    if (one.texture && one.texture->getWidth() != v.size())
-      s.engine->destroy(one.texture), one.texture = nullptr;
-    if (!one.texture)
-      one.texture = Texture::Builder()
-                        .width((uint32_t)v.size())
-                        .height(1)
-                        .levels(1)
-                        .format(Texture::InternalFormat::R16F)
-                        .build(*s.engine);
-    auto* halves = new std::vector<math::half>(v.begin(), v.end());
-    one.texture->setImage(
-        *s.engine, 0,
-        backend::PixelBufferDescriptor(
-            halves->data(), halves->size() * sizeof(math::half),
-            backend::PixelDataFormat::R, backend::PixelDataType::HALF,
-            [](void*, size_t, void* user) {
-              delete (std::vector<math::half>*)user;
-            },
-            halves));
-    fx.othersNow[k] = one.texture;
+    if (one.audioLink) {
+      fx.othersNow[k] = screen_pool_audiolink(s, [&](bool fft, int wide) {
+        return st.sounds ? st.sounds(fx.file, fx.others[k], fft, wide)
+                         : std::vector<float>();
+      });
+      continue;
+    }
+    const std::string key =
+        fx.others[k] + "|" + (one.fft ? "f|" : "w|") + std::to_string(one.wide);
+    fx.othersNow[k] = screen_pool_sound(s, key, one.fft, one.wide, [&] {
+      return st.sounds ? st.sounds(fx.file, fx.others[k], one.fft, one.wide)
+                       : std::vector<float>();
+    });
   }
 }
 

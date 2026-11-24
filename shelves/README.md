@@ -204,6 +204,9 @@ Parameters use `// --<kind>@<name>:<Label>,...` where `<name>` is read in code a
 | `// --select@name:Label,opt1,opt2,...` | Dropdown (`opt1` is default; `k.name` holds the selected string) |
 | `// --picture@name:Label` | Layer image input (effects only) |
 | `// --sound@name:Label,fft,512` | Audio layer picker (`k.name` = layer ID, `0` if none; in ISF, configures `fft`/`wave` audio input) |
+| `// --sound@audioLink:AudioLink,audiolink,128` | Stage-shared `128×8` R16F AudioLink bus texture (rows 0–3: Bass/LowMid/HighMid/Treble history, 4: FFT, 5: wave, 6: RMS, 7: beat pulse; defaults to master audio mix) |
+| `// --pad:spec` | Bounded offscreen spill margin in px (`0`, `<px>`, or `<param>*<scale>+<base>:<cap>`; ISF JSON `"PAD"`). Unset falls back to auto-analysis or full stage |
+| `// --bypass:param` | Skip GPU passes completely when `param <= 0` (ISF JSON `"BYPASS"`) |
 | `// --group:Name` … `// --group` | Collapsible parameter group |
 | `// --macro@name:Label,default -> param min max, ...` | Single `0..1` macro driving multiple parameters |
 | `// --label:Category` | Shelf category (marks a closed pack in `create/`) |

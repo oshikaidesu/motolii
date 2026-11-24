@@ -57,14 +57,18 @@ std::string strip_io_attrs(const std::string& s) {
   return std::regex_replace(s, kAttr, "");
 }
 
-// Removes all `diagnostic(...);` lines and `@group(...) @binding(...) var...;`
-// declarations from a WGSL module before embedding it into a fused shader.
+// Removes all `diagnostic(...);` lines, `@group(...) @binding(...) var...;`
+// declarations, and synthetic `frame_level`/`frame_sample` helpers before
+// embedding a WGSL module into a fused shader.
 std::string strip_module_header(const std::string& wgsl) {
   static const std::regex kDiag(R"(diagnostic\s*\([^)]*\)\s*;)");
   static const std::regex kBind(
       R"(@group\(\s*\d+u?\s*\)\s*@binding\(\s*\d+u?\s*\)\s*var(?:<\s*uniform\s*>)?[^;]*;)");
+  static const std::regex kFrameHelper(
+      R"(fn\s+frame_(?:level|sample)\s*\([^)]*\)\s*->\s*vec4(?:f|<f32>)\s*\{[^}]*\})");
   std::string out = std::regex_replace(wgsl, kDiag, "");
-  return std::regex_replace(out, kBind, "");
+  out = std::regex_replace(out, kBind, "");
+  return std::regex_replace(out, kFrameHelper, "");
 }
 
 // Finds the matching `}` for the `{` at `openPos`, or npos if unbalanced.
@@ -294,6 +298,8 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
   fx.spillScale = 1.f;
   fx.spillBase = 0.f;
   fx.spillCap = 0.f;
+  fx.bypassField = -1;
+  fx.bypassBelow = 0.f;
   fx.sampleExpr.clear();
 
   // Determine whether the shader body outside struct declarations actually
@@ -321,8 +327,9 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
     }
   }
 
-  // Classify bounded spill behavior for tight offscreen texture sizing.
-  // Any unrecognized or multi-input/generator/spill shader stays Unbounded.
+  // Classify bounded spill behavior and zero-strength bypass.
+  // Explicit author directives (`// --pad:...`, `// --bypass:<param>`) take
+  // priority so any custom WGSL/ISF/TSL shader can opt in with one line.
   const auto find_param_field = [&](const char* name) -> int {
     for (size_t i = 0; i < fx.fields.size(); ++i)
       if (fx.fields[i].kind == ScreenFx::FieldKind::Param &&
@@ -330,17 +337,61 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
         return (int)i;
     return -1;
   };
+  if (!fx.bypassParam.empty()) {
+    const int idx = find_param_field(fx.bypassParam.c_str());
+    if (idx >= 0) fx.bypassField = idx, fx.bypassBelow = 0.f;
+  }
+  if (!fx.padSpec.empty()) {
+    // Supported forms: "0", "<px>", "<param>", "<param>*<scale>+<base>:<cap>"
+    std::string spec = fx.padSpec;
+    float cap = 0.f;
+    if (const size_t colon = spec.find(':'); colon != std::string::npos) {
+      cap = (float)std::atof(spec.c_str() + colon + 1);
+      spec.resize(colon);
+    }
+    char* endNum = nullptr;
+    const double fixed = std::strtod(spec.c_str(), &endNum);
+    if (endNum && *endNum == '\0') {
+      if (fixed <= 0.0) {
+        fx.spillKind = ScreenFx::SpillKind::Zero;
+        fx.preservesZeroAlpha = true;
+      } else {
+        fx.spillKind = ScreenFx::SpillKind::FixedPx;
+        fx.spillBase = (float)fixed;
+        fx.spillCap = cap;
+      }
+    } else {
+      float scale = 1.f, base = 0.f;
+      std::string pname = spec;
+      if (const size_t plus = pname.find('+'); plus != std::string::npos) {
+        base = (float)std::atof(pname.c_str() + plus + 1);
+        pname.resize(plus);
+      }
+      if (const size_t mul = pname.find('*'); mul != std::string::npos) {
+        scale = (float)std::atof(pname.c_str() + mul + 1);
+        pname.resize(mul);
+      }
+      const int idx = find_param_field(pname.c_str());
+      if (idx >= 0) {
+        fx.spillKind = ScreenFx::SpillKind::ParamPx;
+        fx.spillField = idx;
+        fx.spillScale = scale;
+        fx.spillBase = base;
+        fx.spillCap = cap;
+      }
+    }
+  }
   if (!fx.spill && !fx.alpha && !fx.source && fx.historyFrames == 0 &&
       fx.others.empty() && fx.layered == 0) {
-    // 1. Non-pointwise SkSL filters that strictly early-return 0 on alpha == 0
-    //    and premultiply output by center alpha (e.g. bilateral denoise, inner
-    //    blur).
-    if (!fx.hasFrameRect && fx.passes.empty() && fx.textureCount == 1 &&
+    // 1. Non-pointwise SkSL/WGSL filters that strictly early-return 0 on
+    //    alpha == 0 and premultiply output by center alpha (e.g. denoise).
+    if (fx.spillKind == ScreenFx::SpillKind::Unbounded && !fx.hasFrameRect &&
+        fx.passes.empty() && fx.textureCount == 1 &&
         wgsl.find("invert_alpha") == std::string::npos) {
       static const std::regex kEarlyZeroFilter(
           R"(if\s*\(?[\w\.]+\s*<=?\s*(?:0\.0|0\.001|1e-0?[456])(?:\s*\)\s*\|\|\s*\([^)]*\))?\s*\)?\s*\{\s*(?:\{\s*)?return\s+vec4(?:f|<f32>)\(0(?:\.0)?\))");
       static const std::regex kPremulReturn(
-          R"(return\s+vec4(?:f|<f32>)\([^;]*\*\s*(\w+\.w)\s*,\s*\1\s*\))");
+          R"(return\s+vec4(?:f|<f32>)\([^;]*\*\s*(\w+\.[wa])\s*,\s*\1\s*\))");
       if (std::regex_search(wgsl, kEarlyZeroFilter) &&
           std::regex_search(wgsl, kPremulReturn)) {
         fx.preservesZeroAlpha = true;
@@ -358,6 +409,7 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
         fx.spillScale = 1.f;
         fx.spillBase = 0.f;
         fx.spillCap = 0.f;
+        if (fx.bypassField < 0) fx.bypassField = idx, fx.bypassBelow = 0.f;
       }
     }
     // 3. Sashimono separable 1D-tap blur / glow ISF shaders (taps clamped to
@@ -372,6 +424,12 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
           fx.spillScale = 1.f;
           fx.spillBase = 0.f;
           fx.spillCap = 96.f;
+          if (fx.bypassField < 0) {
+            if (const int inten = find_param_field("intensity"); inten >= 0)
+              fx.bypassField = inten, fx.bypassBelow = 0.f;
+            else
+              fx.bypassField = idx, fx.bypassBelow = 0.499f;
+          }
           break;
         }
       }
@@ -390,6 +448,8 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
         fx.spillScale = 5.f;
         fx.spillBase = 8.f;
         fx.spillCap = 128.f;
+        if (fx.bypassField < 0 && find_param_field("intensity") < 0)
+          fx.bypassField = idx, fx.bypassBelow = 0.f;
       }
     }
   }
@@ -411,20 +471,17 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
     fx.uniformStruct = um[2];
   }
 
-  // Must have strictly ONE textureSample / textureSampleLevel / frame_sample /
-  // frame_level call in the entire shader.
+  // Count texture sample calls outside synthetic `frame_level`/`frame_sample`
+  // helpers so normal user-written WGSL & TSL shaders fuse automatically too.
+  const std::string scanBody = strip_module_header(wgsl);
   static const std::regex kAnySample(
       R"(\b(?:textureSample(?:Level)?|frame_(?:sample|level))\s*\()");
   int sampleCalls = 0;
-  for (std::sregex_iterator it(wgsl.begin(), wgsl.end(), kAnySample), end;
-       it != end; ++it) {
-    // Skip helper definitions `fn frame_sample(` / `fn frame_level(`.
-    const size_t p = (size_t)it->position();
-    if (p >= 3 && wgsl.compare(p - 3, 3, "fn ") == 0) continue;
+  for (std::sregex_iterator it(scanBody.begin(), scanBody.end(), kAnySample),
+       end;
+       it != end; ++it)
     ++sampleCalls;
-  }
-  // `screen_framed` defines 2 helpers that each call textureSample/Level inside
-  // their own bodies — count only non-helper calls for generic framed shaders.
+
   static const char* const kSksl1 =
       "textureSample(image_Texture, image_Sampler, (coord + "
       "(select(vec2<f32>(0.0), _uniform0.layerRect.xy, "
@@ -436,31 +493,48 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
       "_uniform0.layerRect.xy, vec2<bool>(_uniform0.layerRect.z > 0.0)))) / "
       "_uniform0.resolution)";
 
-  const auto not_in_loop = [&](size_t pos) {
-    const size_t fnStart = wgsl.rfind("fn ", pos);
+  const auto not_in_loop = [&](const std::string& src, size_t pos) {
+    const size_t fnStart = src.rfind("fn ", pos);
     if (fnStart == std::string::npos) return false;
     static const std::regex kLoop(R"(\b(?:for|while|loop)\b)");
-    return !std::regex_search(wgsl.begin() + (long)fnStart,
-                              wgsl.begin() + (long)pos, kLoop);
+    return !std::regex_search(src.begin() + (long)fnStart,
+                              src.begin() + (long)pos, kLoop);
   };
 
   if (sampleCalls == 1) {
-    if (const size_t p1 = wgsl.find(kSksl1);
-        p1 != std::string::npos && not_in_loop(p1)) {
+    if (const size_t p1 = scanBody.find(kSksl1);
+        p1 != std::string::npos && not_in_loop(scanBody, p1)) {
       fx.pointwise = true;
       fx.pointwiseSksl = true;
       fx.sampleExpr = kSksl1;
-    } else if (const size_t p2 = wgsl.find(kSksl2);
-               p2 != std::string::npos && not_in_loop(p2)) {
+    } else if (const size_t p2 = scanBody.find(kSksl2);
+               p2 != std::string::npos && not_in_loop(scanBody, p2)) {
       fx.pointwise = true;
       fx.pointwiseSksl = true;
       fx.sampleExpr = kSksl2;
     } else {
-      static const std::regex kDirectUv(
-          R"((?:textureSampleLevel|textureSample)\s*\(\s*\w+\s*,\s*\w+\s*,\s*uv\s*(?:,\s*0(?:\.0)?f?\s*)?\))");
+      // Match any user-written WGSL or TSL shader that samples its single
+      // texture at its own UV coordinate (whether raw or rewritten by
+      // screen_framed to frame_sample/frame_level).
+      std::string uvName = "uv";
+      {
+        static const std::regex kUvDecl(
+            R"(@location\(\s*0\s*\)\s*(\w+)\s*:\s*vec2(?:f|<f32>))");
+        std::smatch umv;
+        if (std::regex_search(scanBody, umv, kUvDecl)) {
+          uvName = umv[1];
+          // screen_framed renames `foo` -> `foo_on` and defines `let foo =
+          // ...`.
+          if (uvName.size() > 3 && uvName.ends_with("_on"))
+            uvName.resize(uvName.size() - 3);
+        }
+      }
+      const std::regex kDirectUv(
+          R"(\b(?:textureSampleLevel|textureSample|frame_level|frame_sample)\s*\(\s*\w+\s*,\s*\w+\s*,\s*)" +
+          uvName + R"(\s*(?:,\s*0(?:\.0)?f?\s*)?\))");
       std::smatch dm;
-      if (std::regex_search(wgsl, dm, kDirectUv) &&
-          not_in_loop((size_t)dm.position())) {
+      if (std::regex_search(scanBody, dm, kDirectUv) &&
+          not_in_loop(scanBody, (size_t)dm.position())) {
         fx.pointwise = true;
         fx.pointwiseSksl = false;
         fx.sampleExpr = dm[0];
@@ -468,17 +542,18 @@ void screen_analyze_pointwise(ScreenFx& fx, const std::string& wgsl) {
     }
   }
 
-  // An SkSL pointwise shader that cannot emit non-zero pixels where input
-  // alpha is zero (and never inverts/replaces alpha) can safely render into a
-  // tight bounding texture around the layer without full-screen expansion.
-  if (fx.pointwise && fx.pointwiseSksl && !fx.spill && !fx.alpha &&
-      !fx.source && wgsl.find("invert_alpha") == std::string::npos) {
+  // A pointwise shader that cannot emit non-zero pixels where input alpha is
+  // zero (and never inverts/replaces alpha) can safely render into a tight
+  // bounding texture around the layer without full-screen expansion.
+  if (fx.pointwise && !fx.spill && !fx.alpha && !fx.source &&
+      fx.spillKind == ScreenFx::SpillKind::Unbounded &&
+      wgsl.find("invert_alpha") == std::string::npos) {
     static const std::regex kEarlyZero(
         R"(if\s*\(?[\w\.]+\s*<=?\s*(?:0\.0|0\.001|1e-0?[456])\s*\)?\s*\{\s*(?:\{\s*)?(?:return\s+(?:vec4(?:f|<f32>)\(0(?:\.0)?\)|\w+)|[\w_]+\s*=\s*vec4(?:f|<f32>)\(0(?:\.0)?\)))");
     static const std::regex kPremulOut(
-        R"(sk_FragColor\s*=\s*vec4(?:f|<f32>)\([^;]*\*\s*(_\d+_\w+\.w|\w+\.w)\s*,\s*\1\s*\))");
-    if (std::regex_search(wgsl, kEarlyZero) ||
-        std::regex_search(wgsl, kPremulOut)) {
+        R"((?:sk_FragColor\s*=|return)\s*vec4(?:f|<f32>)\([^;]*\*\s*(_\d+_\w+\.[wa]|\w+\.[wa])\s*,\s*\1\s*\))");
+    if (std::regex_search(scanBody, kEarlyZero) ||
+        std::regex_search(scanBody, kPremulOut)) {
       fx.preservesZeroAlpha = true;
       fx.spillKind = ScreenFx::SpillKind::Zero;
     }

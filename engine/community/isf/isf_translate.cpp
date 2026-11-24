@@ -57,7 +57,8 @@ std::string isf_wgsl(const std::string& text, const std::string& name,
     if (other != inputName) others.push_back(other);
   // Audio inputs are images as the spec says, bound after the other images.
   for (const auto& i : inputs.GetArray())
-    if (isf_str(i, "TYPE") == "audio" || isf_str(i, "TYPE") == "audioFFT")
+    if (const std::string t = isf_str(i, "TYPE");
+        t == "audio" || t == "audioFFT" || t == "audioLink")
       others.push_back(isf_str(i, "NAME"));
 
   const std::map<std::string, std::string> kinds = {
@@ -174,13 +175,17 @@ std::string isf_wgsl(const std::string& text, const std::string& name,
     for (const auto& i : inputs.GetArray())
       if (isf_str(i, "NAME") == n)
         label = isf_str(i, "LABEL", n),
-        sound = isf_str(i, "TYPE") == "audioFFT" ? ",fft,"
-                : isf_str(i, "TYPE") == "audio"  ? ",wave,"
-                                                 : "",
+        sound = isf_str(i, "TYPE") == "audioFFT"    ? ",fft,"
+                : isf_str(i, "TYPE") == "audio"     ? ",wave,"
+                : isf_str(i, "TYPE") == "audioLink" ? ",audiolink,"
+                                                    : "",
         sound += sound.empty()
                      ? ""
                      : std::to_string((
-                           int)(i.HasMember("MAX") ? isf_num(i["MAX"], 0) : 0));
+                           int)(i.HasMember("MAX")
+                                    ? isf_num(i["MAX"], 0)
+                                    : (isf_str(i, "TYPE") == "audioLink" ? 128
+                                                                         : 0)));
     std::replace(label.begin(), label.end(), ',', ' ');
     lines += (sound.empty() ? "// --picture@" : "// --sound@") + n + ":" +
              label + sound + "\n";
@@ -330,6 +335,10 @@ std::string isf_wgsl(const std::string& text, const std::string& name,
     std::replace(about.begin(), about.end(), '\n', ' ');
     top += "// --about:" + about + "\n";
   }
+  if (std::string pad = isf_str(head, "PAD"); !pad.empty())
+    top += "// --pad:" + pad + "\n";
+  if (std::string bypass = isf_str(head, "BYPASS"); !bypass.empty())
+    top += "// --bypass:" + bypass + "\n";
   for (const std::string& p : passLines) lines += p + "\n";
   return top + lines + "\n" + wgsl;
 }

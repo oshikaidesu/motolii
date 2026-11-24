@@ -52,3 +52,11 @@ Erode-Fast:
   author: VIDVOX
   license: MIT
   source: https://editor.isf.video
+
+Dual Kawase Blur:
+  author: "Marius Bjørge / ARM (SIGGRAPH 2015)"
+  license: MIT
+
+Physical Bloom:
+  author: "Jorge Jimenez (SIGGRAPH 2014)"
+  license: MIT

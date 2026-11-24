@@ -88,6 +88,7 @@ struct ScreenFx {
   enum class SpillKind : uint8_t {
     Unbounded = 0,
     Zero,
+    FixedPx,
     ParamPx,
   };
   SpillKind spillKind = SpillKind::Unbounded;
@@ -95,6 +96,11 @@ struct ScreenFx {
   float spillScale = 1.f;
   float spillBase = 0.f;
   float spillCap = 0.f;
+  // Optional author directives (`// --pad:...`, `// --bypass:<param>`).
+  std::string padSpec, bypassParam;
+  // Field index whose value <= `bypassBelow` makes this effect a no-op.
+  int bypassField = -1;
+  float bypassBelow = 0.f;
   bool sharedInterop = false;
   std::string wgsl, uniformStruct, uniformVar, sampleExpr;
   std::vector<float> paramBuf;
@@ -148,8 +154,9 @@ struct ScreenFx {
   // covers its whole side.
   double frame[4] = {0, 0, 1, 1}, pass[4] = {0, 0, 1, 1};
   // `// --sound@name`. Half-float row of `wide` values. `fft` = spectrum.
+  // `audioLink` = stage-shared 128x8 AudioLink bus texture.
   struct Sound {
-    bool is = false, fft = false;
+    bool is = false, fft = false, audioLink = false;
     int wide = 0;
     filament::Texture* texture = nullptr;
   };

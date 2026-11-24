@@ -89,6 +89,61 @@ TEST(ScreenFuse, DetectsTimeDependentVsStaticShaders) {
   EXPECT_FALSE(gblur.usesTime);
   EXPECT_EQ(gblur.spillKind, ScreenFx::SpillKind::ParamPx);
   EXPECT_FLOAT_EQ(gblur.spillCap, 128.f);
+  EXPECT_GE(gblur.bypassField, 0);
+}
+
+TEST(ScreenFuse, AuthorDirectivesAndModernShelfShadersWork) {
+  const ScreenFx kawase = analyze_effect("blur/Dual Kawase Blur.fs");
+  EXPECT_EQ(kawase.spillKind, ScreenFx::SpillKind::ParamPx);
+  EXPECT_FLOAT_EQ(kawase.spillScale, 1.5f);
+  EXPECT_FLOAT_EQ(kawase.spillBase, 8.f);
+  EXPECT_FLOAT_EQ(kawase.spillCap, 192.f);
+  EXPECT_GE(kawase.bypassField, 0);
+  EXPECT_FALSE(kawase.usesTime);
+
+  const ScreenFx bloom = analyze_effect("blur/Physical Bloom.fs");
+  EXPECT_EQ(bloom.spillKind, ScreenFx::SpillKind::ParamPx);
+  EXPECT_FLOAT_EQ(bloom.spillScale, 3.f);
+  EXPECT_FLOAT_EQ(bloom.spillBase, 16.f);
+  EXPECT_FLOAT_EQ(bloom.spillCap, 192.f);
+  EXPECT_GE(bloom.bypassField, 0);
+  EXPECT_FALSE(bloom.usesTime);
+
+  const ScreenFx al = analyze_effect("stylize/AudioLink Pulse.wgsl");
+  EXPECT_EQ(al.spillKind, ScreenFx::SpillKind::Zero);
+  EXPECT_GE(al.bypassField, 0);
+  ASSERT_EQ(al.sounds.size(), 1u);
+  EXPECT_TRUE(al.sounds[0].audioLink);
+
+  // Plain user-written WGSL (rewritten by screen_framed) fuses automatically
+  // and detects zero-alpha preservation without any special directives.
+  {
+    ScreenFx custom;
+    custom.textureCount = 1;
+    const std::string framedUserWgsl =
+        "struct Knobs { frameRect: vec4f, gain: f32, };\n"
+        "@group(0) @binding(0) var image: texture_2d<f32>;\n"
+        "@group(0) @binding(1) var near: sampler;\n"
+        "@group(0) @binding(2) var<uniform> k: Knobs;\n"
+        "fn frame_level(t: texture_2d<f32>, s: sampler, c: vec2f, l: f32) -> "
+        "vec4f { return textureSampleLevel(t, s, c * k.frameRect.zw + "
+        "k.frameRect.xy, l); }\n"
+        "fn frame_sample(t: texture_2d<f32>, s: sampler, c: vec2f) -> vec4f { "
+        "return textureSample(t, s, c * k.frameRect.zw + k.frameRect.xy); }\n"
+        "@fragment fn main(@builtin(position) frag_on: vec4f, @location(0) "
+        "uv_on: vec2f) -> @location(0) vec4f {\n"
+        "  let uv = (uv_on - k.frameRect.xy) / k.frameRect.zw;\n"
+        "  let c = frame_sample(image, near, uv);\n"
+        "  if (c.a <= 0.0) { return vec4f(0.0); }\n"
+        "  return vec4f(clamp(c.rgb * k.gain, vec3f(0.0), vec3f(1.0)) * c.a, "
+        "c.a);\n"
+        "}\n";
+    screen_analyze_pointwise(custom, framedUserWgsl);
+    EXPECT_TRUE(custom.pointwise);
+    EXPECT_FALSE(custom.pointwiseSksl);
+    EXPECT_TRUE(custom.preservesZeroAlpha);
+    EXPECT_EQ(custom.spillKind, ScreenFx::SpillKind::Zero);
+  }
 }
 
 }  // namespace
