@@ -12,7 +12,7 @@ Motolii は WebGPU ネイティブの軽量エンジンとプレーンファイ�
 
 ![Motolii ワークスペース：左に素材と棚、中央に Stage プレビュー、下に Timeline、右に Inspector](docs/pictures/tabs/window.jpg)
 
-> 💬 **[Motolii Discord コミュニティ](https://discord.gg/EFZQREAQ9g)** で日々の開発進捗や実験クリップを公開しています。作った映像や `.vism` の共有、「ネットで見つけたこの表現を持ち込みたい！」というリクエストもお気軽にどうぞ。
+> 💬 **[Motolii Discord コミュニティ](https://discord.gg/EFZQREAQ9g)** — 見る専（ROM 専）大歓迎・参加ログは出ないので気軽に覗けます。日々の進捗クリップや、技術選定の裏話をまとめた開発小話コラム（`#dev-notes`）を公開しています。
 
 ---
 
