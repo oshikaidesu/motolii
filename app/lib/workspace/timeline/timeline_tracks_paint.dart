@@ -354,27 +354,6 @@ class TimelineTracksPainter extends CustomPainter {
         arrow,
       );
     }
-    final nameX = math.max(x0 + 8, 6.0) + (r.clipped ? 12 : 0);
-    final t = lineText(r.name, TextStyles.name(ink).bold);
-    if (nameX + 20 < x1) {
-      if (r.wave != null || r.frames != null) {
-        c.drawRRect(
-          RRect.fromLTRBR(
-            nameX - 4,
-            cy - 6.5,
-            nameX + t.width + 4,
-            cy + 6.5,
-            Shape.r(3),
-          ),
-          p..color = fill,
-        ); // Backing for the name so it stays readable over the waveform or frames.
-      }
-      c.save();
-      c.clipRect(Rect.fromLTRB(nameX, bar.top, x1 - 6, bar.bottom));
-      t.paint(c, Offset(nameX, cy - t.height / 2));
-      c.restore();
-    }
-    t.dispose();
     if (r.locked) {
       for (var x = x0 - bar.height; x < x1; x += 6) {
         c.drawLine(
