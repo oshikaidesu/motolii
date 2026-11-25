@@ -136,7 +136,7 @@ else()
     gltfio gltfio_core dracodec matp filament backend webgpu_dawn bluegl filabridge filaflat utils geometry smol-v
     ibl ktxreader stb uberzlib zstd shaders perfetto abseil meshoptimizer camutils image basis_transcoder uberarchive
     matdbg filamat civetweb viewer
-    d3d12 d3d11 dxgi dxguid onecore_apiset user32 gdi32 shlwapi ws2_32 winmm ole32 opengl32)
+    d3d12 d3d11 dxgi dxguid onecore_apiset user32 gdi32 shlwapi ws2_32 winmm ole32 opengl32 dwrite)
 endif()
 add_library(skia_libraries INTERFACE)
 target_link_libraries(skia_libraries INTERFACE ${SKIA}/out/path/libpathops.a ${SKIA}/out/path/libskia.a)
@@ -186,16 +186,24 @@ if(APPLE)
   target_link_libraries(motolii_community_absent_motion PUBLIC skia_libraries)
   target_link_options(motolii_community_absent_motion PUBLIC -Wl,-dead_strip)
 else()
-  # Windows' linker looks for them before it drops anything. So LLVM drops them itself: the objects as LLVM's own
-  # code, joined, everything but our motolii:: calls made private (internalize), and what nothing reaches removed.
-  target_compile_options(absent_motion PRIVATE -flto)
-  set(ABSENT_KEPT ${CMAKE_CURRENT_BINARY_DIR}/absent_motion_kept.obj)
-  add_custom_command(OUTPUT ${ABSENT_KEPT} DEPENDS $<TARGET_OBJECTS:absent_motion> COMMAND_EXPAND_LISTS VERBATIM
-    COMMAND llvm-link $<TARGET_OBJECTS:absent_motion> -o absent_motion.bc
-    COMMAND opt -passes=internalize,globaldce -internalize-public-api-list=*@motolii@@* absent_motion.bc -o absent_motion_kept.bc
-    COMMAND ${CMAKE_CXX_COMPILER} -c -O2 absent_motion_kept.bc -o ${ABSENT_KEPT})
-  add_library(motolii_community_absent_motion STATIC ${ABSENT_KEPT})
-  set_target_properties(motolii_community_absent_motion PROPERTIES LINKER_LANGUAGE CXX)
+  find_program(LLVM_LINK llvm-link)
+  if(LLVM_LINK)
+    # Windows' linker looks for them before it drops anything. So LLVM drops them itself: the objects as LLVM's own
+    # code, joined, everything but our motolii:: calls made private (internalize), and what nothing reaches removed.
+    target_compile_options(absent_motion PRIVATE -flto)
+    set(ABSENT_KEPT ${CMAKE_CURRENT_BINARY_DIR}/absent_motion_kept.obj)
+    add_custom_command(OUTPUT ${ABSENT_KEPT} DEPENDS $<TARGET_OBJECTS:absent_motion> COMMAND_EXPAND_LISTS VERBATIM
+      COMMAND llvm-link $<TARGET_OBJECTS:absent_motion> -o absent_motion.bc
+      COMMAND opt -passes=internalize,globaldce -internalize-public-api-list=*@motolii@@* absent_motion.bc -o absent_motion_kept.bc
+      COMMAND ${CMAKE_CXX_COMPILER} -c -O2 absent_motion_kept.bc -o ${ABSENT_KEPT})
+    add_library(motolii_community_absent_motion STATIC ${ABSENT_KEPT})
+    set_target_properties(motolii_community_absent_motion PROPERTIES LINKER_LANGUAGE CXX)
+  else()
+    add_library(motolii_community_absent_motion STATIC $<TARGET_OBJECTS:absent_motion>)
+    # Without llvm-link the linker sees every object: tell it to tolerate the symbols that scene.cpp and drawing.cpp
+    # reference but that are never reached (macOS's -dead_strip drops them before resolution; lld-link cannot).
+    target_link_options(motolii_community_absent_motion PUBLIC "LINKER:/FORCE:UNRESOLVED")
+  endif()
   target_link_libraries(motolii_community_absent_motion PUBLIC skia_libraries)
 endif()
 

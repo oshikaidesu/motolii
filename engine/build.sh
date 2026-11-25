@@ -13,7 +13,7 @@ source tools/build_lock.sh; build_lock "$@"   # one build at a time on this mach
 if [[ $OSTYPE == (msys|cygwin)* ]]; then
     # What deps/ builds by hand is compiled for MSVC's runtime DLL, as Filament and the engine are.
     export CC=clang CXX=clang++ AR=llvm-ar CFLAGS=-fms-runtime-lib=dll MSYS=winsymlinks:nativestrict
-    WINDOWS=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DGSTREAMER=$(cygpath -m $GSTREAMER_1_0_ROOT_MSVC_X86_64)
+    WINDOWS=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DGSTREAMER=$(cygpath -ms "$GSTREAMER_1_0_ROOT_MSVC_X86_64")
              -DLIBRARIES=$(cygpath -m $MOTOLII_LIBRARIES) -DCorrosion_DIR=$(cygpath -m $MOTOLII_CORROSION)/lib/cmake/Corrosion)
 fi
 

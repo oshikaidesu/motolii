@@ -28,6 +28,12 @@
 #include <filesystem>
 #include <fstream>
 #include <regex>
+
+#if defined(_WIN32) && !defined(__cpp_lib_regex_constants)
+static constexpr auto regex_multiline = std::regex_constants::syntax_option_type{};
+#else
+static constexpr auto regex_multiline = std::regex::multiline;
+#endif
 #include <sstream>
 #include <string>
 
@@ -122,7 +128,7 @@ std::string three_isf(const std::string& file, std::string& why) {
     return why.empty() ? why = "its export does not read" : why, "";
   std::string frag = d["frag"].GetString();
   if (std::regex_search(
-          frag, std::regex(R"(^\s*#include\s*<)", std::regex::multiline)))
+          frag, std::regex(R"(^\s*#include\s*<)", regex_multiline)))
     return why = "it names three's own #include pieces", "";
   const rapidjson::Value none(rapidjson::kObjectType);
   const rapidjson::Value& u =
@@ -170,7 +176,7 @@ std::string three_isf(const std::string& file, std::string& why) {
           "\n";
   const std::regex uniform(
       R"(^[ \t]*uniform[ \t]+(\w+)[ \t]+(\w+)[ \t]*;[ \t]*(//.*)?$)",
-      std::regex::multiline);
+      regex_multiline);
   for (std::sregex_iterator m(frag.begin(), frag.end(), uniform), end; m != end;
        ++m) {
     const std::string type = (*m)[1], own = (*m)[2];
@@ -263,12 +269,12 @@ std::string three_isf(const std::string& file, std::string& why) {
   if (std::regex_search(
           frag, at,
           std::regex(R"(^[ \t]*varying[ \t]+vec2[ \t]+(\w+)[ \t]*;[ \t]*$)",
-                     std::regex::multiline)))
+                     regex_multiline)))
     defines += "#define " + at[1].str() + " isf_FragNormCoord\n",
         frag = std::regex_replace(
             frag,
             std::regex(R"(^[ \t]*varying[ \t]+\w+[ \t]+\w+[ \t]*;[ \t]*$)",
-                       std::regex::multiline),
+                       regex_multiline),
             "");
   // three.js prepends a luminance() function to every shader (see
   // getLuminanceFunction in WebGLProgram.js), so add it if the shader uses it

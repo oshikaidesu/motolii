@@ -12,8 +12,8 @@ K=$PWD/third_party/skia_src
 # is; its objects are .obj and its library skia.lib, which is copied to the Mac's name.
 PYTHON=python3 GN=() WINDOWS= O=o A=ar
 if [[ $OSTYPE == (msys|cygwin)* ]]; then
-    PYTHON=python GN=(--script-executable=$(command -v python)) O=obj A=$AR
-    WINDOWS=" clang_win=\"$(cygpath -m ${$(command -v clang-cl):h:h})\" extra_cflags=[\"/MD\"]"
+    PYTHON=python GN=(--script-executable=$(python -c 'import sys;print(sys.executable)' | tr '\\' '/')) O=obj A=$AR
+    WINDOWS=" clang_win=\"$(cygpath -ms "${$(command -v clang-cl):h:h}")\" extra_cflags=[\"/MD\"]"
 fi
 [ -x $K/bin/gn ] || (cd $K && $PYTHON bin/fetch-gn > /dev/null)
 [ -f $K/out/path/build.ninja ] || (cd $K && bin/gn gen out/path $GN --args='is_official_build=true is_debug=false skia_enable_pdf=false

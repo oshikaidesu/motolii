@@ -13,7 +13,7 @@ set -e
 cd "$(dirname "$0")/.."
 S=$PWD/third_party/stylo_src
 P=(deps/patches/stylo/*.patch)
-SUM=$(cat $P | shasum | cut -c1-16)
+SUM=$(cat $P | { shasum 2>/dev/null || sha256sum; } | cut -c1-16)
 [ "$(cat $S/.patches 2>/dev/null)" = "$SUM" ] && exit 0
 T=$(mktemp -d)
 curl -sfL https://static.crates.io/crates/stylo/stylo-0.22.0.crate | tar -xz -C $T

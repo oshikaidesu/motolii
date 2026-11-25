@@ -11,7 +11,7 @@ source tools/build_lock.sh; build_lock "$@"
 SRC=$PWD/third_party/aexlo_src
 COMMIT=4733ffdf966d9fea3a4d7dea4dfb1b8a65ca6178
 PATCHES=(deps/patches/aexlo/*.patch(N))
-SUM="${COMMIT}:$([ ${#PATCHES} -gt 0 ] && cat $PATCHES | shasum | cut -c1-16 || echo none)"
+SUM="${COMMIT}:$([ ${#PATCHES} -gt 0 ] && cat $PATCHES | { shasum 2>/dev/null || sha256sum; } | cut -c1-16 || echo none)"
 if [ ! -d "$SRC" ] || [ "$(cat "$SRC/.patches" 2>/dev/null)" != "$SUM" ]; then
   if [ ! -d "$SRC/.git" ]; then
     rm -rf "${SRC:?}"

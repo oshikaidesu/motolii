@@ -12,18 +12,18 @@ SRC="$PWD/third_party/filament_src"
 P="$PWD/deps/patches"   # (what Motolii changes in Filament, its glslang and its Tint: deps/patches/<library>/)
 if [ ! -d "$SRC" ]; then
     git clone --depth 1 --branch v1.77.2 https://github.com/google/filament.git "$SRC"
-    (cd "$SRC" && git apply "$P/filament/filament_dawn_compute.patch" && git apply "$P/glslang/glslang_hlsl.patch")   # (glslang_hlsl: its HLSL front end built in, AviUtl2's shaders: community/aviutl/aviutl.cpp)
+    (cd "$SRC" && git apply --ignore-whitespace "$P/filament/filament_dawn_compute.patch" && git apply --ignore-whitespace "$P/glslang/glslang_hlsl.patch")   # (glslang_hlsl: its HLSL front end built in, AviUtl2's shaders: community/aviutl/aviutl.cpp)
 fi
 # (Filament's WebGPU viewport turned to WebGPU's top-left origin, as its own scissor() does: upstream's TODO in
 #  beginRenderPass, still there on main 10/27. Put on a tree made before it too, once)
-(cd "$SRC" && { git apply --reverse --check "$P/filament/filament_webgpu_viewport.patch" 2>/dev/null || git apply "$P/filament/filament_webgpu_viewport.patch"; })
+(cd "$SRC" && { git apply --ignore-whitespace --reverse --check "$P/filament/filament_webgpu_viewport.patch" 2>/dev/null || git apply --ignore-whitespace "$P/filament/filament_webgpu_viewport.patch"; })
 # (a depth-only pass keeps a material's fragment stage: without it a shadow is its whole quad, whatever it cuts away)
-(cd "$SRC" && { git apply --reverse --check "$P/filament/filament_webgpu_depth_fragment.patch" 2>/dev/null || git apply "$P/filament/filament_webgpu_depth_fragment.patch"; })
-(cd "$SRC" && { git apply --reverse --check "$P/tint/tint_msl_let.patch" 2>/dev/null || git apply "$P/tint/tint_msl_let.patch"; })   # (a first open of a 立体 took 76 s in Apple's compiler, on one shader, for a `const`)
+(cd "$SRC" && { git apply --ignore-whitespace --reverse --check "$P/filament/filament_webgpu_depth_fragment.patch" 2>/dev/null || git apply --ignore-whitespace "$P/filament/filament_webgpu_depth_fragment.patch"; })
+(cd "$SRC" && { git apply --ignore-whitespace --reverse --check "$P/tint/tint_msl_let.patch" 2>/dev/null || git apply --ignore-whitespace "$P/tint/tint_msl_let.patch"; })   # (a first open of a 立体 took 76 s in Apple's compiler, on one shader, for a `const`)
 WINDOWS=()
 if [[ $OSTYPE == (msys|cygwin)* ]]; then
     # (Dawn on D3D12 and the DXGI handles the live frames and videos are shared by: stage/live_shared_windows.cpp)
-    (cd "$SRC" && { git apply --reverse --check "$P/filament/filament_webgpu_windows.patch" 2>/dev/null || git apply "$P/filament/filament_webgpu_windows.patch"; })
+    (cd "$SRC" && { git apply --ignore-whitespace --reverse --check "$P/filament/filament_webgpu_windows.patch" 2>/dev/null || git apply --ignore-whitespace "$P/filament/filament_webgpu_windows.patch"; })
     # Filament builds on Windows with MSVC alone, and refuses MSYS2's environment; the runtime DLL, as the engine's.
     # (Dawn loads d3dcompiler_47.dll from System32: the engine is a DLL the app copies about, out/live/)
     WINDOWS=(-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DUSE_STATIC_CRT=OFF -DDAWN_FORCE_SYSTEM_COMPONENT_LOAD=ON)

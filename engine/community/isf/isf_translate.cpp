@@ -5,6 +5,11 @@
 
 #include <map>
 #include <regex>
+#if defined(_WIN32) && !defined(__cpp_lib_regex_constants)
+static constexpr auto regex_multiline = std::regex_constants::syntax_option_type{};
+#else
+static constexpr auto regex_multiline = std::regex::multiline;
+#endif
 
 namespace motolii {
 
@@ -273,7 +278,7 @@ std::string isf_wgsl(const std::string& text, const std::string& name,
   if (!vertex.empty()) {
     const std::regex said(
         R"(^[ \t]*(?:varying|out|in)[ \t]+(\w+)[ \t]+(\w+)([ \t]*\[[^\]]*\])?[ \t]*;)",
-        std::regex::multiline);
+        regex_multiline);
     // Each varying by name: its type, and the array size when it is an array.
     std::map<std::string, std::string> handed;
     for (const std::string* t : {&vertex, &body})

@@ -29,7 +29,8 @@ tmp=$(mktemp -d)
 # unaffected. Another place to fetch from is a choice for a person: the SHA-256 above is of this file only.
 kind=tgz; [[ $name == win-* ]] && kind=zip   # (Windows' release is a zip)
 curl -fL -sS --retry 3 -o $tmp/ort.$kind https://github.com/microsoft/onnxruntime/releases/download/v$V/onnxruntime-$name-$V.$kind
-[ "$(shasum -a 256 $tmp/ort.$kind | cut -d' ' -f1)" = $SHA ] || { echo "onnxruntime-$name-$V.$kind: its SHA-256 is not the one this script knows"; rm -rf $tmp; exit 1; }
+actual=$({ shasum -a 256 $tmp/ort.$kind 2>/dev/null || sha256sum $tmp/ort.$kind; } | cut -d' ' -f1)
+[ "$actual" = $SHA ] || { echo "onnxruntime-$name-$V.$kind: its SHA-256 is not the one this script knows"; rm -rf $tmp; exit 1; }
 if [ $kind = zip ]; then
     (cd $tmp && unzip -q ort.zip) && mkdir -p $OUT && mv $tmp/onnxruntime-$name-$V/* $OUT/
 else

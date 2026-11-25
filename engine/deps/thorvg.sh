@@ -20,7 +20,7 @@ if [[ $OSTYPE == (msys|cygwin)* ]]; then
     export CC=clang-cl CXX=clang-cl   # (ThorVG's C++17 has designated initializers, which cl takes only as C++20)
 fi
 [ -d $T ] || { git init -q $T && git -C $T -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/thorvg/thorvg 920324543b0377d14f34ebcd561f27590ddb55de && git -C $T checkout -q FETCH_HEAD; }
-git -C $T diff --quiet && git -C $T apply $PWD/deps/patches/thorvg/thorvg_z.patch $PWD/deps/patches/thorvg/thorvg_wg_upload.patch $PWD/deps/patches/thorvg/thorvg_length.patch $PWD/deps/patches/thorvg/thorvg_over.patch $PWD/deps/patches/thorvg/thorvg_matte_clip.patch $PWD/deps/patches/thorvg/thorvg_texture.patch $PWD/deps/patches/thorvg/thorvg_ttc.patch $PWD/deps/patches/thorvg/thorvg_otf_guard.patch
+git -C $T diff --quiet && git -C $T apply --ignore-whitespace $PWD/deps/patches/thorvg/thorvg_z.patch $PWD/deps/patches/thorvg/thorvg_wg_upload.patch $PWD/deps/patches/thorvg/thorvg_length.patch $PWD/deps/patches/thorvg/thorvg_over.patch $PWD/deps/patches/thorvg/thorvg_matte_clip.patch $PWD/deps/patches/thorvg/thorvg_texture.patch $PWD/deps/patches/thorvg/thorvg_ttc.patch $PWD/deps/patches/thorvg/thorvg_otf_guard.patch
 mkdir -p $T/dawn_pc
 cat > $T/dawn_pc/wgpu_native.pc <<PC
 Name: wgpu_native

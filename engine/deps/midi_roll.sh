@@ -7,4 +7,4 @@ cd "$(dirname "$0")/.."
 F=third_party/midi_roll/PianoRollSvg.js
 [ -f $F ] && exit 0
 curl -fsSL -o $F https://raw.githubusercontent.com/bladeSk/midi-to-piano-roll/205854ee374d1410eb4bc8a21066c222b7996859/PianoRollSvg.js
-echo "4beb99a00a9a72a3e2728ca9b65daf7710f28656d99c9490d59e3d50b0adc564  $F" | shasum -a 256 -c - > /dev/null
+echo "4beb99a00a9a72a3e2728ca9b65daf7710f28656d99c9490d59e3d50b0adc564  $F" | { shasum -a 256 -c - 2>/dev/null || sha256sum -c -; } > /dev/null

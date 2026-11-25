@@ -16,7 +16,8 @@ OUT=$PWD/third_party/ffmpeg_lgpl
 if [ ! -d $SRC ]; then
     tmp=$(mktemp -d)
     curl -fL -s -o $tmp/ffmpeg.tar.xz https://ffmpeg.org/releases/ffmpeg-$V.tar.xz
-    [ "$(shasum -a 256 $tmp/ffmpeg.tar.xz | cut -d' ' -f1)" = $SHA ] || { echo "ffmpeg-$V.tar.xz: its SHA-256 is not the one this script knows"; rm -rf $tmp; exit 1; }
+    actual=$({ shasum -a 256 $tmp/ffmpeg.tar.xz 2>/dev/null || sha256sum $tmp/ffmpeg.tar.xz; } | cut -d' ' -f1)
+    [ "$actual" = $SHA ] || { echo "ffmpeg-$V.tar.xz: its SHA-256 is not the one this script knows"; rm -rf $tmp; exit 1; }
     mkdir -p $SRC && tar -xf $tmp/ffmpeg.tar.xz -C $SRC --strip-components 1
     rm -rf $tmp
 fi
@@ -32,14 +33,15 @@ case "$(uname -s)" in
         OUT=$(cygpath -m $OUT)   # (E:/..., which the .pc files carry to Windows' own pkg-config)
         # (mfenc.c needs d3d11va's headers.) zlib is GStreamer's z.lib, under the name configure gives -lz with MSVC (zlib.lib)
         mkdir -p $SRC/zlib && cp $GSTREAMER_1_0_ROOT_MSVC_X86_64/lib/z.lib $SRC/zlib/zlib.lib
+        GSTREAMER_SHORT=$(cygpath -ms "$GSTREAMER_1_0_ROOT_MSVC_X86_64")
         CONFIGURE=(--prefix=$OUT ${CONFIGURE[2,-1]} --toolchain=msvc --arch=x86_64 --enable-mediafoundation --enable-d3d11va
-                   --extra-cflags=-I$(cygpath -m $GSTREAMER_1_0_ROOT_MSVC_X86_64/include) --extra-ldflags=-LIBPATH:$(cygpath -m $SRC/zlib))
+                   --extra-cflags=-I$(cygpath -m $GSTREAMER_SHORT/include) --extra-ldflags=-LIBPATH:$(cygpath -m $SRC/zlib))
         unset CFLAGS CC CXX AR   # (build.sh's are clang's, for deps/ built by hand: FFmpeg picks MSVC's itself)
         cpus=$NUMBER_OF_PROCESSORS ;;
     *) echo "ffmpeg: this script does not build on $(uname -s): see docs/engine/PACKAGING.md"; exit 1 ;;
 esac
 if [ ! -x $OUT/bin/ffmpeg ]; then
-    (cd $SRC && ./configure $CONFIGURE > /dev/null && make -j$cpus > /dev/null && make install > /dev/null)
+    (cd $SRC && ./configure $CONFIGURE > /dev/null && make -j1 > /dev/null && make install > /dev/null)
     mkdir -p $OUT && print -r -- "./configure $CONFIGURE" > $OUT/CONFIGURE.txt
     if [ -f $OUT/bin/avcodec.lib ]; then cp $OUT/bin/*.lib $OUT/lib/; fi   # (MSVC's import libraries, where the .pc files say)
 fi
