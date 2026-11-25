@@ -205,7 +205,9 @@ void main() {
     expect(guide, contains('layer_length'));
     expect(guide, contains('/tmp/fx/ops_result.json'));
     expect(guide, contains('ONCE when your turn ends'));
-    expect(guide, contains('Creative partner mode'));
+    expect(guide, contains('Implicit & creative partner mode'));
+    expect(guide, contains('Vism first (Inspector Vism > Dock panel)'));
+    expect(guide, contains('Group array motion'));
     expect(guide, contains('say` `name: "script"'));
     expect(guide, contains('up to 8 `--track@` params'));
   });

@@ -112,9 +112,11 @@ String buildMotoliiGuide({
     '- `add` kinds & files: shape = rect|circle|polygon|star|line|null|ring|arc|arrow|squircle|cog|path|spiral|chamfer (NO "ellipse" — use circle + scale_x/scale_y); solid = ring|gem|cube|ball|sketch or .glb/.gltf; image = .png/.jpg/.webp/.svg; text = "" or .ttf/.otf; video/sound = media path; camera; light = sun|point|spot; environment.',
     '- Stage (`layer: 0`) properties: `bpm`, `bpm_from`, `frame_rate`, `layer_length`, `background` (6-hex), `script` (NO `seconds` or `fps` properties).',
     '- Colors (`fill`, `stroke`, `background`, etc.): 6-digit hex without `#`, e.g. `ff3366`.',
-    '- Expressions vs shaders: attach `.js` expressions via `say` `name: "script"` (up to 8 `--track@` params, exposed as `js_<param>` after commit); attach `.fs`/`.wgsl` shaders via `fx`. Never `set` newly created `js_*` params in the same undo group as attaching the script/fx — put initial values in the script/shader defaults and let subsequent edits or Vism panels tweak them.',
-    '- Craft principle: leverage existing Motolii strengths (shelves/ shaders, expressions, presets, 3D solids/lights/camera, Jolt rigid_body, SVG assets, audio FFT, Vism panels) instead of building crude placeholder shapes from scratch.',
-    '- Creative partner mode: when the user is brainstorming, asking for feedback, or exploring direction ("how does this look?", "what\'s missing?", "what should come next?"), do NOT mutate the scene yet — inspect stage.png (and nearby frames via render_frame when MCP is available) plus timing/colors/layers, give concrete creative critique, and offer 2-3 actionable options you can apply in 1 undo once they pick one. When they ask you to build/edit, apply directly.',
+    '- Expressions vs shaders: attach `.js` expressions via `say` `name: "script"` (or as an `fx` step; up to 8 `--track@` params, exposed as `js_<param>` after commit); attach `.fs`/`.wgsl` shaders via `fx`. Never `set` newly created `js_*` params in the same undo group as attaching the script/fx — put initial values in the script/shader defaults and let subsequent edits or Inspector Vism cards tweak them.',
+    '- Vism first (Inspector Vism > Dock panel): Vism is NOT a plain knob macro — it is a visual, direct-manipulation instrument (`ui.svg`, `ui.scene3d`, `ui.shader`, `ui.waveform`, `ui.curve`, `ui.sequencer`, `ui.picker`) that lives inside the layer/group\'s Inspector `ValuesCard`. Prefer Inspector Vism (`<effect>.ui.js` or a multi-code `vism.json` pack combining Expression + p5.js/WGSL/ISF/TSL into one card with nested Code notebook cells). Use `panels/*.js` only for cross-layer workflow utilities.',
+    '- Group array motion: attaching an expression (or Vism pack containing an expression) to a group layer runs `each(i, n, t, k, at)` across its child layers `[0..n-1]`, enabling repeater/stagger/falloff choreography across mixed children.',
+    '- Craft principle: leverage existing Motolii strengths (shelves/ shaders, expressions, presets, 3D solids/lights/camera, Jolt rigid_body, SVG assets, audio FFT, Inspector Vism packs) instead of building crude placeholder shapes from scratch.',
+    '- Implicit & creative partner mode: users often speak tersely ("ここ寂しい", "ちょっと強い", "1枚にまとめて") relying on your awareness of `Recent user activity`, selection, playhead, keyframes, and `stage.png`. Infer intent directly. When the user asks for critique/brainstorming, do NOT mutate the scene yet — inspect `stage.png`, timing, and layers, give concrete critique, and offer 2-3 options you can apply in 1 undo once they pick one.',
     'Fallback ops file (when MCP is unavailable): write a JSON array or {"ops":[...],"notice":"..."} to $opsPath. '
         'Motolii applies $opsPath ONCE when your turn ends (never mid-turn) and writes commit status/errors to $opsResultPath plus refreshed scene.json & stage.png. '
         'Supported ops: add (layer:-1 targets last added, layer:0 targets stage), create, psd, pivot, set, say, key (ease e.g. "Bezier 0.2 0 0.2 1"), fx, explode (mode: letters|strokes), outline, remove, select, time, play, open_panel, reload_shelves, later.',
@@ -319,7 +321,114 @@ List<String> _describeSituation(
     ].join(', ');
     lines.add('- Selected keyframe(s): $ks.');
   }
+  if (ws.recentActivity.isNotEmpty) {
+    lines.add(
+      '- Recent user activity (oldest → newest): ${ws.recentActivity.join(' -> ')}.',
+    );
+  }
   return lines;
+}
+
+/// One subtle, locally detected action chip (0ms, no LLM call) — short label only;
+/// the underlying intent stays invisible so the pane never feels like a template list.
+typedef ContextChip = ({String id, String label, String prompt});
+
+/// Detects at most 2 genuinely relevant context chips from the live scene structure.
+List<ContextChip> contextChipsFor(WorkspaceController ws) {
+  if (!projectOpen(ws)) return const [];
+  final chips = <ContextChip>[];
+  final sel = ws.layer;
+  final fps = WorkspaceController.fps > 0 ? WorkspaceController.fps : 60;
+  final totalSec = WorkspaceController.duration / fps;
+
+  if (ws.stretches.isNotEmpty) {
+    chips.add((
+      id: 'ease-feel',
+      label: '動きのキレを詰める',
+      prompt: '今選んでいるイージング区間の動きを見て、もっと気持ちいい緩急に調整して',
+    ));
+  }
+  if (sel != null) {
+    final fxCount = ws.fxOf(sel.id).length;
+    if (fxCount >= 2) {
+      chips.add((
+        id: 'pack-vism',
+        label: '1枚のVismパックに束ねる',
+        prompt: '選択中レイヤーに重なっているエフェクト・式を、可視化付きの1枚のInspector Vismパック（vism.json + .ui.js）に束ねて',
+      ));
+    }
+    final children = ws.layers.where((l) => l.parent == sel.id).length;
+    if (sel.kind == LayerKind.group && children >= 2) {
+      chips.add((
+        id: 'group-array',
+        label: '子レイヤーを配列アニメ化',
+        prompt: 'このグループの子レイヤー群を配列処理（each）でリピーター／スタッガー風に動かし、Inspector Vismカードで可視化・調整できるようにして',
+      ));
+    }
+  }
+  if (ws.many.length > 1) {
+    chips.add((
+      id: 'multi-group-vism',
+      label: 'まとめて配列アニメ化',
+      prompt: '選択中のレイヤー群をグループ化して配列モーションと可視化付きInspector Vismカードを付けて',
+    ));
+  }
+  if (chips.length < 2 && ws.layers.isNotEmpty && totalSec >= 2.0) {
+    int maxKey = -1;
+    for (final l in ws.layers) {
+      for (final f in l.keys) {
+        if (f > maxKey) maxKey = f;
+      }
+    }
+    final maxSec = maxKey >= 0 ? maxKey / fps : -1.0;
+    if (maxSec > 0.1 && maxSec < totalSec * 0.45) {
+      chips.add((
+        id: 'hold-after-intro',
+        label: '${maxSec.toStringAsFixed(1)}s以降の余韻を足す',
+        prompt:
+            '${maxSec.toStringAsFixed(1)}sまでの既存モーションは活かしつつ、それ以降も画面が生きて見える演出とInspector Vismカードを提案・構築して',
+      ));
+    }
+  }
+  if (chips.length < 2 && sceneHasAudio(ws)) {
+    chips.add((
+      id: 'audio-link',
+      label: '音・ビートに連動',
+      prompt: 'このシーンの音声・ビートに合わせて反応する表現と可視化付きInspector Vismカードを付けて',
+    ));
+  }
+  if (chips.isEmpty && ws.layers.isNotEmpty) {
+    chips.add((
+      id: 'cut-review',
+      label: '今のカットを見る',
+      prompt: '今のカットの見た目・構成・テンポを見て、良くなっている点ともう一段良くする演出案を2〜3個提案して（まだ変更しないで）',
+    ));
+  }
+  return chips.take(2).toList();
+}
+
+/// Quiet, context-sensitive single-line placeholder for the composer.
+String composerHintFor(WorkspaceController ws, String agentName) {
+  if (!projectOpen(ws) || ws.layers.isEmpty) {
+    return '例:「タイトル演出を一緒に考えて」「3Dと音で…」';
+  }
+  if (ws.stretches.isNotEmpty) {
+    return '例:「もう少しキレを出して」「余韻を長めに」…';
+  }
+  if (ws.many.length > 1) {
+    return '例:「順番にずらして」「グループにして配列で動かして」…';
+  }
+  final sel = ws.layer;
+  if (sel != null) {
+    if (sel.kind == LayerKind.group) {
+      return '例:「子レイヤーを波打たせて」「Vismカードで操れるように」…';
+    }
+    if (ws.fxOf(sel.id).length >= 2) {
+      return '例:「重ねたFXを1枚のVismにまとめて」「強すぎた」…';
+    }
+    return '例:「ここ物足りない」「可視化付きVismカードにして」…';
+  }
+  return '一言でOK（例:「ここ寂しい」「次どう繋ごう？」）';
 }
 
 String _fmtNum(double v) =>

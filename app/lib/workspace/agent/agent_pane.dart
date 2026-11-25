@@ -300,11 +300,14 @@ class _AgentPaneState extends State<AgentPane> {
 
   /// Puts a new file the agent wrote on the selected layer, as the Effects shelf puts an empty one (empty_effect.dart).
   void _put(WorkspaceController ws, AcpChatSession talk, String file) {
-    if (!RegExp(r'\.(wgsl|fs|js|css|am|mjs)$').hasMatch(file)) return;
+    final isPack = file.endsWith('/vism.json') || file == 'vism.json';
+    if (!isPack && !RegExp(r'\.(wgsl|fs|js|css|am|mjs)$').hasMatch(file)) {
+      return;
+    }
     putEffectFile(
       ws,
       file,
-      expression: file.endsWith('.js') || file.endsWith('.css'),
+      expression: !isPack && (file.endsWith('.js') || file.endsWith('.css')),
       told: (why) {
         if (why.isNotEmpty) {
           talk.tell(
@@ -365,14 +368,25 @@ class _AgentPaneState extends State<AgentPane> {
                   Expanded(child: _conversation(talk)),
                   if (talk.asked case final r?) _question(context, talk, r),
                   _with(context, talk),
-                  AgentComposer(
-                    talk: talk,
-                    controller: _say,
-                    attachments: _attachments,
-                    onAttach: _pickAttachment,
-                    onRemoveAttachment: (p) =>
-                        setState(() => _attachments.remove(p)),
-                    onSend: (t) => _send(talk, t),
+                  if (talk.entries.isEmpty && !talk.sending)
+                    _contextChips(context, talk),
+                  Builder(
+                    builder: (context) {
+                      final ws = WorkspaceScope.of(context, {
+                        WorkspaceAspect.picked,
+                        WorkspaceAspect.structure,
+                      });
+                      return AgentComposer(
+                        talk: talk,
+                        controller: _say,
+                        hint: composerHintFor(ws, talk.agentName),
+                        attachments: _attachments,
+                        onAttach: _pickAttachment,
+                        onRemoveAttachment: (p) =>
+                            setState(() => _attachments.remove(p)),
+                        onSend: (t) => _send(talk, t),
+                      );
+                    },
                   ),
                 ],
               ],
@@ -546,6 +560,63 @@ class _AgentPaneState extends State<AgentPane> {
     );
   }
 
+  /// Subtle 0ms context chips above the composer — short labels only, never raw prompt templates.
+  Widget _contextChips(BuildContext context, AcpChatSession talk) {
+    final ws = WorkspaceScope.of(context, {
+      WorkspaceAspect.picked,
+      WorkspaceAspect.document,
+      WorkspaceAspect.layers,
+      WorkspaceAspect.structure,
+    });
+    final chips = contextChipsFor(ws);
+    if (chips.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        WindowTokens.inset,
+        Shape.s(5),
+        WindowTokens.inset,
+        Shape.s(2),
+      ),
+      child: Wrap(
+        spacing: Shape.s(5),
+        runSpacing: Shape.s(4),
+        children: [
+          for (final c in chips)
+            DockHover(
+              key: ValueKey('agent-chip-${c.id}'),
+              onTap: () {
+                if (talk.ready && !talk.sending) {
+                  _send(talk, c.prompt);
+                } else {
+                  _say.text = c.label;
+                  _say.selection = TextSelection.collapsed(
+                    offset: c.label.length,
+                  );
+                }
+              },
+              builder: (context, h) => Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: Shape.s(7),
+                  vertical: Shape.s(3),
+                ),
+                decoration: BoxDecoration(
+                  color: h ? WindowTokens.well : WindowTokens.card,
+                  borderRadius: Shape.round(WindowTokens.chipRadius),
+                  border: Border.all(
+                    color: h ? Accent.fill : WindowTokens.line,
+                  ),
+                ),
+                child: Text(
+                  c.label,
+                  style: TextStyles.micro(h ? Grey.g100 : Grey.g76),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _link(String label, VoidCallback onTap) => DockHover(
     onTap: onTap,
     builder: (context, h) => Padding(
@@ -703,52 +774,23 @@ class _AgentPaneState extends State<AgentPane> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Magpie(),
-        SizedBox(height: Shape.s(10)),
+        SizedBox(height: Shape.s(8)),
         for (final line in [
-          'Ask in a few words — your selection, playhead, focus group, and whole scene are sent automatically.',
-          'Bounce ideas and get feedback on your cut, or ask to build animations, shaders, expressions, and custom Vism panels.',
+          'Selection, playhead, recent edits, and stage preview are shared automatically — just say what you want.',
           if (choose)
             'Choose an agent below. Every agent of the ACP registry works the '
                 'same way.',
         ])
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(4)),
-            child: Text(line, style: TextStyles.name(Grey.g76, 11, null, 1.4)),
+            child: Text(line, style: TextStyles.name(Grey.g63, 11, null, 1.4)),
           ),
       ],
     ),
   );
 
   Widget _conversation(AcpChatSession talk) => talk.entries.isEmpty
-      ? SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _intro(),
-              Builder(
-                builder: (context) {
-                  final ws = WorkspaceScope.of(context, {
-                    WorkspaceAspect.picked,
-                    WorkspaceAspect.structure,
-                  });
-                  return AgentStarterPrompts(
-                    prompts: startersFor(ws),
-                    onPick: (prompt) {
-                      if (talk.ready && !talk.sending) {
-                        _send(talk, prompt);
-                      } else {
-                        _say.text = prompt;
-                        _say.selection = TextSelection.collapsed(
-                          offset: prompt.length,
-                        );
-                      }
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-        )
+      ? Align(alignment: Alignment.topLeft, child: _intro())
       : ListView(
           reverse: true,
           padding: EdgeInsets.all(WindowTokens.inset),

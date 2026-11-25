@@ -18,6 +18,7 @@ class AgentComposer extends StatefulWidget {
     required this.talk,
     required this.controller,
     required this.onSend,
+    this.hint,
     this.attachments = const [],
     this.onAttach,
     this.onRemoveAttachment,
@@ -25,6 +26,7 @@ class AgentComposer extends StatefulWidget {
   final AcpChatSession talk;
   final TextEditingController controller;
   final ValueChanged<String> onSend;
+  final String? hint;
   final List<String> attachments;
   final VoidCallback? onAttach;
   final ValueChanged<String>? onRemoveAttachment;
@@ -55,7 +57,7 @@ class _AgentComposerState extends State<AgentComposer> {
   Widget build(BuildContext context) {
     final talk = widget.talk;
     final hint = talk.ready
-        ? 'Ask ${talk.agentName}'
+        ? (widget.hint ?? 'Ask ${talk.agentName}')
         : talk.needsSignIn
         ? 'Sign in above, then ask'
         : talk.starting

@@ -56,10 +56,25 @@ class WorkspaceController extends ChangeNotifier {
     playhead: playhead,
     onLayersRead: () => selection.syncWithLayers(),
     onChanged: () => _tell(WorkspaceAspect.document),
-    onStructure: () => _tell(WorkspaceAspect.structure),
+    onStructure: () {
+      recordActivity('scene updated (${layers.length} layers)');
+      _tell(WorkspaceAspect.structure);
+    },
     onListed: () => _tell(WorkspaceAspect.layers),
     onStageTextureChanged: () => _tell(WorkspaceAspect.stage),
   );
+
+  /// Ring buffer of recent editing actions so ACP can infer terse/implicit prompts.
+  final List<String> _recentActivity = [];
+  List<String> get recentActivity => List.unmodifiable(_recentActivity);
+  void recordActivity(String entry) {
+    final trimmed = entry.trim();
+    if (trimmed.isEmpty) return;
+    if (_recentActivity.isNotEmpty && _recentActivity.last == trimmed) return;
+    _recentActivity.add(trimmed);
+    if (_recentActivity.length > 8) _recentActivity.removeAt(0);
+  }
+
   List<Layer> get layers => project.layers;
   Motolii? get inside => project.inside;
   VoidCallback? get refit => project.refit;
@@ -143,7 +158,13 @@ class WorkspaceController extends ChangeNotifier {
   /// The notice line and its tap action.
   late final notices = Notices(onChanged: () => _tell(WorkspaceAspect.notice));
   String? get notice => notices.notice;
-  set notice(String? said) => notices.notice = said;
+  set notice(String? said) {
+    notices.notice = said;
+    if (said != null && said.trim().isNotEmpty) {
+      recordActivity('notice: ${said.trim()}');
+    }
+  }
+
   void Function()? get noticeGo => notices.noticeGo;
   set noticeGo(void Function()? go) => notices.noticeGo = go;
   double? get noticeProgress => notices.progress;
@@ -198,24 +219,46 @@ class WorkspaceController extends ChangeNotifier {
   Set<SelectedKeyframe> get keys => selection.keys;
   Set<StretchPicked> get stretches => selection.stretches;
   StretchPicked? get stretch => selection.stretch;
-  void select(int? id) => selection.select(id);
-  void pickMany(Iterable<int> ids, {bool inOrder = false, int? lead}) =>
-      selection.pickMany(ids, inOrder: inOrder, lead: lead);
+  void select(int? id) {
+    selection.select(id);
+    if (id == null) {
+      recordActivity('cleared selection');
+    } else {
+      final name = layers.where((l) => l.id == id).firstOrNull?.name ?? '#$id';
+      recordActivity('selected "$name" (id $id)');
+    }
+  }
+
+  void pickMany(Iterable<int> ids, {bool inOrder = false, int? lead}) {
+    selection.pickMany(ids, inOrder: inOrder, lead: lead);
+    final count = selection.many.length;
+    if (count > 1) recordActivity('selected $count layers');
+  }
+
   void pickKey(SelectedKeyframe k, {bool add = false}) =>
       selection.pickKey(k, add: add);
   void pickKeys(Iterable<SelectedKeyframe> ks) => selection.pickKeys(ks);
   void clearKeys() => selection.clearKeys();
   void clearStretch() => selection.clearStretch();
-  void pickStretch(int layer, String name, int from, {bool add = false}) =>
-      selection.pickStretch(layer, name, from, add: add);
+  void pickStretch(int layer, String name, int from, {bool add = false}) {
+    selection.pickStretch(layer, name, from, add: add);
+    recordActivity('picked ease stretch "$name" on layer $layer');
+  }
+
   String? get aim => selection.aim;
   set aim(String? to) => selection.aim = to;
 
   /// The playhead.
-  late final playhead = Playhead(
+  late final Playhead playhead = Playhead(
     engine: () => inside,
     composition: _composition,
-    onPlayingChanged: () => _tell(WorkspaceAspect.playing),
+    onPlayingChanged: () {
+      if (!playhead.playing) {
+        final sec = playhead.frame / (fps > 0 ? fps : 60);
+        recordActivity('paused at ${sec.toStringAsFixed(2)}s');
+      }
+      _tell(WorkspaceAspect.playing);
+    },
   );
   ValueNotifier<int> get moment => playhead.moment;
   int get frame => playhead.frame;
