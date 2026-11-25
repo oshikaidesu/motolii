@@ -5,6 +5,8 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/custom_card_body.dart' show CardParamNames;
 import 'package:motolii/storage/agent_files.dart';
 import 'package:motolii/storage/agent_mcp_transport.dart';
 import 'package:motolii/widgets/custom_ui/panel_node.dart'
@@ -15,6 +17,8 @@ import 'package:motolii/workspace/agent/agent_registry.dart' show agentRegistry;
 import 'package:motolii/workspace/agent/layer_code.dart' show buildMotoliiGuide;
 import 'package:motolii/workspace/state/custom_panel_service.dart'
     show normalizePanelColorWord;
+import 'package:motolii/workspace/state/tiles/effect_code_cards.dart'
+    show isVismPackPath, readVismPack, vismPackCells;
 
 class _PassthroughHttpOverrides extends HttpOverrides {}
 
@@ -229,4 +233,42 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('agent-starter-ctx-1')));
     expect(picked, 'タイトル演出を組んで');
   });
+
+  test('readVismPack & vismPackCells parse bundled Kinetic Array pack', () {
+    final pack =
+        '${Directory.current.parent.path}/shelves/effects/stylize/Kinetic Array/vism.json';
+    expect(isVismPackPath(pack), isTrue);
+    final info = readVismPack(pack);
+    expect(info, isNotNull);
+    expect(info!.name, 'Kinetic Array');
+    expect(info.uiFile, endsWith('Kinetic Array.ui.js'));
+    expect(info.steps.length, 2);
+    final cells = vismPackCells(pack);
+    expect(cells.map((c) => c.role).toList(), [
+      'Vism UI',
+      'Step 1 · JS',
+      'Step 2 · ISF',
+    ]);
+  });
+
+  test(
+    'CardParamNames exposes step-prefixed names and non-colliding leaf aliases',
+    () {
+      final card = CardDeclaration('Kinetic Array', '''
+struct Params {
+  /// @label(Speed) @default(0.5)
+  js_speed: f32,
+  /// @label(Aura Speed) @default(0.2)
+  a1b2c3:js_aura_speed: f32,
+  /// @label(Glow) @default(0.35)
+  a1b2c3:js_aura_glow: f32,
+}
+''', toneOf: () => const Color(0xFF4ECDC4));
+      final names = CardParamNames(card);
+      expect(names.resolve('speed'), 'js_speed');
+      expect(names.resolve('aura_speed'), 'a1b2c3:js_aura_speed');
+      expect(names.resolve('aura_glow'), 'a1b2c3:js_aura_glow');
+      expect(names.resolve('glow'), 'a1b2c3:js_aura_glow');
+    },
+  );
 }

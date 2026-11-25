@@ -56,6 +56,8 @@ struct DocPlaceCache {
     std::string from;
     double absentAt = -1e300;
     std::vector<AbsentEffect> absent;
+    bool childrenReady = false;
+    std::vector<int> children;
   };
   // What doc_place asks of a layer's effects, which is the same for each of its
   // copies. Asked once per layer while a time is being evaluated, as for talls.
@@ -112,6 +114,10 @@ filament::math::mat4 doc_place(Doc& d, int layer, double now, int deeper = 0,
 // expressions put it, not where it has fallen to (bodies.h asks this for
 // every frame). Empty when the layer has no expressions, or is being laid.
 std::vector<ScriptCopy> doc_copies_laid(Doc& d, int layer, int n, double said);
+// Evaluates a parent group's expressions as an array over its direct child
+// layers [0..n-1] and writes the child's copy transform/opacity into `out`.
+// Returns false if `child` has no expression-bearing group parent.
+bool doc_group_array_copy(Doc& d, int child, double said, ScriptCopy* out);
 // Returns one matrix per line that joins copies of the layer named by "connect"
 // to copies of the layer named by "connect_to", or to other copies of the same
 // layer. Each line is stretched along the direction between the two copies and

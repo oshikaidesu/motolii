@@ -44,7 +44,7 @@ std::vector<std::string> doc_fx_drawn(Doc& d, std::vector<std::string> list) {
 std::vector<DocScript*> doc_expressions_fx(Doc& d, int layer) {
   std::vector<DocScript*> all;
   if (layer != 0)
-    for (const std::string& file : doc_fx_list(d, layer))
+    for (const std::string& file : doc_fx_expand(doc_fx_list(d, layer)))
       if (doc_expression(d, file))
         if (DocScript* sc = doc_script_of(d, file);
             sc && (sc->run ? sc->run->ok() : !sc->css.empty()))
@@ -315,7 +315,8 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
 
 std::string doc_expressions_said(Doc& d, int layer) {
   std::string all = doc_literal_word(d, layer, "script");
-  for (const std::string& file : doc_fx_list(d, layer)) all += " " + file;
+  for (const std::string& file : doc_fx_expand(doc_fx_list(d, layer)))
+    all += " " + file;
   return all;
 }
 

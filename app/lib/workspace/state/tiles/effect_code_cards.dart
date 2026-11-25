@@ -1,4 +1,6 @@
 // A card's code file: which file it is, its title, own-copy status, and the copy-on-first-edit mechanism.
+import 'dart:convert' show jsonDecode;
+
 import 'package:motolii/bridge/engine_paths.dart' show motoliiOwn;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
@@ -13,8 +15,75 @@ import 'package:motolii/workspace/state/media/shelf_items.dart'
 import 'package:motolii/workspace/state/tiles/tile_review.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
-// Drawn code, or an expression (a .js with each(), document/scripts/expressions.h).
-final _code = RegExp(r'\.(wgsl|fs|js)$');
+// Drawn code, an expression (.js with each()), or a multi-code Vism pack manifest (`vism.json`).
+final _code = RegExp(r'(\.(wgsl|fs|js)|/vism\.json|^vism\.json)$');
+
+/// Parsed multi-code Vism pack manifest (`vism.json`).
+typedef VismPackInfo = ({String name, String? uiFile, List<String> steps});
+
+/// True when [path] names a Vism pack manifest (`vism.json`).
+bool isVismPackPath(String path) =>
+    path == 'vism.json' || path.endsWith('/vism.json');
+
+/// Reads a `vism.json` pack manifest and resolves its UI file and ordered steps.
+VismPackInfo? readVismPack(String path) {
+  final src = codeSource(path);
+  if (!isVismPackPath(src) || !existsFile(src)) return null;
+  try {
+    final decoded = jsonDecode(textOf(src));
+    if (decoded is! Map) return null;
+    final slash = src.lastIndexOf('/');
+    final dir = slash >= 0 ? src.substring(0, slash) : '.';
+    final folder = dir.split('/').last;
+    final rawName = decoded['name'] is String
+        ? (decoded['name'] as String).trim()
+        : '';
+    final name = rawName.isNotEmpty ? rawName : folder;
+    String resolve(String rel) => rel.startsWith('/') ? rel : '$dir/$rel';
+    String? uiFile;
+    if (decoded['ui'] is String &&
+        (decoded['ui'] as String).trim().isNotEmpty) {
+      final cand = resolve((decoded['ui'] as String).trim());
+      if (existsFile(cand)) uiFile = cand;
+    }
+    uiFile ??= [
+      '$dir/$folder.ui.js',
+      '$dir/card.ui.js',
+    ].where(existsFile).firstOrNull;
+    final steps = <String>[];
+    if (decoded['steps'] is List) {
+      for (final s in decoded['steps'] as List) {
+        if (s is String && s.trim().isNotEmpty) {
+          final cand = resolve(s.trim());
+          if (existsFile(cand)) steps.add(cand);
+        }
+      }
+    }
+    return (name: name, uiFile: uiFile, steps: steps);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Ordered sub-cells of a Vism pack for the nested Code notebook: UI first, then each step.
+List<({String role, String path})> vismPackCells(String manifestPath) {
+  final pack = readVismPack(manifestPath);
+  if (pack == null) return const [];
+  final out = <({String role, String path})>[
+    if (pack.uiFile case final ui?) (role: 'Vism UI', path: ui),
+  ];
+  for (final (i, step) in pack.steps.indexed) {
+    final ext = step.split('.').last.toLowerCase();
+    final kind = switch (ext) {
+      'wgsl' => 'WGSL',
+      'fs' || 'glsl' => 'ISF',
+      'css' => 'CSS',
+      _ => 'JS',
+    };
+    out.add((role: 'Step ${i + 1} · $kind', path: step));
+  }
+  return out;
+}
 
 /// The code file and slot for the card [title] on layer [thing]. Null when the card has no code.
 /// Matched by parameter names (`js_<stem>_<param>`), not by title alone (two cards can share a title).
@@ -43,6 +112,10 @@ String? codeFileOf(String fx, String title, List<String> names) {
     final file = codeSource(w),
         stem = TileReview.knobStem(w),
         titled = codeTitleOf(w) == title;
+    if (isVismPackPath(file)) {
+      if (titled) return w;
+      continue;
+    }
     // A three.js effect is run as a scene once saved (doc_three_saved).
     if (w.endsWith('.js') && _three(file)) continue;
     // A card's own parameters begin with js_. The first card with code on a layer also shows values of the layer
@@ -79,6 +152,10 @@ String? codeFileOf(String fx, String title, List<String> names) {
 String codeTitleOf(String w) {
   final file = codeSource(w),
       stem = w.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '');
+  if (isVismPackPath(file)) {
+    return readVismPack(file)?.name ??
+        file.substring(0, file.lastIndexOf('/')).split('/').last;
+  }
   if (file != w) {
     return '${codeTitleOf(file)} ${stem.substring(stem.lastIndexOf('~') + 1)}';
   }
@@ -140,7 +217,10 @@ bool codeAlone(WorkspaceController ws, int thing, String word, String slot) {
 
 /// Whether the card's title comes from the code's first line (and can therefore be renamed).
 bool codeNamedInText(String word, String slot) =>
-    slot == 'fx' && !word.endsWith('.fs') && codeSource(word) == word;
+    slot == 'fx' &&
+    !word.endsWith('.fs') &&
+    !isVismPackPath(word) &&
+    codeSource(word) == word;
 
 /// [text] with the first-line name changed to [name]. The file keeps its name so values and keys stay.
 String codeRenamed(String text, String name) {
@@ -185,9 +265,24 @@ void codeRename(
   });
 }
 
-/// Copies companion files (ISF .vs, first.tsv, images) to [dir].
+/// Copies companion files (ISF .vs, Vism pack ui & steps, first.tsv, images) to [dir].
 void codeBeside(String from, String word, String dir) {
   final home = from.substring(0, from.lastIndexOf('/'));
+  if (isVismPackPath(from)) {
+    final pack = readVismPack(from);
+    if (pack != null) {
+      if (pack.uiFile case final ui?) {
+        copyFile(ui, '$dir/${ui.split('/').last}');
+      }
+      for (final step in pack.steps) {
+        copyFile(step, '$dir/${step.split('/').last}');
+        if (step.endsWith('.fs')) {
+          final vs = step.replaceFirst(RegExp(r'\.fs$'), '.vs');
+          if (existsFile(vs)) copyFile(vs, '$dir/${vs.split('/').last}');
+        }
+      }
+    }
+  }
   if (from.endsWith('.fs')) {
     final vs = from.replaceFirst(RegExp(r'\.fs$'), '.vs');
     if (existsFile(vs)) copyFile(vs, '$dir/${vs.split('/').last}');

@@ -16,11 +16,18 @@
 #include <sqlite3.h>
 
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <string>
 
+#include "community/quickjs/panel_script.h"
 #include "document/document.h"
 #include "document/evaluate/camera.h"
+#include "document/evaluate/fx_list.h"
+#include "document/evaluate/place.h"
+#include "document/evaluate/relations.h"
 #include "document/evaluate/value_at.h"
+#include "document/scripts/expressions.h"
 
 namespace motolii {
 namespace {
@@ -312,6 +319,101 @@ TEST(Cards, EnvironmentLayerExposesRoomCardAndAnimatedIntensityRotation) {
   doc_forget(*env.d);
   EXPECT_NEAR(doc_number(*env.d, 1, "environment", 1.0, 1.0), 1.5, 1e-5);
   EXPECT_NEAR(doc_number(*env.d, 1, "environment_rotate", 1.0, 0.0), 90.0, 1e-5);
+}
+
+TEST(Cards, VismPackMergesExpressionAndShaderIntoOneCardAndExpandsSteps) {
+  const std::filesystem::path dir =
+      std::filesystem::temp_directory_path() / "motolii_vism_pack_test";
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+  std::filesystem::create_directories(dir, ec);
+
+  {
+    std::ofstream(dir / "motion.js")
+        << "// --track@amp:Amp,0,2,0.5,0.01\n"
+           "function each(i, n, t, k) { return { x: i * k.amp }; }\n";
+    std::ofstream(dir / "glow.fs")
+        << "/*{\"ISFVSN\":\"2\",\"INPUTS\":["
+           "{\"NAME\":\"inputImage\",\"TYPE\":\"image\"},"
+           "{\"NAME\":\"amount\",\"TYPE\":\"float\",\"DEFAULT\":0.4,\"MIN\":0,\"MAX\":1}"
+           "]}*/\n"
+           "void main() { gl_FragColor = IMG_NORM_PIXEL(inputImage, isf_FragNormCoord); }\n";
+    std::ofstream(dir / "KineticAura.ui.js")
+        << "function renderCard(ctx) { return ui.text('pack'); }\n";
+    std::ofstream(dir / "vism.json")
+        << "{\"name\":\"Kinetic Aura\",\"ui\":\"KineticAura.ui.js\","
+           "\"steps\":[\"motion.js\",\"glow.fs\"]}\n";
+  }
+
+  const std::string packPath = (dir / "vism.json").generic_string();
+  Layer shape("shape");
+  shape.Say("shape", "rect");
+  shape.Say("fx", ("a1b2c3:" + packPath).c_str());
+
+  const std::string cards = shape.Cards();
+  EXPECT_TRUE(Has(cards, "Kinetic Aura")) << cards;
+  EXPECT_FALSE(Has(cards, "Motion")) << cards;
+  EXPECT_FALSE(Has(cards, "glow")) << cards;
+  const size_t at = cards.find("Kinetic Aura:");
+  ASSERT_NE(at, std::string::npos);
+  const std::string line = cards.substr(at, cards.find(';', at) - at);
+  EXPECT_NE(line.find("js_amp"), std::string::npos) << line;
+  EXPECT_NE(line.find("a1b2c3:js_glow_amount"), std::string::npos) << line;
+
+  const auto steps = doc_fx_steps_with_ids(*shape.d, 1);
+  ASSERT_EQ(steps.size(), 1u);
+  EXPECT_EQ(steps[0], "a1b2c3:" + (dir / "glow.fs").generic_string());
+  const auto exprs = doc_expressions_fx(*shape.d, 1);
+  EXPECT_EQ(exprs.size(), 1u);
+  EXPECT_EQ(panel_card_ui_file(packPath),
+            (dir / "KineticAura.ui.js").generic_string());
+
+  std::filesystem::remove_all(dir, ec);
+}
+
+TEST(Cards, GroupLayerExpressionDrivesDirectChildrenAsArrayAndOpacity) {
+  const std::filesystem::path dir =
+      std::filesystem::temp_directory_path() / "motolii_group_array_test";
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+  std::filesystem::create_directories(dir, ec);
+
+  const std::filesystem::path exprFile = dir / "array_spread.js";
+  {
+    std::ofstream(exprFile)
+        << "// --track@gap:Gap,0,2,0.5,0.01\n"
+           "function each(i, n, t, k) {\n"
+           "  return { x: i * k.gap, opacity: 1.0 - i * 0.25 };\n"
+           "}\n";
+  }
+
+  Layer grp("shape");
+  grp.Say("shape", "null", 1);
+  grp.Put("order", 1.0, 1);
+  grp.Say("fx", ("b1c2d3:" + exprFile.generic_string()).c_str(), 1);
+
+  for (int id = 2; id <= 4; ++id) {
+    grp.Say("kind", "shape", id);
+    grp.Say("shape", "rect", id);
+    grp.Put("parent", 1.0, id);
+    grp.Put("order", (double)id, id);
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    const int child = 2 + i;
+    ScriptCopy c;
+    ASSERT_TRUE(doc_group_array_copy(*grp.d, child, 0.0, &c));
+    EXPECT_NEAR(c.x, i * 0.5, 1e-5);
+    EXPECT_NEAR(c.opacity, 1.0 - i * 0.25, 1e-5);
+    const auto m = doc_place(*grp.d, child, 0.0);
+    EXPECT_NEAR(m[3].x, i * 0.5, 1e-5);
+    EXPECT_NEAR(doc_group_opacity(*grp.d, child, 0.0), 1.0 - i * 0.25, 1e-5);
+  }
+  // Group hull itself must not double-apply child[0]'s offset.
+  const auto grpM = doc_place(*grp.d, 1, 0.0);
+  EXPECT_NEAR(grpM[3].x, 0.0, 1e-5);
+
+  std::filesystem::remove_all(dir, ec);
 }
 
 }  // namespace

@@ -1,0 +1,6 @@
+{
+  "name": "Kinetic Array",
+  "about": "Group/layer array motion (each) + aura shader packed into one visual Inspector Vism card",
+  "ui": "Kinetic Array.ui.js",
+  "steps": ["motion.js", "aura.fs"]
+}

@@ -24,8 +24,10 @@ class CardParamNames {
     final ids = [for (final p in card.params) p.id];
     final prefix = _commonJsPrefix(ids);
     final jsHead = RegExp(r'^([0-9a-f]{6}:)?js_');
+    final rawById = <String, String>{};
     for (final id in ids) {
       final rawName = id.replaceFirst(jsHead, '');
+      rawById[id] = rawName;
       final short = prefix.isNotEmpty && id.startsWith(prefix)
           ? id.substring(prefix.length)
           : rawName;
@@ -33,6 +35,27 @@ class CardParamNames {
       shortToFull[short] = id;
       fullToShort[id] = short;
       fullToAliases[id] = {rawName, short};
+    }
+    // Multi-step Vism packs mix `js_<param>` (expression) and `id:js_<stem>_<param>`
+    // (shader). Expose the trailing leaf alias (`amount` for `glow_amount`) when it
+    // does not collide across steps; colliding names keep their step-prefixed form.
+    final leafCounts = <String, int>{};
+    final leafById = <String, String>{};
+    for (final entry in rawById.entries) {
+      final raw = entry.value;
+      final cut = raw.lastIndexOf('_');
+      if (cut > 0 && cut + 1 < raw.length) {
+        final leaf = raw.substring(cut + 1);
+        leafById[entry.key] = leaf;
+        leafCounts[leaf] = (leafCounts[leaf] ?? 0) + 1;
+      }
+    }
+    for (final entry in leafById.entries) {
+      final leaf = entry.value;
+      if (leafCounts[leaf] == 1 && !shortToFull.containsKey(leaf)) {
+        shortToFull[leaf] = entry.key;
+        fullToAliases[entry.key]!.add(leaf);
+      }
     }
   }
 

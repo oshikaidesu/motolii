@@ -455,6 +455,32 @@ std::string panel_card_ui_file(const std::string& effect_path) {
   if (effect_path.empty()) return "";
   std::error_code ec;
   const std::filesystem::path p(resolve_shelf_path(effect_path));
+  // Vism pack manifest (`vism.json`): resolve its declared `ui` file (or
+  // `<folder>.ui.js` / `card.ui.js` beside it).
+  if (p.filename() == "vism.json" && std::filesystem::is_regular_file(p, ec)) {
+    const std::string text = read_text(p);
+    const size_t key = text.find("\"ui\"");
+    if (key != std::string::npos) {
+      const size_t colon = text.find(':', key + 4);
+      const size_t q1 = colon != std::string::npos ? text.find('"', colon + 1)
+                                                   : std::string::npos;
+      const size_t q2 =
+          q1 != std::string::npos ? text.find('"', q1 + 1) : std::string::npos;
+      if (q2 != std::string::npos && q2 > q1 + 1) {
+        const std::filesystem::path uiPath =
+            p.parent_path() / text.substr(q1 + 1, q2 - q1 - 1);
+        if (std::filesystem::is_regular_file(uiPath, ec))
+          return uiPath.generic_string();
+      }
+    }
+    for (const std::filesystem::path& cand :
+         {p.parent_path() / (p.parent_path().filename().string() + ".ui.js"),
+          p.parent_path() / "card.ui.js"}) {
+      if (std::filesystem::is_regular_file(cand, ec))
+        return cand.generic_string();
+    }
+    return "";
+  }
   const std::filesystem::path sidecar =
       p.parent_path() / (p.stem().string() + ".ui.js");
   if (std::filesystem::is_regular_file(sidecar, ec)) {

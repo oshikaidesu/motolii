@@ -14,6 +14,26 @@ namespace motolii {
 
 struct Doc;
 
+// A multi-code Vism pack folder described by `vism.json`: bundles Expression,
+// p5/Three, WGSL/ISF/TSL steps into one Inspector Vism card while keeping each
+// source file intact for nested Code notebook editing.
+struct VismPack {
+  std::string name;
+  std::string ui;
+  std::vector<std::string> steps;
+  long long stamp = -1;
+  int seen = -1;
+};
+
+// Returns true when `file` (with or without an instance-ID prefix) names a
+// Vism pack manifest (`vism.json`).
+bool vism_pack_is(const std::string& file);
+// Reads and caches a Vism pack manifest (`vism.json`), or returns nullptr.
+const VismPack* doc_vism_pack(const std::string& file);
+// Expands any Vism pack (`vism.json`) entries in `list` into their ordered step
+// file paths; non-pack paths pass through unchanged.
+std::vector<std::string> doc_fx_expand(const std::vector<std::string>& list);
+
 // Returns the files of the layer's effects in the order they are laid, like
 // the effect stack of After Effects. The "fx" property names them in order;
 // each is the file alone, without the ID an entry may carry (fx_entry_id in

@@ -12,6 +12,7 @@
 
 #include "base/file_read.h"
 #include "document/card_table.h"
+#include "document/evaluate/place.h"
 #include "document/evaluate/shown.h"
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
@@ -496,13 +497,16 @@ bool doc_shutter(Doc& d, int layer, double now, double* open, bool* moves) {
 double doc_group_opacity(Doc& d, int layer, double now) {
   double k = 1.0;
   // Stop after 64 levels so that a cycle of parents terminates.
-  for (int up = (int)doc_number(d, layer, "parent", 0, 0), n = 0;
+  for (int cur = layer, up = (int)doc_number(d, layer, "parent", 0, 0), n = 0;
        up && n < 64 && k > 0.0;
-       up = (int)doc_number(d, up, "parent", 0, 0), ++n)
-    if (doc_word(d, up, "shape") == "null")
+       cur = up, up = (int)doc_number(d, up, "parent", 0, 0), ++n)
+    if (doc_word(d, up, "shape") == "null") {
       k *= doc_number(d, up, "visible", 0, 1) > 0.5
                ? std::clamp(doc_number(d, up, "opacity", now, 1), 0.0, 1.0)
                : 0.0;
+      if (ScriptCopy grpCopy; doc_group_array_copy(d, cur, now, &grpCopy))
+        k *= std::clamp(grpCopy.opacity, 0.0, 1.0);
+    }
   return k;
 }
 

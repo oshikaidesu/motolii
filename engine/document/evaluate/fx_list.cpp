@@ -5,7 +5,10 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <map>
 
+#include "base/file_read.h"
+#include "base/json.h"
 #include "community/after_effects_plugin/ae_plugin.h"
 #include "community/aviutl/aviutl.h"
 #include "community/isf/isf.h"
@@ -18,9 +21,87 @@
 #include "document/evaluate/value_at.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/scripts.h"
+#include "shelf/shelf_folders.h"
 #include "stage/layer_effects/layer_fx.h"
 
 namespace motolii {
+
+bool vism_pack_is(const std::string& file) {
+  if (file.empty()) return false;
+  const std::string path = fx_source(fx_entry_path(file));
+  return std::filesystem::path(path).filename() == "vism.json";
+}
+
+const VismPack* doc_vism_pack(const std::string& file) {
+  if (!vism_pack_is(file)) return nullptr;
+  const std::string path = fx_source(fx_entry_path(file));
+  static std::map<std::string, VismPack> cache;
+  VismPack& p = cache[path];
+  if (p.stamp >= 0 && p.seen == files_changed()) return &p;
+  std::error_code ec;
+  const long long stamp =
+      (long long)std::filesystem::last_write_time(path, ec)
+          .time_since_epoch()
+          .count();
+  p.seen = files_changed();
+  if (ec) return p.stamp >= 0 ? &p : nullptr;
+  if (p.stamp == stamp) return &p;
+
+  const std::string text = read_text(path);
+  rapidjson::Document doc;
+  if (doc.Parse(text.c_str()).HasParseError() || !doc.IsObject())
+    return p.stamp >= 0 ? &p : nullptr;
+
+  const std::filesystem::path dir = std::filesystem::path(path).parent_path();
+  VismPack fresh;
+  fresh.stamp = stamp;
+  fresh.seen = files_changed();
+  fresh.name = (doc.HasMember("name") && doc["name"].IsString() &&
+                doc["name"].GetStringLength() > 0)
+                   ? doc["name"].GetString()
+                   : dir.filename().generic_string();
+  if (doc.HasMember("ui") && doc["ui"].IsString() &&
+      doc["ui"].GetStringLength() > 0) {
+    const std::filesystem::path uiPath = dir / doc["ui"].GetString();
+    if (std::filesystem::is_regular_file(uiPath, ec))
+      fresh.ui = uiPath.generic_string();
+  }
+  if (fresh.ui.empty()) {
+    for (const std::filesystem::path& cand :
+         {dir / (dir.filename().generic_string() + ".ui.js"),
+          dir / "card.ui.js"}) {
+      if (std::filesystem::is_regular_file(cand, ec)) {
+        fresh.ui = cand.generic_string();
+        break;
+      }
+    }
+  }
+  if (doc.HasMember("steps") && doc["steps"].IsArray()) {
+    for (const auto& item : doc["steps"].GetArray()) {
+      if (!item.IsString() || item.GetStringLength() == 0) continue;
+      const std::filesystem::path rel(item.GetString());
+      const std::filesystem::path resolved =
+          rel.is_absolute() ? rel : (dir / rel);
+      if (std::filesystem::is_regular_file(resolved, ec))
+        fresh.steps.push_back(resolved.generic_string());
+    }
+  }
+  p = std::move(fresh);
+  return &p;
+}
+
+std::vector<std::string> doc_fx_expand(const std::vector<std::string>& list) {
+  std::vector<std::string> out;
+  out.reserve(list.size());
+  for (const std::string& w : list) {
+    if (const VismPack* pack = doc_vism_pack(w)) {
+      for (const std::string& step : pack->steps) out.push_back(step);
+    } else {
+      out.push_back(w);
+    }
+  }
+  return out;
+}
 
 std::vector<std::string> doc_fx_entries(Doc& d, int layer, bool off) {
   std::vector<std::string> said, all;
@@ -54,7 +135,9 @@ std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
 
 std::string doc_fx_values_id(Doc& d, const std::string& entry) {
   const std::string id = fx_entry_id(entry), file = fx_entry_path(entry);
-  if (id.empty() || doc_expression(d, file)) return "";
+  if (id.empty()) return "";
+  if (vism_pack_is(file)) return id;
+  if (doc_expression(d, file)) return "";
   // As thing_effects (layer_fx.cpp) chooses what it builds as a shader.
   const std::string ext =
       std::filesystem::path(file).extension().generic_string();
@@ -70,6 +153,8 @@ bool doc_fx_files(const std::vector<std::string>& list) {
   // engine/community/absent_motion/absent_motion.h.
   // Filament's own settings belong to the stage.
   return std::any_of(list.begin(), list.end(), [](const std::string& w) {
+    if (const VismPack* pack = doc_vism_pack(w))
+      return doc_fx_files(pack->steps);
     const std::string ext =
         std::filesystem::path(w).extension().generic_string();
     return ext != ".mjs" && ext != ".am" && ext != ".json";
@@ -78,10 +163,8 @@ bool doc_fx_files(const std::vector<std::string>& list) {
 std::vector<std::string> doc_fx_steps_with_ids(Doc& d, int layer) {
   // An entry keeps its ID only where what draws it reads its values by it.
   std::vector<std::string> result;
-  for (const std::string& w : doc_fx_entries(d, layer)) {
-    const std::string id = doc_fx_values_id(d, w);
-    std::string path = fx_entry_path(w);
-    if (doc_expression(d, path)) continue;
+  const auto push_step = [&](const std::string& id, std::string path) {
+    if (doc_expression(d, path)) return;
     if (std::filesystem::path(path).extension() == ".am")
       if (const DocScript* sc = doc_script_of(d, path);
           sc && (sc->absent == "motionblur" || sc->absent == "shutterblur"))
@@ -89,6 +172,15 @@ std::vector<std::string> doc_fx_steps_with_ids(Doc& d, int layer) {
                 "am_directionalblur.wgsl")
                    .generic_string();
     result.push_back(id.empty() ? path : id + ":" + path);
+  };
+  for (const std::string& w : doc_fx_entries(d, layer)) {
+    const std::string id = doc_fx_values_id(d, w);
+    const std::string path = fx_entry_path(w);
+    if (const VismPack* pack = doc_vism_pack(path)) {
+      for (const std::string& step : pack->steps) push_step(id, step);
+    } else {
+      push_step(id, path);
+    }
   }
   return result;
 }
@@ -123,7 +215,8 @@ bool doc_fx(Doc& d, int layer, double at, bool most, Canvas2DFx& fx,
   };
   bool ok = true;
   // Expressions lay copies and are not drawn.
-  for (const std::string& w : doc_fx_drawn(d, doc_fx_list(d, layer))) {
+  for (const std::string& w :
+       doc_fx_drawn(d, doc_fx_expand(doc_fx_list(d, layer)))) {
     // The file is resolved as a canvas layer's own file is, see doc_match. An
     // effect put on again uses its own file, see fx_source.
     if (ae_plugin_is(w) ? !std::filesystem::exists(w)

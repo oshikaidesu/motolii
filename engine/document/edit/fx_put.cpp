@@ -18,6 +18,7 @@
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/value_at.h"
+#include "document/scripts/expressions.h"
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
 #include "shelf/shelf_folders.h"
@@ -293,15 +294,23 @@ bool doc_fx_out(Doc& d, int layer, const char* name) {
       std::any_of(list.begin(), list.end(), [&](const std::string& w) {
         return fx_entry_path(w) == file;
       });
-  if (const DocScript* sc = shared ? nullptr : doc_script_of(d, file))
-    for (const std::string& n : sc->names) {
-      const std::string key = id.empty() ? n : id + ":" + n;
-      if (!doc_change(d,
-                      sqlite3_mprintf(
-                          "delete from keyframe where layer = %d and name = %Q",
-                          layer, key.c_str())))
-        d.act.ok = false;
-    }
+  const auto drop_keys = [&](const std::string& path, bool use_id) {
+    if (const DocScript* sc = shared ? nullptr : doc_script_of(d, path))
+      for (const std::string& n : sc->names) {
+        const std::string key = (!use_id || id.empty()) ? n : id + ":" + n;
+        if (!doc_change(d,
+                        sqlite3_mprintf(
+                            "delete from keyframe where layer = %d and name = %Q",
+                            layer, key.c_str())))
+          d.act.ok = false;
+      }
+  };
+  if (const VismPack* pack = doc_vism_pack(file)) {
+    for (const std::string& step : pack->steps)
+      drop_keys(step, !doc_expression(d, step));
+  } else {
+    drop_keys(file, true);
+  }
   return doc_acted(d);
 }
 

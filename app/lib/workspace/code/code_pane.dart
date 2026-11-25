@@ -21,6 +21,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/open_in_host.dart'
     show externalEditorName, openInEditor;
+import 'package:motolii/storage/shelf_disk.dart' show writeText;
 import 'package:motolii/storage/shelf_meta.dart' show shelfMetaOfFile;
 import 'package:motolii/storage/text_file.dart' show readText;
 import 'package:motolii/widgets/app_glyphs.dart' show AppGlyphs;
@@ -37,9 +38,11 @@ import 'package:motolii/workspace/shelf/code_field.dart' show CodeField;
 import 'package:motolii/workspace/shelf/effect_code.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart' show ShelfNameField;
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show reloadAgentShelves;
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:motolii/workspace/state/tiles/effect_code_cards.dart'
-    show codeNameRefused;
+    show codeNameRefused, codeWritten, isVismPackPath, vismPackCells;
 import 'package:motolii/workspace/state/inspector/inspector_actions.dart'
     show effectTitles, effectsOff, moveEffect, removeCard, toggleEffect;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -331,7 +334,12 @@ class _CellState extends State<_Cell> {
   /// names it under the layer (`// --property:rotation` says Expression: Rotation, read as engine/community/sites/adapter.cpp
   /// reads it); for any other code, what it is written in, said by the file's ending.
   String get _on {
-    final text = readText(EffectCode.source(widget.code.word)) ?? '';
+    final src = EffectCode.source(widget.code.word);
+    if (isVismPackPath(src)) {
+      final n = vismPackCells(src).length;
+      return 'Vism Pack · $n ${n == 1 ? 'cell' : 'cells'}';
+    }
+    final text = readText(src) ?? '';
     final named = RegExp(r'//\s*--property:\s*(\w+)')
         .firstMatch(text)
         ?.group(1);
@@ -473,17 +481,212 @@ class _CellState extends State<_Cell> {
         fieldKey: ValueKey('code-cell-tag-input:${widget.title}'),
       ),
       if (widget.open)
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            WindowTokens.inset,
-            Shape.s(4),
-            WindowTokens.inset,
-            Shape.s(8),
-          ),
-          child: widget.code,
-        ),
+        isVismPackPath(EffectCode.source(widget.code.word))
+            ? _PackNestedCells(
+                ws: widget.code.ws,
+                thing: widget.code.thing,
+                manifestWord: widget.code.word,
+                slot: widget.code.slot,
+              )
+            : Padding(
+                padding: EdgeInsets.fromLTRB(
+                  WindowTokens.inset,
+                  Shape.s(4),
+                  WindowTokens.inset,
+                  Shape.s(8),
+                ),
+                child: widget.code,
+              ),
     ],
   );
+}
+
+/// Nested notebook sub-cells for a multi-code Vism pack (`vism.json`):
+/// exposes Vism UI (`.ui.js`) and every step (Expression / p5.js / WGSL / ISF)
+/// inside the parent pack cell so users can inspect or hack any layer directly.
+class _PackNestedCells extends StatefulWidget {
+  const _PackNestedCells({
+    required this.ws,
+    required this.thing,
+    required this.manifestWord,
+    required this.slot,
+  });
+  final WorkspaceController ws;
+  final int thing;
+  final String manifestWord;
+  final String slot;
+
+  @override
+  State<_PackNestedCells> createState() => _PackNestedCellsState();
+}
+
+class _PackNestedCellsState extends State<_PackNestedCells> {
+  final Set<String> _closed = {};
+  final Map<String, String> _errors = {};
+  String? _ownedManifest;
+
+  String get _manifest =>
+      _ownedManifest ?? EffectCode.source(widget.manifestWord);
+
+  void _saveSubFile(String subPath, String text) {
+    final ws = widget.ws;
+    final fileName = subPath.split('/').last;
+    void writeAndReload(String targetPath) {
+      writeText(targetPath, text);
+      if (targetPath.endsWith('.ui.js')) {
+        reloadAgentShelves(ws);
+        if (mounted) setState(() => _errors.remove(fileName));
+      } else {
+        codeWritten(ws, targetPath, (done, why) {
+          if (!mounted) return;
+          setState(() {
+            if (done) {
+              _errors.remove(fileName);
+            } else {
+              _errors[fileName] = why.trim();
+            }
+          });
+        });
+      }
+    }
+
+    if (EffectCode.alone(ws, widget.thing, widget.manifestWord, widget.slot) ||
+        _ownedManifest != null) {
+      writeAndReload(subPath);
+      return;
+    }
+    final (_, toManifest, read) = EffectCode.copyOwn(
+      ws,
+      widget.thing,
+      widget.manifestWord,
+      widget.slot,
+    );
+    _ownedManifest = toManifest;
+    final newDir = toManifest.substring(0, toManifest.lastIndexOf('/'));
+    ws.after(read, (_, _) => writeAndReload('$newDir/$fileName'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cells = vismPackCells(_manifest);
+    return Container(
+      margin: EdgeInsets.fromLTRB(
+        WindowTokens.inset + Shape.s(8),
+        Shape.s(4),
+        WindowTokens.inset,
+        Shape.s(8),
+      ),
+      padding: EdgeInsets.only(left: Shape.s(8)),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: Accent.fill.withValues(alpha: 0.45),
+            width: 2,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [for (final c in cells) _subCell(c.role, c.path)],
+      ),
+    );
+  }
+
+  Widget _subCell(String role, String path) {
+    final name = path.split('/').last;
+    final open = !_closed.contains(name);
+    final err = _errors[name] ?? '';
+    return Padding(
+      padding: EdgeInsets.only(bottom: Shape.s(6)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: WindowTokens.well,
+          borderRadius: Shape.round(WindowTokens.radius),
+          border: Border.all(color: WindowTokens.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: Shape.z(22),
+              padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Pressable(
+                      onTap: () => setState(() {
+                        if (!_closed.remove(name)) _closed.add(name);
+                      }),
+                      builder: (_, hot) => Row(
+                        key: ValueKey('vism-subcell-head:$name'),
+                        children: [
+                          DisclosureTriangle(open: open, hot: hot),
+                          SizedBox(width: Shape.s(5)),
+                          Text(
+                            role,
+                            style: TextStyles.micro(Accent.ink)
+                                .copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          SizedBox(width: Shape.s(6)),
+                          Flexible(
+                            child: Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyles.micro(
+                                hot ? Grey.g95 : Grey.g76,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Tip(
+                    'Open in ${externalEditorName()}',
+                    child: Pressable(
+                      onTap: () => openInEditor(path),
+                      builder: (_, h) => Glyph(
+                        AppGlyphs.link,
+                        size: 11,
+                        color: h ? Grey.g95 : Grey.g56,
+                        fade: true,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (open)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  Shape.s(6),
+                  0,
+                  Shape.s(6),
+                  Shape.s(6),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    CodeField(
+                      path,
+                      (text) => _saveSubFile(path, text),
+                      key: ValueKey('vism-subcell-code:$path'),
+                      fit: true,
+                    ),
+                    if (err.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: Shape.s(4)),
+                        child: Text(err, style: TextStyles.micro(Role.error)),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// The row under the cells that starts an empty expression on the layer; [why] is why the last try was refused.

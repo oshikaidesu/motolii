@@ -2,6 +2,7 @@
 
 #include <filament/RenderableManager.h>
 
+#include <algorithm>
 #include <set>
 
 #include "community/script_runner/script_runner.h"
@@ -162,7 +163,55 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
   }
   return out;
 }
+
+// Direct child layers of a group (`shape == "null"`) in layer stack order,
+// cached per evaluation frame.
+std::vector<int> doc_group_children(Doc& d, int group) {
+  const auto collect = [&] {
+    std::vector<int> kids;
+    if (doc_literal_word(d, group, "shape") != "null") return kids;
+    for (const int t : doc_laid(d))
+      if (t != group && (int)doc_literal(d, t, "parent", 0, 0) == group)
+        kids.push_back(t);
+    return kids;
+  };
+  if (!d.place_cache.evaluating) return collect();
+  DocPlaceCache::Placing& kept = d.place_cache.placing[group];
+  if (!kept.childrenReady) kept.childrenReady = true, kept.children = collect();
+  return kept.children;
+}
+
+math::mat4 script_copy_matrix(const ScriptCopy& c) {
+  const double* m = c.matrix;
+  return math::mat4::rotation(c.rotate * (double)TAU / 360.0,
+                              math::double3{0, 0, 1}) *
+         math::mat4::rotation(c.rotate_y * (double)TAU / 360.0,
+                              math::double3{0, 1, 0}) *
+         math::mat4::rotation(c.rotate_x * (double)TAU / 360.0,
+                              math::double3{1, 0, 0}) *
+         math::mat4::scaling(math::double3{c.size * c.scale_x,
+                                           c.size * c.scale_y,
+                                           c.size * c.scale_z}) *
+         math::mat4(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9],
+                    m[10], m[11], m[12], m[13], m[14], m[15]);
+}
 }  // namespace
+
+bool doc_group_array_copy(Doc& d, int child, double said, ScriptCopy* out) {
+  if (!out) return false;
+  const int parent = (int)doc_literal(d, child, "parent", 0, 0);
+  if (parent <= 0 || parent == child) return false;
+  if (doc_literal_word(d, parent, "shape") != "null") return false;
+  if (doc_placing_scs(d, parent).empty()) return false;
+  const std::vector<int> kids = doc_group_children(d, parent);
+  const auto it = std::find(kids.begin(), kids.end(), child);
+  if (it == kids.end()) return false;
+  const int idx = (int)(it - kids.begin());
+  const DocLaid laid = doc_laid(d, parent, idx, (int)kids.size(), said);
+  if (laid.by != 2) return false;
+  *out = laid.c;
+  return true;
+}
 
 std::vector<ScriptCopy> doc_copies_laid(Doc& d, int layer, int n, double said) {
   const std::vector<DocScript*> scs = doc_placing_scs(d, layer);
@@ -219,10 +268,21 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
   // gaps. The script or the MIDI file places it (doc_laid) relative to the
   // layer's own position. Then it is rotated and scaled as they say, about its
   // anchor.
+  // A group with children applies its expressions as an array over its child
+  // layers (doc_group_array_copy) rather than offsetting the group hull itself.
+  const bool groupDrivesChildren =
+      doc_literal_word(d, layer, "shape") == "null" &&
+      !doc_group_children(d, layer).empty();
   const int n = member ? doc_members(d, layer) : 1;
-  const DocLaid laid = member ? doc_laid(d, layer, copy, n, said) : DocLaid{};
+  const DocLaid laid = (member && !groupDrivesChildren)
+                           ? doc_laid(d, layer, copy, n, said)
+                           : DocLaid{};
   math::double3 shift{0.0};
   math::mat4 own;
+  if (ScriptCopy grpCopy; doc_group_array_copy(d, layer, said, &grpCopy)) {
+    shift += math::double3{grpCopy.x, grpCopy.y, grpCopy.z};
+    own = own * script_copy_matrix(grpCopy);
+  }
   if (member) {
     // Apply the scripted offset first, so that a falloff reads the position
     // where the copy lies.

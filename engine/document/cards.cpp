@@ -157,6 +157,7 @@ std::string doc_fx_title(const std::string& name) {
   const std::string path = fx_entry_path(name);
   if (path != name) return doc_fx_title(path);
   if (ae_plugin_is(path)) return ae_plugin_title(path);
+  if (const VismPack* pack = doc_vism_pack(path)) return pack->name;
   if (const std::string source = fx_source(name); source != name) {
     // An effect duplicated from another: the title of its source plus its
     // number, such as "Glow 2". It has its own card.
@@ -373,13 +374,32 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
       const std::string id = doc_fx_values_id(d, entry);
       const std::string w = fx_entry_path(entry);
       std::string card;
-      if (const DocScript* sc = doc_script_of(d, w))
-        for (const DocValue& one : sc->values)
-          card += (card.empty() ? "" : " ") +
-                  (id.empty() ? std::string(one.name) : id + ":" + one.name);
-      if (!copies && doc_expression(d, w))
-        card = "copies" + std::string(card.empty() ? "" : " ") + card + copied,
-        copies = true;
+      if (const VismPack* pack = doc_vism_pack(w)) {
+        bool hasExpr = false;
+        for (const std::string& step : pack->steps) {
+          const bool expr = doc_expression(d, step);
+          hasExpr = hasExpr || expr;
+          if (const DocScript* sc = doc_script_of(d, step))
+            for (const DocValue& one : sc->values) {
+              const std::string key =
+                  (expr || id.empty()) ? std::string(one.name)
+                                       : id + ":" + one.name;
+              if ((" " + card + " ").find(" " + key + " ") == std::string::npos)
+                card += (card.empty() ? "" : " ") + key;
+            }
+        }
+        if (!copies && hasExpr)
+          card = "copies" + std::string(card.empty() ? "" : " ") + card + copied,
+          copies = true;
+      } else {
+        if (const DocScript* sc = doc_script_of(d, w))
+          for (const DocValue& one : sc->values)
+            card += (card.empty() ? "" : " ") +
+                    (id.empty() ? std::string(one.name) : id + ":" + one.name);
+        if (!copies && doc_expression(d, w))
+          card = "copies" + std::string(card.empty() ? "" : " ") + card + copied,
+          copies = true;
+      }
       card = doc_fx_title(w) + ": " + card;
       all += (all.empty() ? "" : "; ") + card;
     }

@@ -65,9 +65,10 @@ std::string doc_screen_parameter(const std::string& file,
 
 DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
   // The notes of a MIDI file are copies, not a script, see
-  // engine/media/midi_notes.h.
+  // engine/media/midi_notes.h. A Vism pack manifest (`vism.json`) delegates to
+  // its step files rather than acting as a single script or Lottie file.
   if (file.empty() || file == "none" ||
-      std::filesystem::path(file).extension() == ".mid")
+      std::filesystem::path(file).extension() == ".mid" || vism_pack_is(file))
     return nullptr;
   DocScript& s = doc_scripts(d)[file];
   // Checked already. This must come first, because the code below opens the
@@ -211,7 +212,7 @@ std::vector<DocScript*> doc_scripts_on(Doc& d, int layer) {
   std::vector<DocScript*> all;
   if (layer != 0) {
     if (DocScript* sc = doc_script_of(d, said)) all.push_back(sc);
-    for (const std::string& file : doc_fx_list(d, layer, true))
+    for (const std::string& file : doc_fx_expand(doc_fx_list(d, layer, true)))
       if (DocScript* sc = doc_script_of(d, file)) all.push_back(sc);
     // An image layer can be an After Effects file, which has slots, or a
     // sketch, which has lines that draw. The image layer runs a sketch itself,
