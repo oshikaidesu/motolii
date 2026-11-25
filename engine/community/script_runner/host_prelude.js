@@ -1,4 +1,4 @@
-// Concise, typed host API over project_reads.cpp natives (see motolii_host.d.ts).
+// Concise, typed host API over project_reads.cpp natives (see shelves/motolii-host.d.ts).
 // Keeps expression code idiomatic JS rather than raw C-style bridge calls.
 (function (g) {
   function hostK() {

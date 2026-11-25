@@ -14,7 +14,7 @@ HTML や WebView を一切使わず、**1 本の JavaScript（＋任意のアセ
 1. Motolii を開き、**Tools** パネルを開く
 2. 右上の **`+ New Vism`** をクリック
    - `~/Library/Application Support/Motolii/panels/My Vism.js` が自動生成され、**独立したドッキングタブとして即オープン**します
-   - 同時に `jsconfig.json` と `motolii-ui.d.ts` も自動配置され、外部エディタ（Cursor / VS Code / Zed）が開きます
+   - 同時に `jsconfig.json`・`motolii-ui.d.ts`・`motolii-host.d.ts` も自動配置され、外部エディタ（Cursor / VS Code / Zed）が開きます
 3. エディタで色や 3D 形状（`cube` → `crystal` / `wavetable` 等）を書き換えて **保存（Cmd+S）**
    - 再起動不要、**約 80ms で即ホットリロード**されます
 
@@ -37,6 +37,7 @@ HTML や WebView を一切使わず、**1 本の JavaScript（＋任意のアセ
 - **3D ＆ GPU ビジュアライザ**:
   - `ui.scene3d(height, { shape, model, look, yaw, pitch, ... })` — プリミティブ・3D ウェーブテーブル・同じフォルダの **`.glb` / `.obj`** 読み込み対応（`look`: `"studio"` / `"toon"` / `"wireframe"` / `"holo"` / `"clay"`）
   - `ui.shader(height, preset, { time, paramA, paramB, color, ... })` — Flutter ネイティブ GLSL（`holo` / `metaball` / `vhs` / `scope` / `aurora` / `grid`）
+- **共通ホスト API**: エクスプレッションと同じ `layer()`・`stage`（`stage.fps` / `stage.beat` / `stage.layers`）・`audio`（`audio.bass` / `audio.rms`）が Vism パネル・カード内でもそのまま使えます（[expression_host_api.md](design/expression_host_api.md)）。
 - **音声＆リズム**: `ctx.audio`（24 バンド FFT）・`ctx.waveform`（波形ピーク）・`ctx.strikes`（ビート打点）・`ctx.bpm` ＋ `ui.waveform` / `ui.sequencer` / `ui.vu`
 - **触覚操作子**: `ui.knob`（`arc` / `pop` / `hardware` / `minimal`）、`ui.fader`、`ui.curve`、`ui.gradient`、`ui.picker`（キャラリグ用ボディピッカー）
 

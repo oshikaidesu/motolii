@@ -62,20 +62,23 @@ bool isMotoliiPackPath(String path) {
   String shelvesFolder = '',
 }) {
   final panelsDir = Directory('$ownFolder/panels')..createSync(recursive: true);
-  // Copy `motolii-ui.d.ts` and write `jsconfig.json` once so VS Code / Cursor autocomplete works immediately.
+  // Copy `motolii-ui.d.ts` and `motolii-host.d.ts` and ensure `jsconfig.json`
+  // includes both so VS Code / Cursor autocomplete works across Vism UI and expressions.
   if (shelvesFolder.isNotEmpty) {
-    final srcDts = File('$shelvesFolder/motolii-ui.d.ts');
-    final dstDts = File('$ownFolder/motolii-ui.d.ts');
-    if (srcDts.existsSync()) {
-      try {
-        srcDts.copySync(dstDts.path);
-      } catch (_) {}
+    for (final dts in const ['motolii-ui.d.ts', 'motolii-host.d.ts']) {
+      final srcDts = File('$shelvesFolder/$dts');
+      final dstDts = File('$ownFolder/$dts');
+      if (srcDts.existsSync()) {
+        try {
+          srcDts.copySync(dstDts.path);
+        } catch (_) {}
+      }
     }
   }
   final jsconfig = File('$ownFolder/jsconfig.json');
   if (!jsconfig.existsSync()) {
     jsconfig.writeAsStringSync(
-      '{\n  "compilerOptions": { "checkJs": false },\n  "include": ["**/*.js", "motolii-ui.d.ts"]\n}\n',
+      '{\n  "compilerOptions": { "checkJs": false },\n  "include": ["**/*.js", "motolii-ui.d.ts", "motolii-host.d.ts"]\n}\n',
     );
   }
 

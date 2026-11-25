@@ -1077,13 +1077,23 @@ f 2 4 3
     final tmp = Directory.systemTemp.createTempSync('motolii_vism_starter_');
     addTearDown(() => tmp.deleteSync(recursive: true));
     final own = '${tmp.path}/own';
-    final made1 = createVismPanelStarter(ownFolder: own);
-    final made2 = createVismPanelStarter(ownFolder: own);
+    final made1 = createVismPanelStarter(
+      ownFolder: own,
+      shelvesFolder: '../shelves',
+    );
+    final made2 = createVismPanelStarter(
+      ownFolder: own,
+      shelvesFolder: '../shelves',
+    );
     expect(made1.name, 'My Vism');
     expect(made2.name, 'My Vism 2');
     expect(File(made1.path).existsSync(), isTrue);
     expect(File(made1.path).readAsStringSync(), contains('ui.scene3d'));
-    expect(File('$own/jsconfig.json').existsSync(), isTrue);
+    expect(File('$own/motolii-ui.d.ts').existsSync(), isTrue);
+    expect(File('$own/motolii-host.d.ts').existsSync(), isTrue);
+    final jsconfigText = File('$own/jsconfig.json').readAsStringSync();
+    expect(jsconfigText, contains('motolii-ui.d.ts'));
+    expect(jsconfigText, contains('motolii-host.d.ts'));
     expect(isMotoliiPackPath('/tmp/my_cool_fx.vism'), isTrue);
   });
 

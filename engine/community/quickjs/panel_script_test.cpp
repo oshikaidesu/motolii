@@ -37,8 +37,7 @@ TEST(PanelScript, RendersDeclarativeUiTreeAndRunsActions) {
   std::string err;
   const std::string ctx =
       R"JSON({"fps":30,"selected":[1,2],"state":{"step":6}})JSON";
-  const std::string tree =
-      panel_eval_render_source(src, "test.js", ctx, &err);
+  const std::string tree = panel_eval_render_source(src, "test.js", ctx, &err);
   ASSERT_TRUE(err.empty()) << err;
   EXPECT_NE(tree.find("\"type\":\"column\""), std::string::npos) << tree;
   EXPECT_NE(tree.find("\"2 selected\""), std::string::npos) << tree;
@@ -75,8 +74,7 @@ TEST(PanelScript, ListsBundledShelfPanels) {
 }
 
 TEST(PanelScript, ResolvesSidecarCardUiAndEvaluatesVectorMapping) {
-  const auto fx =
-      doc_folders("effects").front() / "blur" / "Diagonal Blur.fs";
+  const auto fx = doc_folders("effects").front() / "blur" / "Diagonal Blur.fs";
   const std::string ui = panel_card_ui_file(fx.generic_string());
   ASSERT_FALSE(ui.empty());
   EXPECT_NE(ui.find("Diagonal Blur.ui.js"), std::string::npos) << ui;
@@ -87,8 +85,7 @@ TEST(PanelScript, ResolvesSidecarCardUiAndEvaluatesVectorMapping) {
   ASSERT_TRUE(err.empty()) << err;
   EXPECT_NE(rendered.find("\"hide\":[\"width\",\"angle\"]"), std::string::npos)
       << rendered;
-  EXPECT_NE(rendered.find("\"type\":\"svg\""), std::string::npos)
-      << rendered;
+  EXPECT_NE(rendered.find("\"type\":\"svg\""), std::string::npos) << rendered;
 
   const std::string act = panel_eval_card_action(
       ui, R"JSON({"id":"compass","value":{"x":0.5,"y":0.71}})JSON", "{}", &err);
@@ -98,39 +95,49 @@ TEST(PanelScript, ResolvesSidecarCardUiAndEvaluatesVectorMapping) {
 }
 
 TEST(PanelScript, ExpressionSidecarsExcludeFromShelfAndRenderCleanly) {
-  // Sidecar `.ui.js` files must never show up as standalone expressions or effects.
+  // Sidecar `.ui.js` files must never show up as standalone expressions or
+  // effects.
   for (const auto& p : doc_folder_files("expressions", ".js .css")) {
     const std::string name = p.filename().generic_string();
-    EXPECT_FALSE(name.size() > 6 && name.compare(name.size() - 6, 6, ".ui.js") == 0)
+    EXPECT_FALSE(name.size() > 6 &&
+                 name.compare(name.size() - 6, 6, ".ui.js") == 0)
         << name;
   }
   for (const auto& p : doc_folder_files("effects", ".wgsl .fs .mjs .js")) {
     const std::string name = p.filename().generic_string();
-    EXPECT_FALSE(name.size() > 6 && name.compare(name.size() - 6, 6, ".ui.js") == 0)
+    EXPECT_FALSE(name.size() > 6 &&
+                 name.compare(name.size() - 6, 6, ".ui.js") == 0)
         << name;
   }
 
-  // Every bundled Expression `.ui.js` template resolves and renders a valid ui.svg tree.
+  // Every bundled Expression `.ui.js` template resolves and renders a valid
+  // ui.svg tree.
   const auto exprDir = doc_folders("expressions").front();
   for (const char* expr : {"rigid_body.js", "wind.js", "Field.js", "wave.js",
                            "rise_to_sound.js", "Scale_Assist.js", "lyric.js"}) {
-    const std::string uiFile = panel_card_ui_file((exprDir / expr).generic_string());
+    const std::string uiFile =
+        panel_card_ui_file((exprDir / expr).generic_string());
     ASSERT_FALSE(uiFile.empty()) << expr;
     std::string err;
-    const std::string tree = panel_eval_card_render(uiFile, R"JSON({"params":{}})JSON", &err);
+    const std::string tree =
+        panel_eval_card_render(uiFile, R"JSON({"params":{}})JSON", &err);
     ASSERT_TRUE(err.empty()) << expr << ": " << err;
-    EXPECT_NE(tree.find("\"type\":\"svg\""), std::string::npos) << expr << ": " << tree;
+    EXPECT_NE(tree.find("\"type\":\"svg\""), std::string::npos)
+        << expr << ": " << tree;
   }
 
-  // Jolt Rigid Body mode toggle switches Mass cleanly between 0 (Floor) and 1 (Dynamic).
-  const std::string rbUi = panel_card_ui_file((exprDir / "rigid_body.js").generic_string());
+  // Jolt Rigid Body mode toggle switches Mass cleanly between 0 (Floor) and 1
+  // (Dynamic).
+  const std::string rbUi =
+      panel_card_ui_file((exprDir / "rigid_body.js").generic_string());
   std::string err;
   const std::string floorAct = panel_eval_card_action(
       rbUi, R"JSON({"id":"mode","value":"Floor (Static)"})JSON", "{}", &err);
   ASSERT_TRUE(err.empty()) << err;
   EXPECT_NE(floorAct.find("\"mass\":0"), std::string::npos) << floorAct;
 
-  // Rise to Sound multi-handle drag (`ctx.state.drag`) and live `ctx.audio` rendering.
+  // Rise to Sound multi-handle drag (`ctx.state.drag`) and live `ctx.audio`
+  // rendering.
   const std::string audioUi =
       panel_card_ui_file((exprDir / "rise_to_sound.js").generic_string());
   const std::string liveTree = panel_eval_card_render(
@@ -140,7 +147,8 @@ TEST(PanelScript, ExpressionSidecarsExcludeFromShelfAndRenderCleanly) {
   ASSERT_TRUE(err.empty()) << err;
   EXPECT_NE(liveTree.find("LIVE"), std::string::npos) << liveTree;
 
-  // Grabbing near the lower edge (~u=0.17 for 60Hz) sets ephemeral `state.drag="lo"`.
+  // Grabbing near the lower edge (~u=0.17 for 60Hz) sets ephemeral
+  // `state.drag="lo"`.
   const std::string grabLo = panel_eval_card_action(
       audioUi,
       R"JSON({"id":"band","value":{"x":0.18,"y":0.5,"phase":"down"}})JSON",
@@ -155,9 +163,8 @@ TEST(PanelScript, EvaluatesVismShowcaseAndNewUiPreludeHelpers) {
 
   const auto panelPath = doc_folders("panels").front() / "Vism Showcase.js";
   std::string err;
-  for (const char* skin :
-       {"Pop 3D", "Wavetable", "Hardware", "Beat Sync", "GPU Shader",
-        "Rig Picker", "Pro Curve", "Kawaii"}) {
+  for (const char* skin : {"Pop 3D", "Wavetable", "Hardware", "Beat Sync",
+                           "GPU Shader", "Rig Picker", "Pro Curve", "Kawaii"}) {
     const std::string ctx =
         std::string(R"JSON({"state":{"skin":")JSON") + skin + R"JSON("}})JSON";
     const std::string tree =
@@ -166,7 +173,8 @@ TEST(PanelScript, EvaluatesVismShowcaseAndNewUiPreludeHelpers) {
     EXPECT_NE(tree.find("\"type\":\"box\""), std::string::npos) << skin;
   }
 
-  // Flagship bundled Vism effect sidecars resolve, render surface + controls, and handle presets.
+  // Flagship bundled Vism effect sidecars resolve, render surface + controls,
+  // and handle presets.
   const auto fxDir = doc_folders("effects").front();
   for (const auto& [rel, actionId, expectedParam] :
        std::initializer_list<std::tuple<const char*, const char*, const char*>>{
@@ -174,26 +182,28 @@ TEST(PanelScript, EvaluatesVismShowcaseAndNewUiPreludeHelpers) {
            {"stylize/Bloom.fs", "p:dreamy", "\"intensity\":0.58"},
            {"color/Chroma Zoom.fs", "p:punch", "\"master_zoom\":1.18"},
        }) {
-    const std::string uiFile = panel_card_ui_file((fxDir / rel).generic_string());
+    const std::string uiFile =
+        panel_card_ui_file((fxDir / rel).generic_string());
     ASSERT_FALSE(uiFile.empty()) << rel;
     const std::string tree =
         panel_eval_card_render(uiFile, R"JSON({"params":{}})JSON", &err);
     ASSERT_TRUE(err.empty()) << rel << ": " << err;
     EXPECT_NE(tree.find("\"surface\""), std::string::npos) << rel;
     const std::string act = panel_eval_card_action(
-        uiFile,
-        std::string(R"JSON({"id":")JSON") + actionId + R"JSON("})JSON",
+        uiFile, std::string(R"JSON({"id":")JSON") + actionId + R"JSON("})JSON",
         R"JSON({"params":{}})JSON", &err);
     ASSERT_TRUE(err.empty()) << rel << ": " << err;
     EXPECT_NE(act.find(expectedParam), std::string::npos) << rel << ": " << act;
   }
 
-  // Bundled Auto Lyric (Texflow-compatible Vism console) lists, renders all 4 modes, and emits ops.
+  // Bundled Auto Lyric (Texflow-compatible Vism console) lists, renders all 4
+  // modes, and emits ops.
   EXPECT_NE(listed.find("Auto Lyric\t"), std::string::npos) << listed;
   const auto lyricPath = doc_folders("panels").front() / "Auto Lyric.js";
   for (int mode = 0; mode < 4; ++mode) {
     const std::string ctx =
-        std::string(R"JSON({"selected":[1],"layers":[{"id":1,"name":"L1","kind":"text","text":"テスト"}],"state":{"mode":)JSON") +
+        std::string(
+            R"JSON({"selected":[1],"layers":[{"id":1,"name":"L1","kind":"text","text":"テスト"}],"state":{"mode":)JSON") +
         std::to_string(mode) + R"JSON(}})JSON";
     const std::string tree =
         panel_eval_render(lyricPath.generic_string(), ctx, &err);
@@ -208,6 +218,36 @@ TEST(PanelScript, EvaluatesVismShowcaseAndNewUiPreludeHelpers) {
   EXPECT_NE(applyRes.find("expressions/texflow.js"), std::string::npos)
       << applyRes;
   EXPECT_NE(applyRes.find("\"js_mode\""), std::string::npos) << applyRes;
+}
+
+TEST(PanelScript, ExposesUnifiedHostGlobalsStageLayerAudioInVism) {
+  const std::string src = R"JS(
+    function render(ctx) {
+      const L = layer("Leader");
+      const me = layer();
+      return ui.box([
+        ui.text(L.name + ":" + L.scaleX + ":" + me.id + ":" + stage.fps + ":" + stage.beat),
+        ui.vu(audio.bass, { label: "BASS" }),
+      ]);
+    }
+  )JS";
+  const std::string ctx = R"JSON({
+    "time": 1.5,
+    "fps": 24,
+    "bpm": 120,
+    "selected": [2],
+    "audio": [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1],
+    "layers": [
+      {"id": 1, "name": "Leader", "kind": "shape", "scale_x": 1.75},
+      {"id": 2, "name": "Follower", "kind": "text", "parent": 1}
+    ]
+  })JSON";
+  std::string err;
+  const std::string out =
+      panel_eval_render_source(src, "vism_host.js", ctx, &err);
+  ASSERT_TRUE(err.empty()) << err;
+  EXPECT_NE(out.find("Leader:1.75:2:24:3"), std::string::npos) << out;
+  EXPECT_NE(out.find("\"label\":\"BASS\""), std::string::npos) << out;
 }
 
 }  // namespace

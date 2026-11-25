@@ -2,8 +2,8 @@
 
 Motolii のエクスプレッションは、**短く形が揃った JS ホスト API** と **After Effects 式のコピペそのまま** の 2 通りの書き方でプロジェクト全体へアクセスできる。
 
-- 型定義（形の正本）: [motolii_host.d.ts](../../engine/community/script_runner/motolii_host.d.ts)
-- JS ホスト実装: [host_prelude.js](../../engine/community/script_runner/host_prelude.js)
+- 型定義（形の正本）: [motolii-host.d.ts](../../shelves/motolii-host.d.ts)（Vism の [motolii-ui.d.ts](../../shelves/motolii-ui.d.ts) からも自動参照、`+ New Vism` で補完同梱）
+- JS ホスト実装: [host_prelude.js](../../engine/community/script_runner/host_prelude.js) / Vism UI 側: [panel_script.cpp](../../engine/community/quickjs/panel_script.cpp)
 - AE 式ランタイム: [lottie_shim.js](../../engine/community/after_effects/lottie_shim.js)
 - プロジェクト接続: [script_reads.cpp](../../engine/document/scripts/script_reads.cpp)
 

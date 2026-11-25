@@ -71,6 +71,159 @@ const ui = {
   divider(opts) { return Object.assign({ type: "divider" }, opts); },
   spacer(size) { return size === undefined ? { type: "spacer" } : { type: "spacer", size: Number(size) }; },
 };
+// Unified host facade (`layer()`, `stage`, `audio`) matching host_prelude.js
+// so Vism panels, Vism cards and expressions share the same vocabulary.
+(function (g) {
+  function C() { return g.__vismCtx || {}; }
+  function allRaw() {
+    const c = C();
+    if (Array.isArray(c.layers) && c.layers.length) return c.layers;
+    return c.layer ? [c.layer] : [];
+  }
+  function findRaw(ref) {
+    const list = allRaw();
+    const c = C();
+    if (ref === undefined || ref === null) {
+      if (c.layer) return c.layer;
+      const sel = Array.isArray(c.selected) && c.selected.length ? c.selected[0] : 0;
+      return sel ? list.find((l) => l && l.id === sel) || null : list[0] || null;
+    }
+    if (typeof ref === "number") return list.find((l) => l && l.id === (ref | 0)) || null;
+    if (typeof ref === "string") return list.find((l) => l && l.name === ref) || null;
+    if (typeof ref === "object" && typeof ref.id === "number") return list.find((l) => l && l.id === (ref.id | 0)) || null;
+    return null;
+  }
+  function wrapLayer(raw) {
+    if (!raw) {
+      return {
+        id: 0, exists: false, name: "", kind: "", text: "", index: 0,
+        parent: null, children: [], start: 0, duration: -1,
+        x: 0, y: 0, z: 0, pos: [0, 0, 0], size: 1,
+        scaleX: 1, scaleY: 1, scaleZ: 1, scale: [1, 1, 1], anchor: [0, 0, 0],
+        rotate: 0, rotateX: 0, rotateY: 0, opacity: 1, bounds: null,
+        visible: false, selected: false, fill: "",
+        at() { return this; }, copy() { return this; },
+        get(p, fb) { return fb === undefined ? 0 : fb; }, word() { return ""; },
+        keys() { return []; }, fx(e, p, fb) { return fb === undefined ? 0 : fb; },
+        toWorld() { return [NaN, NaN, NaN]; }, fromWorld() { return [NaN, NaN]; },
+        sample() { return [0, 0, 0, 0]; },
+      };
+    }
+    const list = allRaw();
+    const num = (k, fb) => (typeof raw[k] === "number" ? raw[k] : fb);
+    const sx = num("scale_x", 1), sy = num("scale_y", 1), sz = num("scale_z", 1);
+    const ax = num("anchor_x", 0), ay = num("anchor_y", 0), az = num("anchor_z", 0);
+    const w = num("width", 0), h = num("height", 0);
+    return {
+      id: raw.id | 0,
+      exists: true,
+      name: String(raw.name || ""),
+      kind: String(raw.kind || ""),
+      text: String(raw.text || ""),
+      index: list.indexOf(raw) + 1,
+      get parent() {
+        const pid = num("parent", 0) | 0;
+        return pid > 0 ? wrapLayer(list.find((l) => l && l.id === pid) || null) : null;
+      },
+      get children() {
+        const id = raw.id | 0;
+        return list.filter((l) => l && (l.parent | 0) === id).map(wrapLayer);
+      },
+      start: num("start", 0),
+      duration: num("duration", -1),
+      x: num("x", 0), y: num("y", 0), z: num("z", 0),
+      pos: [num("x", 0), num("y", 0), num("z", 0)],
+      size: num("size", 1),
+      scaleX: sx, scaleY: sy, scaleZ: sz, scale: [sx, sy, sz],
+      anchor: [ax, ay, az],
+      rotate: num("rotate", 0), rotateX: num("rotate_x", 0), rotateY: num("rotate_y", 0),
+      opacity: num("opacity", 1),
+      bounds: w > 0 || h > 0 ? { x: num("x", 0), y: num("y", 0), width: w, height: h, left: -w * 0.5, top: -h * 0.5, rotate: num("rotate", 0), halfX: w * 0.5, halfY: h * 0.5, px: 1 } : null,
+      visible: raw.visible !== false,
+      selected: !!raw.selected,
+      fill: String(raw.fill || ""),
+      at() { return this; },
+      copy() { return this; },
+      get(prop, fb) { return typeof raw[prop] === "number" ? raw[prop] : (fb === undefined ? 0 : fb); },
+      word(prop) { return raw[prop] === undefined || raw[prop] === null ? "" : String(raw[prop]); },
+      keys() { return []; },
+      fx(e, p, fb) {
+        const params = C().params || {};
+        if (typeof params[p] === "number") return params[p];
+        return fb === undefined ? 0 : fb;
+      },
+      toWorld() { return [NaN, NaN, NaN]; },
+      fromWorld() { return [NaN, NaN]; },
+      sample() { return [0, 0, 0, 0]; },
+    };
+  }
+  function calcBands() {
+    const a = Array.isArray(C().audio) ? C().audio : [];
+    if (!a.length) return { bass: 0, lowMid: 0, highMid: 0, treble: 0, rms: 0 };
+    const slice = (s, e) => {
+      let sum = 0, peak = 0, cnt = 0;
+      for (let i = s; i < e && i < a.length; i++) {
+        const v = Number(a[i]) || 0;
+        sum += v; if (v > peak) peak = v; cnt++;
+      }
+      return cnt ? Math.min(1, Math.max(0, 0.6 * (sum / cnt) + 0.4 * peak)) : 0;
+    };
+    const n = a.length;
+    const b0 = slice(0, Math.max(1, Math.round(n * 0.2)));
+    const b1 = slice(Math.round(n * 0.2), Math.round(n * 0.45));
+    const b2 = slice(Math.round(n * 0.45), Math.round(n * 0.75));
+    const b3 = slice(Math.round(n * 0.75), n);
+    const rms = Math.min(1, 0.4 * b0 + 0.2 * b1 + 0.2 * b2 + 0.2 * b3);
+    return { bass: b0, lowMid: b1, highMid: b2, treble: b3, rms };
+  }
+  const audioFn = function () { return audioFn; };
+  for (const k of ["bass", "lowMid", "highMid", "treble", "rms"]) {
+    Object.defineProperty(audioFn, k, { get() { return calcBands()[k]; }, enumerable: true });
+  }
+  Object.defineProperty(audioFn, "waveform", { get() { return Array.isArray(C().waveform) ? C().waveform : []; }, enumerable: true });
+  Object.defineProperty(audioFn, "strikes", { get() { return Array.isArray(C().strikes) ? C().strikes : []; }, enumerable: true });
+  audioFn.bands = () => calcBands();
+  audioFn.at = () => audioFn;
+  audioFn.spectrum = (out) => {
+    const src = Array.isArray(C().audio) ? C().audio : [];
+    const buf = out || new Uint8Array(src.length || 24);
+    for (let i = 0; i < buf.length && i < src.length; i++) {
+      buf[i] = buf instanceof Float32Array ? -100 + 70 * (Number(src[i]) || 0) : Math.round(255 * Math.min(1, Math.max(0, Number(src[i]) || 0)));
+    }
+    return buf;
+  };
+  audioFn.wave = (out) => {
+    const src = Array.isArray(C().waveform) ? C().waveform : [];
+    const buf = out || new Float32Array(src.length || 64);
+    for (let i = 0; i < buf.length && i < src.length; i++) buf[i] = Number(src[i]) || 0;
+    return buf;
+  };
+  g.layer = function (ref) { return wrapLayer(findRaw(ref)); };
+  g.audio = audioFn;
+  g.stage = {
+    get time() { return Number(C().time) || 0; },
+    get fps() { return Number(C().fps) > 0 ? Number(C().fps) : 60; },
+    get frame() { return typeof C().frame === "number" ? C().frame : this.time * this.fps; },
+    get width() { return (C().comp && C().comp.width) || 1920; },
+    get height() { return (C().comp && C().comp.height) || 1080; },
+    get duration() { return Number(C().duration) || 0; },
+    get px() { return (C().comp && C().comp.point) || 1; },
+    get bpm() { return Number(C().bpm) || 0; },
+    get bpmFrom() { return Number(C().bpm_from) || 0; },
+    get beat() { const b = this.bpm; return b > 0 ? (this.time - this.bpmFrom) * b / 60 : 0; },
+    get layers() { return allRaw().map(wrapLayer); },
+    get self() { return wrapLayer(findRaw(undefined)); },
+    get selected() {
+      const ids = new Set(Array.isArray(C().selected) ? C().selected : []);
+      return allRaw().filter((l) => l && ids.has(l.id)).map(wrapLayer);
+    },
+    get marks() { return Array.isArray(C().marks) ? C().marks : []; },
+    camera() { return { eye: [0, 0, 6], look: [0, 0, 0], up: [0, 1, 0], fov: 30, distance: 1, id: 0 }; },
+    toScreen() { return [NaN, NaN]; },
+    get(p, fb) { return typeof C()[p] === "number" ? C()[p] : (fb === undefined ? 0 : fb); },
+    word(p) { return C()[p] === undefined || C()[p] === null ? "" : String(C()[p]); },
+  };
+})(globalThis);
 )JS";
 
 std::string js_exception_string(JSContext* cx, bool timed_out) {
@@ -101,8 +254,8 @@ std::string eval_panel_call(const std::string& source,
   JSRuntime* rt = JS_NewRuntime();
   JS_SetMemoryLimit(rt, kPanelMemoryLimit);
   TimeoutGuard guard{std::chrono::steady_clock::now() + kPanelTimeout, false};
-  JS_SetInterruptHandler(
-      rt, static_cast<JSInterruptHandler*>(&panel_interrupt), &guard);
+  JS_SetInterruptHandler(rt, static_cast<JSInterruptHandler*>(&panel_interrupt),
+                         &guard);
   JSContext* cx = JS_NewContext(rt);
 
   auto fail = [&](const std::string& msg) -> std::string {
@@ -156,6 +309,8 @@ std::string eval_panel_call(const std::string& source,
     JS_FreeValue(cx, global);
     return fail(js_exception_string(cx, guard.timed_out));
   }
+
+  JS_SetPropertyStr(cx, global, "__vismCtx", JS_DupValue(cx, ctx_val));
 
   JSValue result = JS_UNDEFINED;
   if (action_json != nullptr) {

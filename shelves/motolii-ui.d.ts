@@ -1,3 +1,4 @@
+/// <reference path="./motolii-host.d.ts" />
 // Type definitions for Motolii Custom UI scripts:
 // - Inspector Effect / Expression Cards (`<effect>.ui.js` or co-located `renderCard`)
 // - Dockable Custom Panels / Tabs (`shelves/panels/*.js`)
