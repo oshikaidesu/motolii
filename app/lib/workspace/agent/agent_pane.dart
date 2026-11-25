@@ -3,8 +3,15 @@
 // It is drawn with the app's own parts: PanelHeader, the shelf's search field (also the message field), DockHover
 // rows, the skin's Forms for the agent's questions. A reply is Markdown, laid out by flutter_markdown_plus (BSD-3,
 // the Flutter authors' flutter_markdown carried on) in the app's text styles.
+import 'dart:convert' show base64Decode;
+
 import 'package:acpd/acpd.dart'
-    show ContentBlock, RequestPermissionRequest, ResourceLink;
+    show
+        ContentBlock,
+        PlanEntry,
+        PlanEntryStatus,
+        RequestPermissionRequest,
+        ResourceLink;
 import 'package:acpd_io/acpd_io.dart' show AcpAgentConfig;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -13,6 +20,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/disk.dart' show modifiedOf;
 import 'package:motolii/storage/folder_files.dart';
+import 'package:motolii/storage/open_in_host.dart' show pickFile;
 import 'package:motolii/storage/script_files.dart' show textOf;
 import 'package:motolii/widgets/custom_ui/panel_node.dart'
     show parsePanelOpsJson;
@@ -28,15 +36,29 @@ import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart' show putEffectFile;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/custom_panel_service.dart'
-    show applyCustomPanelOps, panelDocOpOf, writeAgentSceneSnapshot;
+    show
+        applyCustomPanelOps,
+        openVismPanelInDock,
+        panelDocOpOf,
+        reloadAgentShelves,
+        writeAgentSceneSnapshot;
+import 'package:motolii/workspace/state/motolii_mcp_bridge.dart';
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:motolii/workspace/state/document/expression_engine.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
-/// The conversation outlives the pane, as a docked tab is rebuilt when it is moved or brought back.
-final _talk = ValueNotifier<AcpChatSession?>(null);
+/// Multi-session conversations outlive the pane when docked tabs rebuild.
+final _sessions = ValueNotifier<List<AcpChatSession>>([]);
+final _activeIndex = ValueNotifier<int>(0);
+
+AcpChatSession? _currentTalk() {
+  final list = _sessions.value;
+  if (list.isEmpty) return null;
+  final idx = _activeIndex.value.clamp(0, list.length - 1);
+  return list[idx];
+}
 
 class AgentPane extends StatefulWidget {
   const AgentPane({super.key});
@@ -47,7 +69,10 @@ class AgentPane extends StatefulWidget {
 class _AgentPaneState extends State<AgentPane> {
   late final _agents = agentRegistry(ownFolder());
   final _find = TextEditingController(), _say = TextEditingController();
+  final _attachments = <String>[];
+  final _expandedThoughts = <int>{};
   var _choosing = false;
+  var _addingThread = false;
 
   @override
   void dispose() {
@@ -56,10 +81,16 @@ class _AgentPaneState extends State<AgentPane> {
     super.dispose();
   }
 
-  void _choose(AgentEntry a) {
-    _talk.value?.dispose();
+  Future<void> _choose(AgentEntry a) async {
+    final ws = WorkspaceScope.read(context);
+    final mcp = await MotoliiMcpBridge.instance.ensureServer(ws);
+    if (!mounted) return;
     final c = a.config;
-    _talk.value = AcpChatSession(
+    final extraDirs = <String>[
+      if (ws.documentFolder case final df? when df.isNotEmpty) df,
+      shelvesFolder(),
+    ];
+    final session = AcpChatSession(
       a.name,
       AcpAgentConfig(
         command: c.command,
@@ -70,21 +101,65 @@ class _AgentPaneState extends State<AgentPane> {
       ownFolder(),
       line: a.line,
       env: a.env,
+      mcpServers: [?mcp],
+      additionalDirectories: extraDirs,
     )..start();
-    setState(() => _choosing = false);
+    final list = [..._sessions.value];
+    if (_addingThread || list.isEmpty) {
+      list.add(session);
+      _sessions.value = list;
+      _activeIndex.value = list.length - 1;
+    } else {
+      final idx = _activeIndex.value.clamp(0, list.length - 1);
+      list[idx].dispose();
+      list[idx] = session;
+      _sessions.value = list;
+    }
+    setState(() {
+      _choosing = false;
+      _addingThread = false;
+    });
   }
 
-  /// Sends [text] with the full scene snapshot (`scene.json` + `stage.png`) and
-  /// the selected layer's cards/code (`layer_code.dart`). Each time a tool call
-  /// ends, modified code files are reloaded, `ops.json` is executed in one undo
-  /// step, and any other new `.js`/`.fs` file in [fresh] is attached to the layer.
+  void _closeSession(int idx) {
+    final list = [..._sessions.value];
+    if (idx < 0 || idx >= list.length) return;
+    list.removeAt(idx).dispose();
+    _sessions.value = list;
+    if (list.isEmpty) {
+      _activeIndex.value = 0;
+    } else if (_activeIndex.value >= list.length) {
+      _activeIndex.value = list.length - 1;
+    }
+    setState(() {});
+  }
+
+  Future<void> _pickAttachment() async {
+    final path = await pickFile(prompt: 'Attach file or reference image');
+    if (path != null && mounted && !_attachments.contains(path)) {
+      setState(() => _attachments.add(path));
+    }
+  }
+
+  /// Sends [text] with the full scene snapshot (`scene.json` + `stage.png`),
+  /// user-attached images/files, and the selected layer's cards/code.
   Future<void> _send(AcpChatSession talk, String text) async {
     if (!talk.ready || talk.sending || text.trim().isEmpty) return;
     _say.clear();
+    final attachments = [..._attachments];
+    if (_attachments.isNotEmpty) setState(() => _attachments.clear());
     final ws = WorkspaceScope.read(context), code = layerCode(ws);
+    MotoliiMcpBridge.instance.attach(ws);
     final fresh = newFolder();
     final more = projectOpen(ws)
-        ? await ownedFor(ws, code, fresh)
+        ? await ownedFor(
+            ws,
+            code,
+            fresh,
+            supportsImage: talk.supportsImage,
+            hasMcp: talk.mcpServers.isNotEmpty,
+            attachments: attachments,
+          )
         : const <ContentBlock>[];
     DateTime? time(String f) => modifiedOf(f);
     final opsFile = '$fresh/ops.json';
@@ -137,7 +212,7 @@ class _AgentPaneState extends State<AgentPane> {
         if (opsOwnedFiles.contains(f)) continue;
         if (!seen.containsKey(f)) {
           seen[f] = time(f);
-          if (code != null) _put(ws, talk, f);
+          _handleNewFile(ws, talk, code != null, f);
         }
       }
       for (final f in seen.keys.toList()) {
@@ -148,16 +223,40 @@ class _AgentPaneState extends State<AgentPane> {
         }
       }
     };
-    talk.send(text, more: more, note: code?.line ?? 'Scene');
+    final noteParts = [
+      code?.line ?? 'Scene',
+      if (attachments.isNotEmpty)
+        '+ ${attachments.map((p) => p.split('/').last).join(', ')}',
+    ];
+    talk.send(text, more: more, note: noteParts.join(' · '));
+  }
+
+  /// Handles a newly written file without mis-attaching `.ui.js` cards or Vism panels.
+  void _handleNewFile(
+    WorkspaceController ws,
+    AcpChatSession talk,
+    bool hasLayer,
+    String file,
+  ) {
+    if (file.endsWith('.ui.js') || file.endsWith('.way')) {
+      reloadAgentShelves(ws);
+      return;
+    }
+    if (file.contains('/panels/') && file.endsWith('.js')) {
+      openVismPanelInDock(ws, path: file);
+      ws.reread();
+      return;
+    }
+    if (hasLayer) _put(ws, talk, file);
   }
 
   /// Puts a new file the agent wrote on the selected layer, as the Effects shelf puts an empty one (empty_effect.dart).
   void _put(WorkspaceController ws, AcpChatSession talk, String file) {
-    if (!RegExp(r'\.(fs|js)$').hasMatch(file)) return;
+    if (!RegExp(r'\.(wgsl|fs|js|css|am|mjs)$').hasMatch(file)) return;
     putEffectFile(
       ws,
       file,
-      expression: file.endsWith('.js'),
+      expression: file.endsWith('.js') || file.endsWith('.css'),
       told: (why) {
         if (why.isNotEmpty) {
           talk.tell(
@@ -169,55 +268,192 @@ class _AgentPaneState extends State<AgentPane> {
   }
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder(
-    valueListenable: _talk,
-    builder: (context, talk, _) => ListenableBuilder(
-      listenable: Listenable.merge([?talk, _find]),
+  Widget build(BuildContext context) {
+    MotoliiMcpBridge.instance.attach(WorkspaceScope.read(context));
+    return ListenableBuilder(
+      listenable: Listenable.merge([_sessions, _activeIndex]),
       builder: (context, _) {
-        final listing = talk == null || _choosing;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            PanelHeader(
-              talk?.agentName ?? 'Agent',
-              trailing: [
-                if (talk != null)
-                  _link(
-                    _choosing ? 'Back' : 'Agents',
-                    () => setState(() => _choosing = !_choosing),
-                  ),
-              ],
-            ),
-            if (listing) ...[
-              if (talk == null) _intro(choose: true),
-              ShelfSearchField(controller: _find, hint: 'Search agents'),
-              Expanded(child: _list()),
-            ] else ...[
-              if (talk.needsSignIn)
-                signInCard(
-                  context,
-                  talk,
-                  onSwitchAgent: () => setState(() => _choosing = true),
+        final sessions = _sessions.value;
+        final talk = _currentTalk();
+        return ListenableBuilder(
+          listenable: Listenable.merge([?talk, _find]),
+          builder: (context, _) {
+            final listing = talk == null || _choosing;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PanelHeader(
+                  talk?.agentName ?? 'Agent',
+                  trailing: [
+                    if (talk != null && !_choosing)
+                      _link('+ New', () {
+                        setState(() {
+                          _addingThread = true;
+                          _choosing = true;
+                        });
+                      }),
+                    if (talk != null)
+                      _link(_choosing ? 'Back' : 'Agents', () {
+                        setState(() {
+                          _addingThread = false;
+                          _choosing = !_choosing;
+                        });
+                      }),
+                  ],
                 ),
-              Expanded(child: _conversation(talk)),
-              if (talk.asked case final r?) _question(context, talk, r),
-              _with(context, talk),
-              AgentComposer(
-                talk: talk,
-                controller: _say,
-                onSend: (t) => _send(talk, t),
-              ),
-            ],
-          ],
+                if (sessions.length > 1 && !listing) _sessionBar(sessions),
+                if (listing) ...[
+                  if (talk == null) _intro(choose: true),
+                  ShelfSearchField(controller: _find, hint: 'Search agents'),
+                  Expanded(child: _list()),
+                ] else ...[
+                  if (talk.needsSignIn)
+                    signInCard(
+                      context,
+                      talk,
+                      onSwitchAgent: () => setState(() => _choosing = true),
+                    ),
+                  if (talk.plan.isNotEmpty) _planBar(talk.plan),
+                  Expanded(child: _conversation(talk)),
+                  if (talk.asked case final r?) _question(context, talk, r),
+                  _with(context, talk),
+                  AgentComposer(
+                    talk: talk,
+                    controller: _say,
+                    attachments: _attachments,
+                    onAttach: _pickAttachment,
+                    onRemoveAttachment: (p) =>
+                        setState(() => _attachments.remove(p)),
+                    onSend: (t) => _send(talk, t),
+                  ),
+                ],
+              ],
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _sessionBar(List<AcpChatSession> sessions) => Container(
+    padding: EdgeInsets.symmetric(
+      horizontal: WindowTokens.inset,
+      vertical: Shape.s(3),
+    ),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: WindowTokens.line)),
+    ),
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final (i, s) in sessions.indexed) ...[
+            if (i > 0) SizedBox(width: Shape.s(4)),
+            GestureDetector(
+              onTap: () => _activeIndex.value = i,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: Shape.s(6),
+                  vertical: Shape.s(2),
+                ),
+                decoration: BoxDecoration(
+                  color: i == _activeIndex.value
+                      ? WindowTokens.card
+                      : WindowTokens.well,
+                  borderRadius: Shape.round(WindowTokens.chipRadius),
+                  border: Border.all(
+                    color: i == _activeIndex.value
+                        ? Accent.fill
+                        : WindowTokens.line,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${s.agentName} #${i + 1}',
+                      style: TextStyles.micro(
+                        i == _activeIndex.value ? Grey.g95 : Grey.g63,
+                      ),
+                    ),
+                    SizedBox(width: Shape.s(4)),
+                    GestureDetector(
+                      onTap: () => _closeSession(i),
+                      child: Text('×', style: TextStyles.micro(Grey.g56)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     ),
   );
 
-  /// Has the engine read a file the agent wrote, as a cell's save does (EffectCode._saved): the engine looks at a
-  /// file's time only when told (files_changed), so a write from outside the app is otherwise not seen.
+  Widget _planBar(List<PlanEntry> entries) => Container(
+    margin: EdgeInsets.fromLTRB(
+      WindowTokens.inset,
+      Shape.s(6),
+      WindowTokens.inset,
+      0,
+    ),
+    padding: EdgeInsets.all(Shape.s(6)),
+    decoration: BoxDecoration(
+      color: WindowTokens.well,
+      borderRadius: Shape.round(WindowTokens.radius),
+      border: Border.all(color: WindowTokens.line),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final p in entries.take(6))
+          Padding(
+            padding: EdgeInsets.only(bottom: Shape.s(2)),
+            child: Row(
+              children: [
+                Text(
+                  switch (p.status) {
+                    PlanEntryStatus.completed => '✓ ',
+                    PlanEntryStatus.inProgress => '● ',
+                    PlanEntryStatus.pending => '○ ',
+                  },
+                  style: TextStyles.micro(
+                    p.status == PlanEntryStatus.completed
+                        ? Accent.ink
+                        : p.status == PlanEntryStatus.inProgress
+                        ? Accent.fill
+                        : Grey.g56,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    p.content,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyles.micro(
+                      p.status == PlanEntryStatus.completed
+                          ? Grey.g56
+                          : Grey.g91,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    ),
+  );
+
+  /// Has the engine read a file the agent wrote, including `.ui.js` cards and Vism panels.
   void _read(WorkspaceController ws, AcpChatSession talk, String file) {
-    if (!RegExp(r'\.(wgsl|fs|js)$').hasMatch(file)) return;
+    if (file.endsWith('.ui.js') ||
+        file.endsWith('.way') ||
+        (file.contains('/panels/') && file.endsWith('.js'))) {
+      reloadAgentShelves(ws);
+      return;
+    }
+    if (!RegExp(r'\.(wgsl|fs|js|css|am|mjs)$').hasMatch(file)) return;
     readCodeFile(ws, file, (done, why) {
       if (!done) {
         talk.tell('${file.split('/').last} does not run: ${why.trim()}');
@@ -460,15 +696,15 @@ class _AgentPaneState extends State<AgentPane> {
           reverse: true,
           padding: EdgeInsets.all(WindowTokens.inset),
           children: [
-            for (final e in talk.entries.reversed)
+            for (final (i, e) in talk.entries.indexed.toList().reversed)
               Padding(
                 padding: EdgeInsets.only(top: Shape.s(8)),
-                child: _line(e),
+                child: _line(talk, i, e),
               ),
           ],
         );
 
-  Widget _line(Entry e) => switch (e.who) {
+  Widget _line(AcpChatSession talk, int index, Entry e) => switch (e.who) {
     Said.you => Container(
       padding: EdgeInsets.all(Shape.s(6)),
       decoration: BoxDecoration(
@@ -486,22 +722,72 @@ class _AgentPaneState extends State<AgentPane> {
         ],
       ),
     ),
-    Said.agent => MarkdownBody(data: e.text, styleSheet: _markdown),
+    Said.agent => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (e.text.isNotEmpty)
+          MarkdownBody(data: e.text, styleSheet: _markdown),
+        if (e.imageBase64 case final b64?)
+          Padding(
+            padding: EdgeInsets.only(top: Shape.s(4)),
+            child: ClipRRect(
+              borderRadius: Shape.round(WindowTokens.radius),
+              child: Image.memory(base64Decode(b64), fit: BoxFit.contain),
+            ),
+          ),
+      ],
+    ),
+    Said.thought => GestureDetector(
+      onTap: () => setState(() {
+        if (!_expandedThoughts.remove(index)) _expandedThoughts.add(index);
+      }),
+      child: Container(
+        padding: EdgeInsets.all(Shape.s(5)),
+        decoration: BoxDecoration(
+          color: WindowTokens.well,
+          borderRadius: Shape.round(WindowTokens.radius),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _expandedThoughts.contains(index) ? '▾ Thinking' : '▸ Thinking',
+              style: TextStyles.micro(Grey.g56),
+            ),
+            if (_expandedThoughts.contains(index)) ...[
+              SizedBox(height: Shape.s(3)),
+              Text(e.text, style: TextStyles.micro(Grey.g63)),
+            ],
+          ],
+        ),
+      ),
+    ),
     Said.tool => _tool(e.call),
     Said.error => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(e.text, style: TextStyles.name(Role.error, 11, null, 1.4)),
-        if (_talk.value case final talk?
-            when !talk.ready && !talk.starting) ...[
-          SizedBox(height: Shape.s(6)),
-          Row(
-            children: [
+        SizedBox(height: Shape.s(6)),
+        Wrap(
+          spacing: Shape.s(6),
+          runSpacing: Shape.s(6),
+          children: [
+            if (talk.ready && !talk.sending)
+              Forms.worn.action(
+                context,
+                ActionSpec(
+                  'Fix with agent',
+                  () => _send(
+                    talk,
+                    'Motolii reported an error — please inspect and fix it:\n${e.text}',
+                  ),
+                ),
+              ),
+            if (!talk.ready && !talk.starting) ...[
               Forms.worn.action(
                 context,
                 ActionSpec('Retry', () => talk.retry()),
               ),
-              SizedBox(width: Shape.s(6)),
               Forms.worn.action(
                 context,
                 ActionSpec(
@@ -510,8 +796,8 @@ class _AgentPaneState extends State<AgentPane> {
                 ),
               ),
             ],
-          ),
-        ],
+          ],
+        ),
       ],
     ),
   };

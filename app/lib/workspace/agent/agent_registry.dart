@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:acpd_io/acpd_io.dart' show AcpAgentConfig;
 
+import 'package:motolii/storage/agent_files.dart' show readCustomAgentsFile;
 import 'package:motolii/storage/agent_registry_file.dart';
 import 'package:motolii/storage/host_platform.dart';
 
@@ -45,18 +46,20 @@ class AgentEntry {
   }
 }
 
-/// Every agent in the registry this machine can start, newest list first, the kept copy when offline.
+/// Every agent this machine can start: user-defined custom agents in
+/// `<ownFolder>/agents/custom.json` first, followed by the ACP registry.
 Future<List<AgentEntry>> agentRegistry(String ownFolder) async {
+  final custom = _customAgents(ownFolder);
+  final seenIds = {for (final a in custom) a.id};
   final text = await registryText(_registry, '$ownFolder/agents/registry.json');
-  if (text == null) return const [];
+  if (text == null) return custom;
   final agents = (jsonDecode(text) as Map)['agents'] as List;
   return [
+    ...custom,
     for (final a in agents.cast<Map>())
-      if (_command(a['distribution'] as Map) case (
-        final line,
-        final env,
-        final method,
-      ))
+      if (_command(a['distribution'] as Map)
+          case (final line, final env, final method)
+          when !seenIds.contains('${a['id']}'))
         AgentEntry(
           '${a['id']}',
           '${a['name']}',
@@ -67,6 +70,33 @@ Future<List<AgentEntry>> agentRegistry(String ownFolder) async {
           installed: method == 'binary' && hostHasProgram(line.first),
         ),
   ];
+}
+
+List<AgentEntry> _customAgents(String ownFolder) {
+  final out = <AgentEntry>[];
+  for (final raw in readCustomAgentsFile(ownFolder)) {
+    final cmd = '${raw['command'] ?? ''}'.trim();
+    if (cmd.isEmpty) continue;
+    final line = [cmd, ..._words(raw['args'])];
+    final env = <String, String>{
+      if (raw['env'] is Map)
+        for (final e in (raw['env'] as Map).entries) '${e.key}': '${e.value}',
+    };
+    final id = '${raw['id'] ?? cmd}'.trim();
+    final name = '${raw['name'] ?? id}'.trim();
+    out.add(
+      AgentEntry(
+        id,
+        name,
+        line,
+        env,
+        description: '${raw['description'] ?? 'Custom ACP agent'}'.trim(),
+        method: 'custom',
+        installed: true,
+      ),
+    );
+  }
+  return out;
 }
 
 (List<String>, Map<String, String>, String)? _command(Map d) {

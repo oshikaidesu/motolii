@@ -7,6 +7,7 @@ import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/agent/acp_chat_session.dart';
 import 'package:motolii/workspace/agent/agent_settings.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
@@ -17,10 +18,16 @@ class AgentComposer extends StatefulWidget {
     required this.talk,
     required this.controller,
     required this.onSend,
+    this.attachments = const [],
+    this.onAttach,
+    this.onRemoveAttachment,
   });
   final AcpChatSession talk;
   final TextEditingController controller;
   final ValueChanged<String> onSend;
+  final List<String> attachments;
+  final VoidCallback? onAttach;
+  final ValueChanged<String>? onRemoveAttachment;
 
   @override
   State<AgentComposer> createState() => _AgentComposerState();
@@ -28,6 +35,7 @@ class AgentComposer extends StatefulWidget {
 
 class _AgentComposerState extends State<AgentComposer> {
   final _focus = FocusNode();
+  final _cmdMenu = GlobalKey<ContextMenuState>();
 
   @override
   void initState() {
@@ -77,6 +85,46 @@ class _AgentComposerState extends State<AgentComposer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.attachments.isNotEmpty) ...[
+              Wrap(
+                spacing: Shape.s(4),
+                runSpacing: Shape.s(4),
+                children: [
+                  for (final path in widget.attachments)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Shape.s(6),
+                        vertical: Shape.s(2),
+                      ),
+                      decoration: BoxDecoration(
+                        color: WindowTokens.card,
+                        borderRadius: Shape.round(WindowTokens.chipRadius),
+                        border: Border.all(color: WindowTokens.line),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            path.split('/').last,
+                            style: TextStyles.micro(Grey.g91),
+                          ),
+                          if (widget.onRemoveAttachment != null) ...[
+                            SizedBox(width: Shape.s(4)),
+                            GestureDetector(
+                              onTap: () => widget.onRemoveAttachment!(path),
+                              child: Text(
+                                '×',
+                                style: TextStyles.micro(Grey.g56),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(height: Shape.s(6)),
+            ],
             // Shift-Enter is a new line; Enter alone goes to the text input as its send action.
             Shortcuts(
               shortcuts: const {
@@ -115,19 +163,66 @@ class _AgentComposerState extends State<AgentComposer> {
               ),
             ),
             SizedBox(height: Shape.s(6)),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Spacer(),
-                AgentSettings(talk),
-                SizedBox(width: Shape.s(8)),
-                _button(talk),
-              ],
+            ContextMenu(
+              key: _cmdMenu,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (widget.onAttach != null)
+                    DockHover(
+                      onTap: widget.onAttach,
+                      builder: (context, h) => Padding(
+                        padding: EdgeInsets.only(right: Shape.s(8)),
+                        child: Text(
+                          '+ File',
+                          style: TextStyles.label(h ? Grey.g95 : Grey.g63),
+                        ),
+                      ),
+                    ),
+                  if (talk.commands.isNotEmpty)
+                    GestureDetector(
+                      onTapUp: (d) => _showCommands(d.globalPosition),
+                      child: DockHover(
+                        builder: (context, h) => Padding(
+                          padding: EdgeInsets.only(right: Shape.s(8)),
+                          child: Text(
+                            '/',
+                            style: TextStyles.label(h ? Grey.g95 : Grey.g63),
+                          ),
+                        ),
+                      ),
+                    ),
+                  const Spacer(),
+                  AgentSettings(talk),
+                  SizedBox(width: Shape.s(8)),
+                  _button(talk),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _showCommands(Offset global) {
+    final box = _cmdMenu.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    _cmdMenu.currentState?.show(box.globalToLocal(global), [
+      for (final cmd in widget.talk.commands)
+        ContextMenuItem(
+          '/${cmd.name}',
+          () {
+            final prefix = '/${cmd.name} ';
+            widget.controller
+              ..text = prefix
+              ..selection = TextSelection.collapsed(offset: prefix.length);
+            _focus.requestFocus();
+          },
+          why: cmd.description,
+          id: 'agent-cmd-${cmd.name}',
+        ),
+    ]);
   }
 
   /// Puts a line break where the caret is, as Shift-Enter does in the Claude app.

@@ -7,19 +7,28 @@ import 'package:acpd/acpd.dart';
 import 'package:acpd_io/acpd_io.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
+import 'package:motolii/storage/agent_files.dart'
+    show readAgentTextFile, writeAgentTextFile;
 import 'package:motolii/workspace/agent/agent_sign_in.dart';
 
 /// Who said a line of the conversation.
-enum Said { you, agent, tool, error }
+enum Said { you, agent, thought, tool, error }
 
 /// One line of the conversation: [text], or for a tool call its ACP JSON in [call]. A request's [note] says what was
 /// sent with it.
 class Entry {
-  Entry(this.who, this.text, [this.call = const {}, this.note = '']);
+  Entry(
+    this.who,
+    this.text, [
+    this.call = const {},
+    this.note = '',
+    this.imageBase64,
+  ]);
   final Said who;
   String text;
   Map<String, Object?> call;
   final String note;
+  final String? imageBase64;
 }
 
 class AcpChatSession extends ChangeNotifier {
@@ -29,6 +38,8 @@ class AcpChatSession extends ChangeNotifier {
     this.folder, {
     this.line = const [],
     this.env = const {},
+    this.mcpServers = const [],
+    this.additionalDirectories = const [],
   });
 
   final String agentName;
@@ -37,6 +48,22 @@ class AcpChatSession extends ChangeNotifier {
   /// The agent's own command and env, as the registry gives them: a terminal sign-in runs it again with more words.
   final List<String> line;
   final Map<String, String> env;
+
+  /// MCP servers injected into `session/new` (e.g., Motolii's built-in loopback MCP server).
+  final List<McpServer> mcpServers;
+
+  /// Extra workspace directories visible to the agent (project folder, shelves/).
+  final List<String> additionalDirectories;
+
+  /// Prompt capabilities advertised by the agent during `initialize`.
+  var supportsImage = false;
+  var supportsAudio = false;
+
+  /// Active execution plan streamed via ACP `plan` updates.
+  var plan = <PlanEntry>[];
+
+  /// Slash commands advertised by the agent via `available_commands_update`.
+  var commands = <AvailableCommand>[];
 
   /// The ways to sign in the agent offered (ACP authMethods), shown while [needsSignIn]; [signInWhy] says what the
   /// agent or the last try said, and [signingIn] is true while a way is under way.
@@ -98,13 +125,30 @@ class AcpChatSession extends ChangeNotifier {
                     _take(n.update);
                   }
                 })
-                ..onRequestPermission((_, r, _) => _ask(r)))
+                ..onRequestPermission((_, r, _) => _ask(r))
+                ..onReadTextFile((_, r, _) async {
+                  return ReadTextFileResponse(
+                    content: readAgentTextFile(
+                      r.path,
+                      line: r.line,
+                      limit: r.limit,
+                    ),
+                  );
+                })
+                ..onWriteTextFile((_, r, _) async {
+                  writeAgentTextFile(r.path, r.content);
+                  settled?.call();
+                  return const WriteTextFileResponse();
+                }))
               .connect(agent.transport);
-      // Sent as JSON so the ways keep their type and args, which acpd's typed reply leaves out. The terminal
-      // capability says Motolii can run the agent's command in a terminal (ACP AuthCapabilities).
+      // Sent as JSON so authMethods keep their type/args and Motolii advertises
+      // full FS + terminal-auth capabilities to any ACP agent.
       final hello = const InitializeRequest(
         protocolVersion: ProtocolVersion.v1,
         clientInfo: Implementation(name: 'Motolii', version: '0'),
+        clientCapabilities: ClientCapabilities(
+          fs: FileSystemCapabilities(readTextFile: true, writeTextFile: true),
+        ),
       ).toJson();
       final said = await client.connection.sendRequest(
         InitializeRequest.methodName,
@@ -117,6 +161,12 @@ class AcpChatSession extends ChangeNotifier {
         },
         mapResult: (r) => r is Map ? r : const {},
       );
+      if (said['agentCapabilities'] case final Map ac) {
+        if (ac['promptCapabilities'] case final Map pc) {
+          supportsImage = pc['image'] == true;
+          supportsAudio = pc['audio'] == true;
+        }
+      }
       ways = [
         for (final m in (said['authMethods'] as List?) ?? const [])
           if (m is Map) SignInWay(m),
@@ -205,7 +255,11 @@ class AcpChatSession extends ChangeNotifier {
     if (client == null) return;
     try {
       final session = await client.client.newSession(
-        NewSessionRequest(cwd: folder),
+        NewSessionRequest(
+          cwd: folder,
+          additionalDirectories: additionalDirectories,
+          mcpServers: mcpServers,
+        ),
       );
       _session = session.sessionId;
       options = session.configOptions;
@@ -417,6 +471,23 @@ class AcpChatSession extends ChangeNotifier {
         } else {
           entries.add(Entry(Said.agent, text));
         }
+      case AgentMessageChunk(
+        chunk: ContentChunk(content: ImageContent(:final data)),
+      ):
+        entries.add(Entry(Said.agent, '', const {}, '', data));
+      case AgentThoughtChunk(
+        chunk: ContentChunk(content: TextContentBlock(:final text)),
+      ):
+        final last = entries.lastOrNull;
+        if (last != null && last.who == Said.thought) {
+          last.text += text;
+        } else {
+          entries.add(Entry(Said.thought, text));
+        }
+      case PlanUpdate(plan: final p):
+        plan = p.entries;
+      case AvailableCommandsSessionUpdate(update: final up):
+        commands = up.availableCommands;
       case ConfigOptionSessionUpdate(:final configOptions):
         options = configOptions;
       case UsageSessionUpdate(used: final u, size: final z, :final meta):

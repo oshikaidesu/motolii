@@ -10,14 +10,18 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/card_actions.dart' show CardCustomUi;
 import 'package:motolii/storage/panel_presets_file.dart';
 import 'package:motolii/storage/shelf_disk.dart' show makeFolder, writeText;
+import 'package:motolii/storage/shelf_meta.dart' show clearShelfMetaCache;
 import 'package:motolii/widgets/custom_ui/panel_node.dart'
-    show PanelOp, panelThemeHexMap;
+    show PanelOp, panelThemeHexMap, panelToneColor, parsePanelList;
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
+import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/tiles/effect_code_cards.dart'
     show codeOfCard, codeSource;
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/tool_panel/custom_panel/js_panel_tool.dart'
+    show JsPanelTool;
 
 /// One document mutation produced by a custom panel's `onAction` or an ACP agent.
 typedef PanelDocOp = ({
@@ -300,25 +304,70 @@ CardCustomUi? cardCustomUiOf(
   );
 }
 
-/// Executes [ops] returned by `onAction` in a single undo step.
+/// Clears shelf and custom-card caches, notifies the engine that shelf files changed,
+/// and triggers a workspace reread.
+void reloadAgentShelves(WorkspaceController ws) {
+  clearShelfMetaCache();
+  clearCustomCardUiCache();
+  ws.inside?.forgetFolders();
+  ws.reread();
+}
+
+/// Reloads shelves/panel caches and opens a discovered Vism panel by [path] or [name]
+/// as a live docking tab. Returns the opened panel name, or null if not found.
+String? openVismPanelInDock(
+  WorkspaceController ws, {
+  String? path,
+  String? name,
+}) {
+  clearShelfMetaCache();
+  clearCustomCardUiCache();
+  ws.inside?.forgetFolders();
+  final panels = parsePanelList(customPanelListRaw(ws));
+  final wantPath = path?.trim() ?? '';
+  final wantName = name?.trim().toLowerCase() ?? '';
+  final hit = panels
+      .where(
+        (d) =>
+            (wantPath.isNotEmpty && d.path == wantPath) ||
+            (wantName.isNotEmpty && d.name.toLowerCase() == wantName),
+      )
+      .firstOrNull;
+  if (hit == null) return null;
+  ws.openDockTab(
+    Pane(
+      hit.name,
+      null,
+      () => JsPanelTool(hit),
+      at: PaneStrip.catalog,
+      tone: panelToneColor(hit.tone),
+      acts: hit.acts,
+    ),
+  );
+  return hit.name;
+}
+
+/// Executes [ops] returned by `onAction` or an ACP agent in a single undo step.
+/// Layer 0 (stage/composition properties) and raw engine `later` calls are permitted.
 void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
   final m = ws.inside;
   if (m == null) return;
-  final docOps = ops.where(
-    (o) =>
-        o.op != 'select' &&
-        o.op != 'time' &&
-        o.op != 'preset_save' &&
-        o.op != 'preset_delete',
-  );
+  const nonDocOps = {
+    'select',
+    'time',
+    'play',
+    'open_panel',
+    'reload_shelves',
+    'preset_save',
+    'preset_delete',
+  };
+  final docOps = ops.where((o) => !nonDocOps.contains(o.op));
   if (docOps.isNotEmpty) {
     groupBegin(ws);
     for (final o in docOps) {
       switch (o.op) {
         case 'set':
-          if (o.layer != 0 &&
-              o.name.isNotEmpty &&
-              (o.value != null || o.word.isNotEmpty)) {
+          if (o.name.isNotEmpty && (o.value != null || o.word.isNotEmpty)) {
             m.later(
               'set',
               layer: o.layer,
@@ -328,14 +377,11 @@ void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
             );
           }
         case 'say':
-          if (o.layer != 0 && o.name.isNotEmpty) {
+          if (o.name.isNotEmpty) {
             m.later('say', layer: o.layer, name: o.name, word: o.word);
           }
         case 'key':
-          if (o.layer != 0 &&
-              o.name.isNotEmpty &&
-              o.at != null &&
-              o.value != null) {
+          if (o.name.isNotEmpty && o.at != null && o.value != null) {
             m.later(
               'key',
               layer: o.layer,
@@ -357,6 +403,9 @@ void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
           if (o.kind.isNotEmpty || o.file.isNotEmpty) {
             m.later('add', name: o.kind, word: o.file);
           }
+        case 'create':
+          final recipe = o.word.isNotEmpty ? o.word : o.name;
+          if (recipe.isNotEmpty) m.later('create', word: recipe);
         case 'psd':
           if (o.file.isNotEmpty) m.later('psd', word: o.file);
         case 'pivot':
@@ -380,26 +429,58 @@ void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
         case 'remove':
           if (o.layer > 0) m.later('remove', layer: o.layer);
         case 'fx':
-          if (o.layer != 0 && o.file.isNotEmpty) {
-            final cur = o.layer > 0 ? m.word(o.layer, 'fx') : '';
+          if (o.file.isNotEmpty) {
+            final cur = o.layer >= 0 ? m.word(o.layer, 'fx') : '';
             final next = cur.isEmpty ? o.file : '$cur ${o.file}';
             m.later('say', layer: o.layer, name: 'fx', word: next);
+          }
+        case 'undo':
+          m.later('undo');
+        case 'redo':
+          m.later('redo');
+        case 'later':
+          // Escape hatch for any engine motolii_later verb (mark, guide, split,
+          // brush, fx_move, isolate, ...), keeping the core unconstrained.
+          if (o.name.isNotEmpty) {
+            m.later(
+              o.name,
+              layer: o.layer,
+              name: o.mode,
+              word: o.word.isNotEmpty ? o.word : o.file,
+              number: o.value ?? o.at ?? 0,
+            );
           }
       }
     }
     ws.after(groupEnd(ws));
   }
   for (final o in ops) {
-    if (o.op == 'select') {
-      if (o.layers.isEmpty) {
-        ws.select(null);
-      } else if (o.layers.length == 1) {
-        ws.select(o.layers.first);
-      } else {
-        ws.pickMany(o.layers);
-      }
-    } else if (o.op == 'time' && o.at != null) {
-      ws.frame = (o.at! * WorkspaceController.fps).round();
+    switch (o.op) {
+      case 'select':
+        if (o.layers.isEmpty) {
+          ws.select(null);
+        } else if (o.layers.length == 1) {
+          ws.select(o.layers.first);
+        } else {
+          ws.pickMany(o.layers);
+        }
+      case 'time' when o.at != null:
+        ws.frame = (o.at! * WorkspaceController.fps).round();
+      case 'play':
+        ws.playing = (o.value ?? 1) > 0.5;
+      case 'reload_shelves':
+        clearShelfMetaCache();
+        clearCustomCardUiCache();
+        m.forgetFolders();
+        ws.reread();
+      case 'open_panel':
+        openVismPanelInDock(
+          ws,
+          path: o.file.isNotEmpty ? o.file : null,
+          name: o.name.isNotEmpty
+              ? o.name
+              : (o.word.isNotEmpty ? o.word : null),
+        );
     }
   }
 }
