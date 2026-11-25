@@ -7,6 +7,7 @@ import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/disk.dart' show existsFile;
 import 'package:motolii/storage/shelf_disk.dart';
 import 'package:motolii/workspace/state/tiles/tile_frames.dart';
 import 'package:motolii/workspace/state/tiles/tile_media.dart';
@@ -23,8 +24,10 @@ class TileStage {
   final String folder;
   final Motolii m;
 
-  /// The layers of the stage: the grid, the picture a transition goes to, the sample photo, the moving card, the sound, the words.
-  late final int grid, under, photo, card, song, words;
+  /// The layers of the stage: the grid, the picture a transition/2-layer effect uses,
+  /// the sample photo, the moving card, the transparent cutout PNG, the moving sample video,
+  /// the sound, and the words.
+  late final int grid, under, photo, card, cutout, film, song, words;
 
   /// Whether the sample's own pictures were taken, the table of what each effect should show, and the values of the layers above.
   late final bool enough;
@@ -58,6 +61,12 @@ class TileStage {
     under = m.add('picture', '$sample/fx_sample_end.jpg');
     photo = m.add('picture', '$sample/fx_sample.jpg');
     card = m.add('picture', '$sample/fx_sample.jpg');
+    // Alpha-transparent cutout PNG for outline/shadow/glow/alpha effects (_needs == 'shape').
+    final cutoutPath = '$sample/fx_sample_cutout.png';
+    cutout = existsFile(cutoutPath) ? m.add('picture', cutoutPath) : 0;
+    // Moving video clip for temporal/motion/frame-diff effects (_needs == 'motion').
+    final filmPath = '$sample/fx_sample_motion.mp4';
+    film = existsFile(filmPath) ? m.add('film', filmPath) : 0;
     // For effects that hear: a kick three times a second under a tone rising from 300 to 2000 Hz, made by the same ffmpeg lavfi as the grid.
     ffmpeg([
       '-f',
@@ -78,6 +87,8 @@ class TileStage {
       ..set(card, 'size', 1.8)
       ..key(card, 'x', tileMoments.first, -0.84)
       ..key(card, 'x', tileMoments.last, 0.84);
+    if (cutout > 0) m.set(cutout, 'size', 3.4);
+    if (film > 0) m.set(film, 'size', 3.6);
 
     lay(false);
     final plain = shoot(
@@ -98,7 +109,15 @@ class TileStage {
     for (final (empty, seen) in [('none', null), ('stage', grid)]) {
       // Nothing on the stage (black), then the grid alone. A tile hardly different from either shows nothing, by the same
       // looksSame test. The road alone is not used: rain on a pane, thin streaks over it, is hardly different from it by the mean.
-      for (final t in [grid, card, photo, under, words]) {
+      for (final t in [
+        grid,
+        card,
+        photo,
+        under,
+        words,
+        if (cutout > 0) cutout,
+        if (film > 0) film,
+      ]) {
         m.set(t, 'opacity', t == seen ? 1 : 0);
       }
       shoot('$folder/$empty.png');
@@ -108,7 +127,14 @@ class TileStage {
         moved.length == tileMoments.length;
     shows = table(dir);
     own = {
-      for (final t in [photo, card, words]) ...m.values(t),
+      for (final t in [
+        photo,
+        card,
+        words,
+        if (cutout > 0) cutout,
+        if (film > 0) film,
+      ])
+        ...m.values(t),
     }; // A drawing's values belong to a shape, so none of them start with js_.
   }
 
@@ -166,11 +192,13 @@ class TileStage {
 
   void lay(bool moving, {bool road = false, int only = 0}) {
     for (final (thing, seen) in [
-      (grid, moving || only != 0 || small),
-      (card, moving),
+      (grid, moving || (only != 0 && only != film) || small),
+      (card, moving && only == 0),
       (photo, !moving && only == 0),
       (under, road),
       (words, only == words),
+      if (cutout > 0) (cutout, only == cutout),
+      if (film > 0) (film, only == film),
       if (drawing > 0) (drawing, only == drawing),
     ]) {
       m.set(thing, 'opacity', seen ? 1 : 0);

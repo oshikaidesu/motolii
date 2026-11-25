@@ -125,11 +125,17 @@ abstract final class TileReview {
 
   /// What a tile is told when it is drawn (saved beside it as .tells): the weights it goes by, what it moves and what it
   /// lacks. A tile whose entry was weighed or reviewed again since is drawn again.
-  static String tells(String dir, String file) => switch ({
-    for (final MapEntry(:key, :value) in entry(dir, file).entries)
-      if (key != '_why') key: value,
-  }) {
-    final w when w.isEmpty => '',
-    final w => jsonEncode(w),
-  };
+  static String tells(String dir, String file) {
+    final e = entry(dir, file);
+    final need = e['_needs'];
+    final w = <String, Object?>{
+      for (final MapEntry(:key, :value) in e.entries)
+        if (key != '_why') key: value,
+      // Trigger redraw only for tiles that benefit from the cutout PNG, motion MP4,
+      // and auto-bound 2nd picture/sound inputs added to TileStage/TileStudio.
+      if (const {'shape', 'picture', 'motion', 'sound'}.contains(need))
+        '_samples': 2,
+    };
+    return w.isEmpty ? '' : jsonEncode(w);
+  }
 }

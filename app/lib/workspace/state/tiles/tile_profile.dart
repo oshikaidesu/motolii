@@ -14,6 +14,7 @@ class TileProfile {
     required this.plays,
     required this.lists,
     required this.ears,
+    required this.pictures,
     required this.hears,
     required this.weights,
     required this.time,
@@ -30,9 +31,11 @@ class TileProfile {
   final Set<String> said;
   final bool plays;
 
-  /// ISF's "long" inputs (a choice, which the engine takes as a range), and its audio and audioFFT inputs.
+  /// ISF's "long" inputs (a choice, which the engine takes as a range), its audio/sound inputs,
+  /// and extra image inputs (`TYPE: "image"` besides inputImage/startImage/endImage, or WGSL `--picture@`).
   final List<String> lists;
   final List<String> ears;
+  final List<String> pictures;
 
   /// Whether the effect hears: an audio input, a sound tag, or the reviewer says it needs sound.
   final bool hears;
@@ -65,7 +68,8 @@ class TileProfile {
             said.contains(
               'feedback',
             ), // ISF's PERSISTENT: the engine reads it (isf_tags).
-        isf = f.endsWith('.fs') ? readTextNow(f) : '';
+        isf = f.endsWith('.fs') ? readTextNow(f) : '',
+        wgsl = f.endsWith('.wgsl') ? readTextNow(f) : '';
     final lists = [
       for (final l in RegExp(
         r'\{[^{}]*"TYPE"\s*:\s*"long"[^{}]*\}',
@@ -77,7 +81,22 @@ class TileProfile {
         r'\{[^{}]*"TYPE"\s*:\s*"audio(FFT)?"[^{}]*\}',
       ).allMatches(isf))
         ?RegExp(r'"NAME"\s*:\s*"([^"]+)"').firstMatch(l.group(0)!)?.group(1),
-    ]; // ISF_Spec's audio and audioFFT inputs.
+      for (final m in RegExp(r'//\s*--sound@([A-Za-z0-9_]+)').allMatches(wgsl))
+        ?m.group(1),
+    ]; // ISF_Spec's audio/audioFFT and WGSL --sound@ inputs.
+    final pictures = [
+      for (final l in RegExp(
+        r'\{[^{}]*"TYPE"\s*:\s*"image"[^{}]*\}',
+      ).allMatches(isf))
+        if (RegExp(r'"NAME"\s*:\s*"([^"]+)"').firstMatch(l.group(0)!)?.group(1)
+            case final n?
+            when !const {'inputImage', 'startImage', 'endImage'}.contains(n))
+          n,
+      for (final m in RegExp(
+        r'//\s*--picture@([A-Za-z0-9_]+)',
+      ).allMatches(wgsl))
+        if (m.group(1) case final n? when n != 'backdrop') n,
+    ];
     final hears =
         ears.isNotEmpty ||
         said.contains('sound') ||
@@ -105,6 +124,7 @@ class TileProfile {
       plays: plays,
       lists: lists,
       ears: ears,
+      pictures: pictures,
       hears: hears,
       weights: weights,
       time: time,

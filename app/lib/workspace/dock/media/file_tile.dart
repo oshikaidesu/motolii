@@ -5,9 +5,11 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/agent_files.dart' show readOptionalTextFile;
 import 'package:motolii/storage/disk.dart' show imageFile;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Pressable;
@@ -56,8 +58,21 @@ class FileArt extends StatelessWidget {
                 ),
         );
       }
+      if (n.id.toLowerCase().endsWith('.svg')) {
+        final svg = readOptionalTextFile(n.id);
+        if (svg != null && svg.trim().isNotEmpty) {
+          return ColoredBox(
+            color: WindowTokens.well,
+            child: Padding(
+              padding: EdgeInsets.all(Shape.s(6)),
+              child: SvgPicture.string(svg, fit: BoxFit.contain),
+            ),
+          );
+        }
+        return flat;
+      }
       final photo = RegExp(
-        r'\.(png|jpe?g|webp)$',
+        r'\.(png|jpe?g|webp|gif|bmp)$',
         caseSensitive: false,
       ).hasMatch(n.id);
       return photo

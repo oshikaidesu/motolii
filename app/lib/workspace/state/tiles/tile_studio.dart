@@ -50,18 +50,25 @@ class TileStudio extends TileStage {
         said = profile.said,
         plays = profile.plays,
         ears = profile.ears,
+        pictures = profile.pictures,
         hears = profile.hears,
         runs = profile.runs,
         first = profile.first;
     final base = home.substring(0, home.length - 4);
     var same = false, split = false, stands = true;
     var made = const <String>[];
-    final worded = show?.text != null || TileReview.needs(dir, f) == 'text'; // For text effects, as the table or the reviewer says: shown on words alone.
+    final need = TileReview.needs(dir, f);
+    final worded = show?.text != null || need == 'text'; // For text effects, as the table or the reviewer says: shown on words alone.
     final alone = worded
         ? words
-        : (show?.drawn ?? false) || TileReview.needs(dir, f) == 'path'
+        : (show?.drawn ?? false) || need == 'path'
         ? math.max(sketch(), 0)
-        : 0; // For strokes or a path: shown on the drawing alone.
+        : need == 'shape' && cutout > 0
+        ? cutout
+        : need == 'motion' && film > 0
+        ? film
+        : 0; // Dedicated sample asset (text, path strokes, transparent cutout PNG, or moving video).
+    final aloneRoad = alone == cutout && cutout > 0;
     final aloneOk =
         alone != 0 &&
         () {
@@ -72,7 +79,7 @@ class TileStudio extends TileStage {
               show?.text?.isNotEmpty ?? false ? show!.text! : 'Motolii',
             );
           }
-          lay(false, only: alone);
+          lay(false, road: aloneRoad, only: alone);
           return shoot('$folder/alone.png').length == tileMoments.length;
         }();
     final bare = alone != 0 ? 'alone' : 'plain';
@@ -82,11 +89,12 @@ class TileStudio extends TileStage {
     for (final moving in alone != 0 ? [false] : [first, if (!first) true]) {
       // Nothing shows on the whole photo, so use a card moving past, where its edge and motion effects show.
       // A transition goes on the photo with the road under it. So does an effect that shows what is behind (rain on a pane over
-      // nothing was black) and one for cut-outs, which gets its card over the road: a glass or a shape needs a background to refract.
+      // nothing was black) and one for cut-outs, which gets its cutout over the road: a glass or a shape needs a background to refract.
       final passes =
-          (said.contains('transition') ||
-              const {'behind', 'shape'}.contains(TileReview.needs(dir, f))) &&
-          alone == 0;
+          aloneRoad ||
+          ((said.contains('transition') ||
+                  const {'behind', 'shape'}.contains(need)) &&
+              alone == 0);
       lay(moving, road: passes, only: alone);
       // A screen effect. A .json is Filament's own settings (engine/stage/effects/viewer_settings.h). An AviUtl2 script goes on a layer instead.
       final whole =
@@ -114,6 +122,13 @@ class TileStudio extends TileStage {
           'js_${TileReview.knobStem(f)}_$e',
           song.toDouble(),
         ); // On the beat.
+      }
+      for (final p in pictures) {
+        m.set(
+          on,
+          'js_${TileReview.knobStem(f)}_$p',
+          under.toDouble(),
+        ); // Second sample layer for composite/map/LUT inputs.
       }
       if (hears && !heard && (whole || onIt)) {
         // Asked for once and waited for, so its pictures are drawn hearing it from the first.
@@ -159,7 +174,10 @@ class TileStudio extends TileStage {
           enough &&
           (alone == 0 || aloneOk) &&
           ([
-            '${moving ? 'moved' : bare}${passes ? '_road' : ''}',
+            if (alone != 0)
+              bare
+            else
+              '${moving ? 'moved' : bare}${passes ? '_road' : ''}',
             'none',
             'stage',
           ].any((b) => looksSame('${base}_%d.png', '$folder/${b}_%d.png')));
