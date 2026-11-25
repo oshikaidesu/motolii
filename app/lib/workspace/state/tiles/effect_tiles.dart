@@ -50,10 +50,12 @@ abstract final class EffectTiles {
 
   static void _again(Motolii m, {String? file}) {
     _tiles.drop((q) => file == null || q.$1 == file);
+    if (file == null) _toldCache.clear();
     for (final (_, f) in m.effects) {
       final home = m.tileHome(f);
       if (home.isEmpty || (file != null && f != file)) continue;
       _tiles.forget(home);
+      _toldCache.remove(home);
       try {
         deleteFile('$home.tells');
       } catch (_) {}
@@ -69,8 +71,14 @@ abstract final class EffectTiles {
   static final moments = tileMoments;
   static const still = tileStill;
 
+  // In-memory cache of each tile's .tells stamp so switching projects does not
+  // re-read hundreds of small files synchronously on the UI isolate.
+  static final _toldCache = <String, String?>{};
+
   /// The saved .tells of [home]. Null when it was drawn before tiles were told anything.
-  static String? _toldOf(String home) => readTextIfThere('$home.tells');
+  static String? _toldOf(String home) => _toldCache.containsKey(home)
+      ? _toldCache[home]
+      : (_toldCache[home] = readTextIfThere('$home.tells'));
 
   /// Its moving pictures: home_0.jpg … home_15.jpg beside its still (none for a tile not drawn here).
   static String frame(String home, int k) => tileFrame(home, k);
@@ -98,13 +106,18 @@ abstract final class EffectTiles {
     void Function(String file)? codeFile,
   }) {
     final m = ws.inside!;
-    _ask(m, changed);
+    var active = true;
+    // Defer the initial ~700-effect tile check past project-open frame paint.
+    Timer.run(() {
+      if (active) _ask(m, changed);
+    });
     try {
       makeFolder(
         '$own/effects',
       ); // There is somewhere to put files, as the README says.
       makeFolder('$own/ae_plugins');
     } catch (_) {
+      active = false;
       return null;
     }
     Timer? soon;
@@ -116,7 +129,11 @@ abstract final class EffectTiles {
 
     final inner = <StreamSubscription<String>>[];
     final merged = StreamController<String>(
-      onCancel: () => Future.wait([for (final w in inner) w.cancel()]),
+      onCancel: () async {
+        active = false;
+        soon?.cancel();
+        await Future.wait([for (final w in inner) w.cancel()]);
+      },
     );
     inner.addAll([
       for (final p in [own, ...library.where((p) => folderThere(p))])
@@ -148,6 +165,7 @@ abstract final class EffectTiles {
     _told = changed;
     _tiles.onDrawn = (homes) {
       for (final h in homes) {
+        _toldCache.remove(h);
         m.tileRendered(h, same: existsFile('$h.same'));
       }
       changed();

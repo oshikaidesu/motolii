@@ -46,11 +46,9 @@ std::string fx_source(const std::string& f) {
   return resolve_shelf_path(base);
 }
 
-// Returns the tags of an ISF file, read from its header and body. See isf.h.
-std::string isf_tags(const std::string& file) {
-  const std::string text = adapter_isf(read_text(file));
-  IsfHead head;
-  if (!isf_read_head(text, head)) return "";
+namespace {
+
+std::string isf_tags_of(const IsfHead& head) {
   const rapidjson::Value& passes = *head.passes;
   const bool sound = head.sound, transition = head.transition;
   const std::vector<std::string>& imageNames = head.images;
@@ -87,6 +85,30 @@ std::string isf_tags(const std::string& file) {
   // image from outside.
   tag(!transition && imageNames.size() > 1, "image");
   return tags;
+}
+
+}  // namespace
+
+IsfMeta isf_meta(const std::string& file) {
+  IsfMeta m;
+  const std::string text = adapter_isf(read_text(file));
+  IsfHead head;
+  if (!isf_read_head(text, head)) return m;
+  m.ok = true;
+  if (const auto shelf = isf_shelf(head)) m.label = *shelf;
+  m.about = isf_str(head.json, "DESCRIPTION");
+  std::replace(m.about.begin(), m.about.end(), '\n', ' ');
+  std::replace(m.about.begin(), m.about.end(), '\r', ' ');
+  m.tags = isf_tags_of(head);
+  return m;
+}
+
+// Returns the tags of an ISF file, read from its header and body. See isf.h.
+std::string isf_tags(const std::string& file) {
+  const std::string text = adapter_isf(read_text(file));
+  IsfHead head;
+  if (!isf_read_head(text, head)) return "";
+  return isf_tags_of(head);
 }
 
 namespace {

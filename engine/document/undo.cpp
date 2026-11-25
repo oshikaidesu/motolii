@@ -295,8 +295,7 @@ Doc* doc_open(Stage& s, const char* path) {
   // default is 0.3. The old `seed` becomes js_Seed for a layer with scatter
   // properties. A layer with another script keeps its old rows, which nothing
   // reads.
-  if (const std::string repeater = doc_recipe_code_path("Repeater");
-      !repeater.empty()) {
+  {
     // Pairs of an old property name and the Repeater parameter that replaces
     // it.
     static const char* const moved[][2] = {
@@ -325,35 +324,48 @@ Doc* doc_open(Stage& s, const char* path) {
           by += std::string(by.empty() ? "" : ",") + "'" + m[0] + "_by'";
       rename += std::string(" when '") + m[0] + "' then '" + m[1] + "'";
     }
-    char* sql = sqlite3_mprintf(
-        "begin;"
-        "create temp table if not exists old_layers(layer integer primary "
-        "key); delete from old_layers;"
-        "insert into old_layers select distinct layer from keyframe where name "
-        "in (%s) and layer not in (select layer from keyframe where name = "
-        "'script' and value not in ('', 'none'));"
-        "insert or ignore into keyframe(layer, name, at, value) select "
-        "f.layer, 'js_Seed', 0.0, s.value from (select distinct layer from "
-        "keyframe where name in ('scatter_x', 'scatter_y', 'scatter_z', "
-        "'scatter_rotate', 'scatter_size') and layer in (select layer from "
-        "old_layers)) f join keyframe s on s.layer = f.layer and s.name = "
-        "'seed' and s.at = 0;"
-        "insert or ignore into keyframe(layer, name, at, value) select layer, "
-        "'js_StepX', 0.0, 0.0 from old_layers where layer not in (select layer "
-        "from keyframe where name = 'copy_x');"
-        "update keyframe set name = case name%s end where layer in (select "
-        "layer from old_layers) and name in (%s);"
-        "delete from keyframe where name in (%s);"
-        "delete from keyframe where layer in (select layer from old_layers) "
-        "and name = 'script';"
-        "insert into keyframe(layer, name, at, value) select layer, 'script', "
-        "0.0, %Q from old_layers;"
-        "drop table old_layers; commit;",
-        names.c_str(), rename.c_str(), names.c_str(), by.c_str(),
-        repeater.c_str());
-    if (sqlite3_exec(d->file, sql, nullptr, nullptr, nullptr) != SQLITE_OK)
-      sqlite3_exec(d->file, "rollback", nullptr, nullptr, nullptr);
-    sqlite3_free(sql);
+    // Skip scanning shelves/create/*.js and running a write transaction on
+    // normal projects that have no legacy Repeater keyframes.
+    bool has_legacy = false;
+    doc_rows(
+        *d,
+        sqlite3_mprintf("select 1 from keyframe where name in (%s,%s) limit 1",
+                        names.c_str(), by.c_str()),
+        [&](sqlite3_stmt*) { has_legacy = true; });
+    if (has_legacy) {
+      if (const std::string repeater = doc_recipe_code_path("Repeater");
+          !repeater.empty()) {
+        char* sql = sqlite3_mprintf(
+            "begin;"
+            "create temp table if not exists old_layers(layer integer primary "
+            "key); delete from old_layers;"
+            "insert into old_layers select distinct layer from keyframe where "
+            "name in (%s) and layer not in (select layer from keyframe where "
+            "name = 'script' and value not in ('', 'none'));"
+            "insert or ignore into keyframe(layer, name, at, value) select "
+            "f.layer, 'js_Seed', 0.0, s.value from (select distinct layer from "
+            "keyframe where name in ('scatter_x', 'scatter_y', 'scatter_z', "
+            "'scatter_rotate', 'scatter_size') and layer in (select layer from "
+            "old_layers)) f join keyframe s on s.layer = f.layer and s.name = "
+            "'seed' and s.at = 0;"
+            "insert or ignore into keyframe(layer, name, at, value) select "
+            "layer, 'js_StepX', 0.0, 0.0 from old_layers where layer not in "
+            "(select layer from keyframe where name = 'copy_x');"
+            "update keyframe set name = case name%s end where layer in (select "
+            "layer from old_layers) and name in (%s);"
+            "delete from keyframe where name in (%s);"
+            "delete from keyframe where layer in (select layer from "
+            "old_layers) and name = 'script';"
+            "insert into keyframe(layer, name, at, value) select layer, "
+            "'script', 0.0, %Q from old_layers;"
+            "drop table old_layers; commit;",
+            names.c_str(), rename.c_str(), names.c_str(), by.c_str(),
+            repeater.c_str());
+        if (sqlite3_exec(d->file, sql, nullptr, nullptr, nullptr) != SQLITE_OK)
+          sqlite3_exec(d->file, "rollback", nullptr, nullptr, nullptr);
+        sqlite3_free(sql);
+      }
+    }
   }
   d->stage = &s;
   // Evaluate the project on every frame while it plays.

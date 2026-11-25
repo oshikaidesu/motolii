@@ -66,6 +66,36 @@ Future<({int wide, int high, double seconds, double rate})?> docFactsOf(
         );
 });
 
+/// Reads properties for many projects in a single isolate so the native library
+/// is opened once instead of once per card on the home screen.
+Future<List<({int wide, int high, double seconds, double rate})?>>
+docFactsBatch(String lib, List<({String doc, String png})> items) {
+  if (items.isEmpty) return Future.value(const []);
+  return Isolate.run(() {
+    final b = c.MotoliiBindings(DynamicLibrary.open(lib));
+    return [
+      for (final item in items)
+        using((a) {
+          final said = b
+              .motolii_doc_properties(
+                item.doc.toNativeUtf8(allocator: a),
+                item.png.toNativeUtf8(allocator: a),
+              )
+              .toDartString()
+              .split(' ');
+          return said.length < 4
+              ? null
+              : (
+                  wide: int.parse(said[0]),
+                  high: int.parse(said[1]),
+                  seconds: double.parse(said[2]),
+                  rate: double.parse(said[3]),
+                );
+        }),
+    ];
+  });
+}
+
 Future<String> mediaInfoOf(String lib, String file) async {
   final said = await _mediaSaid(lib, file);
   if (said.length < 5) return '';

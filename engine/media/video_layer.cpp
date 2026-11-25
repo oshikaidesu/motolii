@@ -3,6 +3,13 @@
 #include <filament/TextureSampler.h>
 #include <gst/pbutils/pbutils.h>
 
+#include <algorithm>
+#include <filesystem>
+#include <future>
+#include <mutex>
+#include <set>
+#include <unordered_map>
+
 #include "gpu/gpu_interop.h"
 #include "stage/render/render_layers.h"
 
@@ -89,23 +96,122 @@ void video_found(GstElement*, GstPad* stream, gpointer film) {
   gst_object_unref(to);
 }
 
-// Returns the length of a file in nanoseconds as reported by GStreamer's
-// discoverer, which reads on until it knows. This is what gst-discoverer-1.0
-// does. Returns 0 if it cannot be found.
-gint64 video_discovered(const char* file) {
-  GstDiscoverer* looks = gst_discoverer_new(5 * GST_SECOND, nullptr);
-  gchar* uri = gst_filename_to_uri(file, nullptr);
-  GstDiscovererInfo* info =
-      looks && uri ? gst_discoverer_discover_uri(looks, uri, nullptr) : nullptr;
-  const gint64 length =
-      info ? (gint64)gst_discoverer_info_get_duration(info) : 0;
-  if (info) g_object_unref(info);
-  if (looks) g_object_unref(looks);
-  g_free(uri);
-  return length;
+struct VideoProbe {
+  bool heard = false;
+  gint64 duration = 0;
+};
+
+struct VideoProbeKey {
+  std::filesystem::file_time_type mtime{};
+  uintmax_t size = 0;
+  bool valid = false;
+};
+
+std::mutex& video_probe_lock() {
+  static std::mutex lock;
+  return lock;
 }
 
+std::unordered_map<std::string, std::pair<VideoProbeKey, VideoProbe>>&
+video_probe_cache() {
+  static std::unordered_map<std::string, std::pair<VideoProbeKey, VideoProbe>>
+      cache;
+  return cache;
+}
+
+VideoProbeKey video_probe_key(const char* file) {
+  std::error_code wrong;
+  const auto mtime = std::filesystem::last_write_time(file, wrong);
+  if (wrong) return {};
+  const auto size = std::filesystem::file_size(file, wrong);
+  if (wrong) return {};
+  return {mtime, size, true};
+}
+
+void video_ensure_gst() {
+  static std::once_flag started;
+  std::call_once(started, [] { gst_init(nullptr, nullptr); });
+}
+
+// Runs GStreamer's discoverer once per (file, mtime, size) to capture both
+// audio-only detection and fallback duration without re-probing repeated clips.
+VideoProbe video_probe(const char* file) {
+  video_ensure_gst();
+  const VideoProbeKey key = video_probe_key(file);
+  if (key.valid) {
+    std::lock_guard<std::mutex> hold(video_probe_lock());
+    const auto& cache = video_probe_cache();
+    if (auto it = cache.find(file); it != cache.end() &&
+                                    it->second.first.valid &&
+                                    it->second.first.mtime == key.mtime &&
+                                    it->second.first.size == key.size)
+      return it->second.second;
+  }
+  VideoProbe result;
+  GstDiscoverer* looks = gst_discoverer_new(5 * GST_SECOND, nullptr);
+  gchar* uri = gst_filename_to_uri(file, nullptr);
+  if (GstDiscovererInfo* info =
+          looks && uri ? gst_discoverer_discover_uri(looks, uri, nullptr)
+                       : nullptr) {
+    GList *videoStreams = gst_discoverer_info_get_video_streams(info),
+          *sounds = gst_discoverer_info_get_audio_streams(info);
+    bool moving = false;
+    for (GList* p = videoStreams; p; p = p->next)
+      moving = moving || !gst_discoverer_video_info_is_image(
+                             (GstDiscovererVideoInfo*)p->data);
+    result.heard = sounds && !moving;
+    result.duration = (gint64)gst_discoverer_info_get_duration(info);
+    gst_discoverer_stream_info_list_free(videoStreams);
+    gst_discoverer_stream_info_list_free(sounds);
+    g_object_unref(info);
+  }
+  g_free(uri);
+  if (looks) g_object_unref(looks);
+  if (key.valid) {
+    std::lock_guard<std::mutex> hold(video_probe_lock());
+    video_probe_cache()[file] = {key, result};
+  }
+  return result;
+}
+
+// Returns the length of a file in nanoseconds as reported by GStreamer's
+// discoverer, reusing the cached probe result.
+gint64 video_discovered(const char* file) { return video_probe(file).duration; }
+
 }  // namespace
+
+void video_prewarm_probes(const std::vector<std::string>& files) {
+  std::vector<std::string> todo;
+  std::set<std::string> seen;
+  for (const std::string& f : files) {
+    if (f.empty() || !seen.insert(f).second) continue;
+    const VideoProbeKey key = video_probe_key(f.c_str());
+    if (!key.valid) continue;
+    std::lock_guard<std::mutex> hold(video_probe_lock());
+    const auto& cache = video_probe_cache();
+    if (auto it = cache.find(f); it != cache.end() && it->second.first.valid &&
+                                 it->second.first.mtime == key.mtime &&
+                                 it->second.first.size == key.size)
+      continue;
+    todo.push_back(f);
+  }
+  if (todo.size() < 2) return;
+  video_ensure_gst();
+  const size_t workers = std::min<size_t>(4, todo.size());
+  std::atomic<size_t> next{0};
+  std::vector<std::future<void>> tasks;
+  tasks.reserve(workers);
+  for (size_t i = 0; i < workers; ++i) {
+    tasks.push_back(std::async(std::launch::async, [&] {
+      for (;;) {
+        const size_t idx = next.fetch_add(1);
+        if (idx >= todo.size()) break;
+        video_probe(todo[idx].c_str());
+      }
+    }));
+  }
+  for (auto& t : tasks) t.get();
+}
 
 Video* video(Stage& s, const char* file, const mat4f& place, float high,
              float from, float to, float speed, const char* lay, bool lit,
@@ -113,30 +219,10 @@ Video* video(Stage& s, const char* file, const mat4f& place, float high,
   // Another backend is in use.
   if (!interop::device(s.engine))
     return video_trouble = "not the WebGPU backend", nullptr;
-  static const bool started = (gst_init(nullptr, nullptr), true);
-  (void)started;
+  video_ensure_gst();
   Video* v = new Video;
-  {
-    // Detect an audio-only file. GStreamer's discoverer reports audio streams,
-    // and for an album cover only still images, as gst-discoverer-1.0 shows.
-    GstDiscoverer* looks = gst_discoverer_new(5 * GST_SECOND, nullptr);
-    gchar* uri = gst_filename_to_uri(file, nullptr);
-    if (GstDiscovererInfo* info =
-            looks && uri ? gst_discoverer_discover_uri(looks, uri, nullptr)
-                         : nullptr) {
-      GList *videoStreams = gst_discoverer_info_get_video_streams(info),
-            *sounds = gst_discoverer_info_get_audio_streams(info);
-      bool moving = false;
-      for (GList* p = videoStreams; p; p = p->next)
-        moving = moving || !gst_discoverer_video_info_is_image(
-                               (GstDiscovererVideoInfo*)p->data);
-      v->heard = sounds && !moving;
-      gst_discoverer_stream_info_list_free(videoStreams),
-          gst_discoverer_stream_info_list_free(sounds), g_object_unref(info);
-    }
-    g_free(uri);
-    if (looks) g_object_unref(looks);
-  }
+  // Detect an audio-only file via the cached discoverer probe.
+  v->heard = video_probe(file).heard;
   // First try the hardware decoder. Where it has no capacity left, for example
   // with 59 videos at once on an M4, retry with a CPU decoder and copy the
   // frames up. The retry uses decodebin, told to skip the hardware decoders,

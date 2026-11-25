@@ -375,6 +375,7 @@ int doc_pack(Doc& d, const std::string& folder, const std::string& name) {
     return sqlite3_close(pack), d.error = "the package could not be opened", -1;
   int n = 0;
   std::set<std::string> taken;
+  sqlite3_exec(pack, "begin;", nullptr, nullptr, nullptr);
   for (const std::string& word : files) {
     const std::filesystem::path was = std::filesystem::absolute(word, wrong);
     const std::string whole = was.generic_string();
@@ -400,6 +401,8 @@ int doc_pack(Doc& d, const std::string& folder, const std::string& name) {
     sqlite3_free(told);
     ++n;
   }
+  if (sqlite3_exec(pack, "commit;", nullptr, nullptr, nullptr) != SQLITE_OK)
+    sqlite3_exec(pack, "rollback;", nullptr, nullptr, nullptr);
   sqlite3_close(pack);
   return n;
 }

@@ -17,6 +17,15 @@ std::string isf_file(const std::string& file);
 // yet. Meanwhile isf_file keeps returning the last successful conversion.
 std::string isf_trouble(const std::string& file);
 
+// Metadata of an ISF (.fs) effect parsed from its JSON header without compiling
+// the shader through glslang/Tint, so shelf listing stays fast on a cold cache.
+struct IsfMeta {
+  bool ok = false;
+  std::string label, about, tags;
+};
+
+IsfMeta isf_meta(const std::string& file);
+
 // Returns tags describing what an ISF effect does, read from the file itself so
 // that nobody has to label it by hand. Shadertoy also flags its shaders from
 // what they define and filters by it. The tags are separated by spaces and come

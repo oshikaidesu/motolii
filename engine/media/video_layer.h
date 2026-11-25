@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "stage/render/render_stage.h"
 
@@ -140,6 +141,10 @@ extern const char* video_trouble;
 // at a time. `video_late` counts requests where the decoder could not yet
 // provide the frame for that time.
 extern long video_asked, video_late;
+
+// Pre-populates the GStreamer discoverer probe cache in parallel for a batch of
+// video files before opening their pipelines sequentially.
+void video_prewarm_probes(const std::vector<std::string>& files);
 
 // Adds the video in `file` to the stage as a quad `high` tall, as wide as the
 // video's aspect ratio makes it, centered at `place` and facing along the z

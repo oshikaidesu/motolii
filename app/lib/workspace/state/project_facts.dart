@@ -1,5 +1,5 @@
 // What a saved project says about itself, read without opening it: the home screen shows it on each card.
-import 'package:motolii/bridge/motolii.dart' show docFactsOf;
+import 'package:motolii/bridge/motolii.dart' show docFactsBatch, docFactsOf;
 
 /// A project's size in pixels, its length in seconds and its frame rate, as it last saved them.
 typedef ProjectFacts = ({int wide, int high, double seconds, double rate});
@@ -11,3 +11,9 @@ Future<ProjectFacts?> savedProjectFacts(
   String projectPath,
   String picturePath,
 ) => docFactsOf(lib, projectPath, picturePath);
+
+/// Reads facts and thumbnails for a list of projects in a single worker isolate.
+Future<List<ProjectFacts?>> savedProjectFactsBatch(
+  String lib,
+  List<({String doc, String png})> items,
+) => docFactsBatch(lib, items);

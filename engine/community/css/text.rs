@@ -11,7 +11,8 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ffi::{CStr, c_char};
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::SystemTime;
 
 use blitz_dom::DocumentConfig;
 use blitz_html::HtmlDocument;
@@ -21,7 +22,7 @@ use icu_properties::props::{ExtendedPictographic, GeneralCategory, GeneralCatego
 use icu_properties::{CodePointMapData, CodePointSetData, PropertyNamesLong, PropertyParser};
 use icu_segmenter::options::{LineBreakOptions, LineBreakStrictness, LineBreakWordOption};
 use icu_segmenter::LineSegmenter;
-use parley::fontique::{Blob, FontInfoOverride};
+use parley::fontique::{Blob, Collection, CollectionOptions, FontInfoOverride, SourceCache};
 use parley::{FontContext, PositionedLayoutItem};
 use skrifa::instance::{LocationRef, Size};
 use skrifa::outline::{DrawSettings, OutlinePen};
@@ -42,6 +43,33 @@ pub struct Text {
 
 /// The div's own color, which no range is expected to set: letters drawn in it take the layer's fill.
 const UNSET: &str = "rgb(1 2 3 / 0.0039)";
+
+type FontCacheEntry = (Option<SystemTime>, u64, Arc<Vec<u8>>);
+
+/// Process-wide font byte cache keyed by path + (mtime, size) so large CJK fonts
+/// are not re-read from disk or cloned on every text layer build.
+fn load_font_bytes(path: &str) -> Option<Arc<Vec<u8>>> {
+    if path.is_empty() {
+        return None;
+    }
+    static CACHE: OnceLock<Mutex<HashMap<String, FontCacheEntry>>> = OnceLock::new();
+    let meta = std::fs::metadata(path).ok()?;
+    let mtime = meta.modified().ok();
+    let len = meta.len();
+    let map = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    if let Ok(guard) = map.lock()
+        && let Some((cached_mtime, cached_len, bytes)) = guard.get(path)
+        && *cached_mtime == mtime
+        && *cached_len == len
+    {
+        return Some(Arc::clone(bytes));
+    }
+    let bytes = Arc::new(std::fs::read(path).ok()?);
+    if let Ok(mut guard) = map.lock() {
+        guard.insert(path.to_owned(), (mtime, len, Arc::clone(&bytes)));
+    }
+    Some(bytes)
+}
 
 fn escape(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
@@ -544,19 +572,19 @@ fn line_break_mask(words: &str, kinsoku: &str) -> Vec<bool> {
 /// Vertical-rl Japanese typesetting using HarfRust (`Direction::TopToBottom` + OpenType
 /// `vert`/`vrt2`/`vpal`/`vhal`) and Skrifa outlines/metrics, with kinsoku & hanging punctuation.
 #[allow(clippy::too_many_arguments)]
-fn set_vertical(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f32, tracking: f32, slant: f32,
+fn set_vertical(words: &str, styles: &str, fonts: &[Arc<Vec<u8>>], size: f32, line: f32, tracking: f32, slant: f32,
                 wrap: f32, kinsoku: &str, hanging: bool, align: f32, features: &str) -> Option<Text> {
-    let first = FontRef::new(fonts.first()?).ok()?;
+    let first = FontRef::new(fonts.first()?.as_slice()).ok()?;
     let m = first.metrics(Size::new(size), LocationRef::default());
     let chars: Vec<char> = words.chars().collect();
     let n = chars.len();
     let ranges = parse_range_styles(styles, &chars);
 
     // Load range fonts alongside the layer/fallback fonts.
-    let mut font_bytes: Vec<Vec<u8>> = fonts.to_vec();
+    let mut font_bytes: Vec<Arc<Vec<u8>>> = fonts.to_vec();
     let mut font_by_path: HashMap<String, usize> = HashMap::new();
     for path in range_fonts(styles) {
-        if let Ok(b) = std::fs::read(&path) {
+        if let Some(b) = load_font_bytes(&path) {
             let idx = font_bytes.len();
             font_bytes.push(b);
             font_by_path.insert(path, idx);
@@ -857,25 +885,40 @@ fn set_vertical(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f
 pub fn set(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f32, tracking: f32, slant: f32,
            wrap: f32, break_all: bool, align: f32, vertical: bool, kinsoku: &str, hanging: bool,
            features: &str) -> Option<Text> {
+    let shared: Vec<Arc<Vec<u8>>> = fonts.iter().map(|b| Arc::new(b.clone())).collect();
+    set_shared(words, styles, &shared, size, line, tracking, slant, wrap, break_all, align, vertical, kinsoku,
+               hanging, features)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn set_shared(words: &str, styles: &str, fonts: &[Arc<Vec<u8>>], size: f32, line: f32, tracking: f32, slant: f32,
+              wrap: f32, break_all: bool, align: f32, vertical: bool, kinsoku: &str, hanging: bool,
+              features: &str) -> Option<Text> {
     if vertical {
         return set_vertical(words, styles, fonts, size, line, tracking, slant, wrap, kinsoku, hanging, align, features);
     }
-    let first = FontRef::new(fonts.first()?).ok()?;
+    let first = FontRef::new(fonts.first()?.as_slice()).ok()?;
     let m = first.metrics(Size::new(size), LocationRef::default());
-    let mut ctx = FontContext::new();
+    // Motolii registers every font file explicitly below; disabling system font discovery avoids rescanning
+    // the OS font library on every text layer build.
+    let mut ctx = FontContext {
+        collection: Collection::new(CollectionOptions { system_fonts: false, shared: false }),
+        source_cache: SourceCache::default(),
+    };
     let mut families = Vec::new();
     for (i, bytes) in fonts.iter().enumerate() {
         let name = format!("motolii-font-{i}");
         let info = FontInfoOverride { family_name: Some(&name), ..Default::default() };
-        if !ctx.collection.register_fonts(Blob::new(Arc::new(bytes.clone())), Some(info)).is_empty() {
+        let cloned: Arc<Vec<u8>> = Arc::clone(bytes);
+        if !ctx.collection.register_fonts(Blob::new(cloned), Some(info)).is_empty() {
             families.push(format!("'{name}'"));
         }
     }
     // Each font file a range names, registered under its path, so the range's declaration names it as it stands.
     for file in range_fonts(styles) {
-        if let Ok(bytes) = std::fs::read(&file) {
+        if let Some(bytes) = load_font_bytes(&file) {
             let info = FontInfoOverride { family_name: Some(&file), ..Default::default() };
-            ctx.collection.register_fonts(Blob::new(Arc::new(bytes)), Some(info));
+            ctx.collection.register_fonts(Blob::new(bytes), Some(info));
         }
     }
     let width = if wrap > 0.0 {
@@ -1095,9 +1138,9 @@ pub unsafe extern "C" fn motolii_text_new(words: *const c_char, styles: *const c
                                           hanging: i32, features: *const c_char) -> *mut Text {
     let (words, styles, fonts, kinsoku, features) =
         unsafe { (text(words), text(styles), text(fonts), text(kinsoku), text(features)) };
-    let bytes: Vec<Vec<u8>> = fonts.lines().filter_map(|f| std::fs::read(f).ok()).collect();
+    let bytes: Vec<Arc<Vec<u8>>> = fonts.lines().filter_map(load_font_bytes).collect();
     std::panic::catch_unwind(|| {
-        set(
+        set_shared(
             words,
             styles,
             &bytes,
@@ -1122,7 +1165,7 @@ pub unsafe extern "C" fn motolii_text_new(words: *const c_char, styles: *const c
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn motolii_font_meta_read(font_file: *const c_char, out: *mut c_char, cap: i32) -> i32 {
     let path = unsafe { text(font_file) };
-    let Ok(bytes) = std::fs::read(path) else { return 0 };
+    let Some(bytes) = load_font_bytes(path) else { return 0 };
     let Some(meta) = std::panic::catch_unwind(|| font_meta(&bytes)).ok().flatten() else { return 0 };
     let b = meta.as_bytes();
     if !out.is_null() && cap > 0 {

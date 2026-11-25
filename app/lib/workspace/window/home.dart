@@ -105,28 +105,24 @@ class _HomeWindowState extends State<HomeWindow> {
       _docs = docs;
       _samples = samples;
     });
-    for (final (i, d) in docs.indexed) {
-      final png = '$_pictures/$read-$i.png';
-      savedProjectFacts(widget.lib, d.path, png).then((facts) {
-        if (!mounted) return;
-        setState(
-          () => d
+    final jobs = <(HomeProject, String)>[
+      for (final (i, d) in docs.indexed) (d, '$_pictures/$read-$i.png'),
+      for (final (i, s) in samples.indexed) (s, '$_pictures/$read-s$i.png'),
+    ];
+    savedProjectFactsBatch(widget.lib, [
+      for (final (proj, png) in jobs) (doc: proj.path, png: png),
+    ]).then((results) {
+      if (!mounted) return;
+      setState(() {
+        for (var i = 0; i < jobs.length && i < results.length; i++) {
+          final (proj, png) = jobs[i];
+          final facts = results[i];
+          proj
             ..facts = facts
-            ..picture = facts != null && existsFile(png) ? png : null,
-        );
+            ..picture = facts != null && existsFile(png) ? png : null;
+        }
       });
-    }
-    for (final (i, s) in samples.indexed) {
-      final png = '$_pictures/$read-s$i.png';
-      savedProjectFacts(widget.lib, s.path, png).then((facts) {
-        if (!mounted) return;
-        setState(
-          () => s
-            ..facts = facts
-            ..picture = facts != null && existsFile(png) ? png : null,
-        );
-      });
-    }
+    });
   }
 
   void _openSample(HomeProject sample) {

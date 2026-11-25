@@ -130,11 +130,30 @@ std::mutex& doc_own_easings_lock() {
 }  // namespace
 
 std::vector<DocRecipe> doc_recipes_read() {
+  struct CachedRecipe {
+    std::filesystem::file_time_type when{};
+    bool ok = false;
+    DocRecipe recipe;
+  };
+  static std::mutex cache_lock;
+  static std::map<std::string, CachedRecipe> cache;
+  std::lock_guard<std::mutex> hold(cache_lock);
   std::vector<DocRecipe> all;
+  std::error_code wrong;
   for (const auto& f : doc_folder_files("create", ".js")) {
+    const std::string path = f.generic_string();
+    const auto stamp = std::filesystem::last_write_time(f, wrong);
+    if (!wrong) {
+      if (auto it = cache.find(path);
+          it != cache.end() && it->second.when == stamp) {
+        if (it->second.ok) all.push_back(it->second.recipe);
+        continue;
+      }
+    }
+    wrong.clear();
     DocRecipe r;
-    r.path = f.generic_string();
-    const std::string text = read_text(f.generic_string());
+    r.path = path;
+    const std::string text = read_text(path);
     // Detect which program the pasted sketch comes from and convert it to plain
     // JavaScript (adapter.h).
     const std::string form = adapter_form(text), told = adapter_js(text, form);
@@ -155,7 +174,8 @@ std::vector<DocRecipe> doc_recipes_read() {
       // Scale the image layer to fill the frame (doc_fit
       // Fit to Comp).
       if (!r.code) r.lines.push_back("fit fit");
-      all.push_back(r);
+      cache[path] = {stamp, true, r};
+      all.push_back(std::move(r));
       continue;
     }
     std::istringstream lines(text);
@@ -189,9 +209,10 @@ std::vector<DocRecipe> doc_recipes_read() {
         r.lines.push_back(line);
     }
     // Keep only recipes whose first command is "make".
-    if (!r.name.empty() && !r.lines.empty() &&
-        r.lines[0].rfind("make ", 0) == 0)
-      all.push_back(r);
+    const bool valid = !r.name.empty() && !r.lines.empty() &&
+                       r.lines[0].rfind("make ", 0) == 0;
+    cache[path] = {stamp, valid, r};
+    if (valid) all.push_back(std::move(r));
   }
   return all;
 }
@@ -223,50 +244,85 @@ std::string doc_folder_names(const char* folder, const char* extension) {
     std::string all;
     int seen = -1;
   };
+  struct ParsedFile {
+    std::filesystem::file_time_type when{};
+    bool ok = false;
+    std::string name, label, about, tags;
+  };
   static std::map<std::string, Seen> seen;
+  static std::map<std::string, ParsedFile> parsed;
   Seen& one = seen[folder];
   std::string& all = one.all;
   if (!doc_folder_moved(one.seen)) return all;
   all.clear();
+  std::error_code wrong;
   for (const auto& f : doc_folder_files(folder, extension)) {
-    // A .json file that is not Filament's own settings is not an effect.
-    // Sashimono's obj.effect table reads sashimono_aviutl.json.
-    if (f.extension() == ".json" && !viewer_is(f.generic_string())) continue;
-    // An ISF effect is converted to WGSL by reading its head. A file that
-    // cannot be converted is not listed.
-    const std::string read = isf_file(f.generic_string());
-    if (read.empty()) continue;
-    std::ifstream in(read);
-    std::string first, name = f.stem().generic_string(), label, about;
-    // (A CSS file, which has no // comments, gives its name as /* Name: ...
-    // */.)
-    if (std::getline(in, first) &&
-        (first.rfind("// ", 0) == 0 || first.rfind("/* ", 0) == 0) &&
-        first.find(':') != std::string::npos)
-      name = first.substr(3, first.find(':') - 3);
-    for (std::string line;
-         std::getline(in, line) && line.rfind("//", 0) == 0;) {
-      if (const size_t at = line.find("--label:");
-          at != std::string::npos && label.empty())
-        label = line.substr(at + 8);
-      // --about: is a one-line description, in the effect author's words.
-      if (const size_t at = line.find("--about:");
-          at != std::string::npos && about.empty())
-        about = line.substr(at + 8);
+    const std::string path = f.generic_string();
+    const auto stamp = std::filesystem::last_write_time(f, wrong);
+    const bool has_stamp = !wrong;
+    wrong.clear();
+    ParsedFile* entry = nullptr;
+    if (has_stamp) {
+      if (auto it = parsed.find(path);
+          it != parsed.end() && it->second.when == stamp)
+        entry = &it->second;
     }
-    // A PlayCanvas splat effect, for a point cloud.
-    if (f.extension() == ".mjs") label = "Points";
-    std::replace(about.begin(), about.end(), '\t', ' ');
+    if (!entry) {
+      ParsedFile fresh;
+      fresh.when = stamp;
+      // A .json file that is not Filament's own settings is not an effect.
+      // Sashimono's obj.effect table reads sashimono_aviutl.json.
+      if (f.extension() == ".json" && !viewer_is(path)) {
+        fresh.ok = false;
+      } else if (f.extension() == ".fs") {
+        // Parse ISF header directly so listing effects does not synchronously
+        // compile hundreds of shaders through glslang+Tint on a cold cache.
+        const IsfMeta meta = isf_meta(path);
+        fresh.ok = meta.ok;
+        if (fresh.ok) {
+          fresh.name = f.stem().generic_string();
+          fresh.label = meta.label;
+          fresh.about = meta.about;
+          fresh.tags = meta.tags;
+        }
+      } else {
+        const std::string read = isf_file(path);
+        if (!read.empty()) {
+          fresh.ok = true;
+          fresh.name = f.stem().generic_string();
+          std::ifstream in(read);
+          std::string first;
+          // (A CSS file, which has no // comments, gives its name as /* Name:
+          // ... */.)
+          if (std::getline(in, first) &&
+              (first.rfind("// ", 0) == 0 || first.rfind("/* ", 0) == 0) &&
+              first.find(':') != std::string::npos)
+            fresh.name = first.substr(3, first.find(':') - 3);
+          for (std::string line;
+               std::getline(in, line) && line.rfind("//", 0) == 0;) {
+            if (const size_t at = line.find("--label:");
+                at != std::string::npos && fresh.label.empty())
+              fresh.label = line.substr(at + 8);
+            // --about: is a one-line description, in the effect author's words.
+            if (const size_t at = line.find("--about:");
+                at != std::string::npos && fresh.about.empty())
+              fresh.about = line.substr(at + 8);
+          }
+          // A PlayCanvas splat effect, for a point cloud.
+          if (f.extension() == ".mjs") fresh.label = "Points";
+          if (f.extension() == ".wgsl") fresh.tags = doc_wgsl_tags(f);
+        }
+      }
+      std::replace(fresh.about.begin(), fresh.about.end(), '\t', ' ');
+      entry = &(parsed[path] = std::move(fresh));
+    }
+    if (!entry->ok) continue;
     // The last two fields are the description and the tags read from the file
-    // by isf_tags or doc_wgsl_tags.
-    all += (all.empty() ? "" : "\n") + name + "\t" + f.generic_string() + "\t" +
-           label +
-           doc_tile(f.generic_string(),
-                    std::filesystem::path(f).replace_extension(".png")) +
-           "\t" + about + "\t" +
-           (f.extension() == ".fs"     ? isf_tags(f.generic_string())
-            : f.extension() == ".wgsl" ? doc_wgsl_tags(f)
-                                       : "");
+    // by isf_meta or doc_wgsl_tags.
+    all += (all.empty() ? "" : "\n") + entry->name + "\t" + path + "\t" +
+           entry->label +
+           doc_tile(path, std::filesystem::path(f).replace_extension(".png")) +
+           "\t" + entry->about + "\t" + entry->tags;
   }
   return all;
 }

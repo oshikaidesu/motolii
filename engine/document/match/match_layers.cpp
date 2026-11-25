@@ -269,6 +269,18 @@ void match_tear_down_changed(Rebuild& rebuild) {
 
 void match_build_layers(Rebuild& rebuild) {
   Doc& d = rebuild.d;
+  // Pre-warm GStreamer discoverer probes in parallel before opening video
+  // pipelines sequentially on the stage thread.
+  std::vector<std::string> video_files;
+  for (const auto& [layer, of] : rebuild.told) {
+    if (d.on_stage.shown.count(layer)) continue;
+    if (doc_word(d, layer, "kind") != "video") continue;
+    const std::string moshed = doc_mosh(d, layer);
+    const std::string file =
+        moshed.empty() ? doc_word(d, layer, "file") : moshed;
+    if (!file.empty()) video_files.push_back(file);
+  }
+  if (video_files.size() >= 2) video_prewarm_probes(video_files);
   for (const auto& [layer, of] : rebuild.told) {
     if (d.on_stage.shown.count(layer)) continue;
     build_layer(rebuild, layer, of);
@@ -284,8 +296,8 @@ void doc_teardown(Doc& d) {
   s.once.clear();
   s.over = nullptr;
   s.lastly = nullptr;
-  // Remove layers while their effect scenes (d.effects.layerFx) are still alive,
-  // since take_layer_off detaches entities from it->second.scene.
+  // Remove layers while their effect scenes (d.effects.layerFx) are still
+  // alive, since take_layer_off detaches entities from it->second.scene.
   for (auto it = d.on_stage.shown.begin(); it != d.on_stage.shown.end();) {
     for (Canvas2D* pic : it->second.sketchPics)
       if (pic) canvas_off(s, pic);
@@ -294,7 +306,8 @@ void doc_teardown(Doc& d) {
       for (filament::MaterialInstance* mi : paint.looks)
         if (mi) s.engine->destroy(mi);
       paint.looks.clear();
-      if (paint.material) s.engine->destroy(paint.material), paint.material = nullptr;
+      if (paint.material)
+        s.engine->destroy(paint.material), paint.material = nullptr;
     }
     it->second.sketchPaints.clear();
     if (it->second.splatPlain) {
