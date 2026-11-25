@@ -3,12 +3,18 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/storage/agent_files.dart';
 import 'package:motolii/storage/agent_mcp_transport.dart';
 import 'package:motolii/widgets/custom_ui/panel_node.dart'
     show parsePanelOpsJson;
+import 'package:motolii/workspace/agent/agent_pane.dart'
+    show AgentStarterPrompts;
 import 'package:motolii/workspace/agent/agent_registry.dart' show agentRegistry;
+import 'package:motolii/workspace/agent/layer_code.dart' show buildMotoliiGuide;
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show normalizePanelColorWord;
 
 class _PassthroughHttpOverrides extends HttpOverrides {}
 
@@ -168,5 +174,55 @@ void main() {
     expect(res.ops[3].op, 'later');
     expect(res.ops[3].at, 4.5);
     expect(res.notice, 'Stage updated');
+  });
+
+  test('normalizePanelColorWord strips leading # on color properties only', () {
+    expect(normalizePanelColorWord('fill', '#ff3366'), 'ff3366');
+    expect(normalizePanelColorWord('background', '#1A2B3C'), '1A2B3C');
+    expect(
+      normalizePanelColorWord('copy_fill', '#ff3366 #1b2fd8'),
+      'ff3366 1b2fd8',
+    );
+    expect(normalizePanelColorWord('1:stroke', '#abcdef'), 'abcdef');
+    expect(normalizePanelColorWord('text', '#ff3366 tag'), '#ff3366 tag');
+  });
+
+  test('buildMotoliiGuide documents exact engine shapes, stage props, and ops_result', () {
+    final guide = buildMotoliiGuide(
+      hasMcp: true,
+      fresh: '/tmp/fx',
+      opsPath: '/tmp/fx/ops.json',
+      opsResultPath: '/tmp/fx/ops_result.json',
+      hostTypes: '/shelves/motolii-host.d.ts',
+      uiTypes: '/shelves/motolii-ui.d.ts',
+      aeReference: '/ae/index.d.ts',
+      ownPath: '/own',
+      shelvesPath: '/shelves',
+    );
+    expect(guide, contains('rect|circle|polygon'));
+    expect(guide, contains('NO "ellipse"'));
+    expect(guide, contains('frame_rate'));
+    expect(guide, contains('layer_length'));
+    expect(guide, contains('/tmp/fx/ops_result.json'));
+    expect(guide, contains('ONCE when your turn ends'));
+    expect(guide, contains('Creative partner mode'));
+  });
+
+  testWidgets('AgentStarterPrompts renders custom context-aware starters', (
+    tester,
+  ) async {
+    String? picked;
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: AgentStarterPrompts(
+          prompts: const [(id: 'ctx-1', title: '空から作る', prompt: 'タイトル演出を組んで')],
+          onPick: (p) => picked = p,
+        ),
+      ),
+    );
+    expect(find.text('空から作る'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('agent-starter-ctx-1')));
+    expect(picked, 'タイトル演出を組んで');
   });
 }

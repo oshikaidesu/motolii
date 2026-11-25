@@ -98,7 +98,11 @@ class MotoliiMcpBridge {
     },
     {
       'name': 'apply_ops',
-      'description': 'Apply one or more Motolii document/workspace operations in a single undo step. Layer 0 targets stage/composition settings (fps, seconds, bpm, width, height, fx, etc.), layer -1 targets the most recently added layer. Supported ops: set, say, key, add, create (recipe), psd, pivot, explode, outline, remove, fx, undo, redo, select, time, play, reload_shelves, open_panel, and later (raw engine motolii_later verb: mark, guide, split, brush, fx_move, isolate, ...).',
+      'description':
+          'Apply one or more Motolii document/workspace operations atomically in a single undo step (if any op is refused, the whole undo step rolls back and ok=false with the engine error is returned). '
+          'Layer 0 targets stage settings (bpm, bpm_from, frame_rate, layer_length, background [6-hex e.g. 1a1d26], script); layer -1 targets the most recently added layer. '
+          'Supported ops: set, say, key (ease e.g. "Bezier 0.2 0 0.2 1"), add (kind="shape" file=rect|circle|polygon|star|line|null|ring|arc|arrow|squircle|cog|path|spiral|chamfer; kind="solid" file=ring|gem|cube|ball|sketch or .glb; kind="image" file=/path.png|.svg; kind="text"; kind="camera"; kind="light" file=sun|point|spot; kind="environment"), '
+          'create (recipe), psd, pivot (x/y in -1..1, +y up), explode, outline, remove, fx, undo, redo, select, time, play, reload_shelves, open_panel, and later.',
       'inputSchema': {
         'type': 'object',
         'required': ['ops'],
@@ -237,6 +241,31 @@ class MotoliiMcpBridge {
     switch (name) {
       case 'get_scene':
         final scene = jsonDecode(customPanelCtxJson(ws, const {})) as Map;
+        final fps = WorkspaceController.fps > 0 ? WorkspaceController.fps : 60;
+        final (workFrom, workTo) = ws.work;
+        scene['situation'] = {
+          'playing': ws.playing,
+          'workArea': workTo > workFrom ? [workFrom, workTo] : null,
+          'selectedInOrder': ws.manyInOrder,
+          'selectedKeys': [
+            for (final k in ws.keys)
+              {'layer': k.layer, 'frame': k.frame, 'at': k.frame / fps},
+          ],
+          'selectedStretches': [
+            for (final s in ws.stretches)
+              {
+                'layer': s.layer,
+                'name': s.name,
+                'from': s.from / fps,
+                'to': s.to / fps,
+              },
+          ],
+          'isolatedGroup': ws.isolatedGroup,
+          'hasAudio': ws.layers.any(
+            (l) => l.kind.name == 'audio' || isSoundLayer(m, l.id),
+          ),
+          'hasCamera': ws.layers.any((l) => l.kind.name == 'camera'),
+        };
         scene['paths'] = {
           'document': ws.document,
           'documentFolder': ws.documentFolder,
@@ -296,18 +325,34 @@ class MotoliiMcpBridge {
         if (parsed.isEmpty) {
           return _text('No valid ops found in array.', isError: true);
         }
-        applyCustomPanelOps(ws, [for (final o in parsed) panelDocOpOf(o)]);
+        final completer = Completer<(bool, String)>();
+        applyCustomPanelOps(
+          ws,
+          [for (final o in parsed) panelDocOpOf(o)],
+          onDone: (done, why) {
+            if (!completer.isCompleted) completer.complete((done, why));
+          },
+        );
+        final (ok, why) = await completer.future.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => (true, ''),
+        );
         final notice = args['notice']?.toString() ?? '';
-        if (notice.isNotEmpty) ws.notice = notice;
-        await Future<void>.delayed(const Duration(milliseconds: 90));
+        if (ok && notice.isNotEmpty) ws.notice = notice;
+        if (ok) await Future<void>.delayed(const Duration(milliseconds: 60));
         return _text(
           jsonEncode({
-            'ok': true,
-            'applied': parsed.length,
+            'ok': ok,
+            if (!ok)
+              'error': why.trim().isEmpty
+                  ? 'Operation refused by engine (undo group rolled back).'
+                  : why.trim(),
+            'applied': ok ? parsed.length : 0,
             'layerCount': ws.layers.length,
             'selected': ws.many.isNotEmpty ? ws.many.toList() : [?ws.selected],
             'frame': ws.frame,
           }),
+          isError: !ok,
         );
 
       case 'read_layer_cards':

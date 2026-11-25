@@ -99,10 +99,12 @@ String customPanelCtxJson(
     for (final l in ws.layers)
       () {
         final b = m?.bounds(l.id);
+        final engineKind = m?.word(l.id, 'kind') ?? '';
         return {
           'id': l.id,
           'name': l.name,
-          'kind': l.kind.name,
+          'kind': engineKind.isNotEmpty ? engineKind : l.kind.name,
+          'shape': m?.word(l.id, 'shape') ?? '',
           'selected': selSet.contains(l.id),
           'parent': m?.parentOf(l.id) ?? 0,
           'order': m?.value(l.id, 'order', 0) ?? 0.0,
@@ -347,11 +349,40 @@ String? openVismPanelInDock(
   return hit.name;
 }
 
+const _colorWordProps = {
+  'fill',
+  'stroke',
+  'background',
+  'bevel_color',
+  'side_color',
+  'back_color',
+  'copy_fill',
+};
+
+/// Strips leading `#` from 6-digit hex colors so `#ff3366` from scripts/agents
+/// matches the engine's bare `rrggbb` format without rolling back an undo group.
+String normalizePanelColorWord(String name, String word) {
+  final isColor = _colorWordProps.contains(name) || name.endsWith(':stroke');
+  if (!isColor || !word.contains('#')) return word;
+  return word.replaceAllMapped(
+    RegExp(r'#([0-9a-fA-F]{6})\b'),
+    (m) => m.group(1)!,
+  );
+}
+
 /// Executes [ops] returned by `onAction` or an ACP agent in a single undo step.
 /// Layer 0 (stage/composition properties) and raw engine `later` calls are permitted.
-void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
+/// When [onDone] is given, reports the engine's actual commit result `(done, why)`.
+void applyCustomPanelOps(
+  WorkspaceController ws,
+  List<PanelDocOp> ops, {
+  void Function(bool done, String why)? onDone,
+}) {
   final m = ws.inside;
-  if (m == null) return;
+  if (m == null) {
+    onDone?.call(false, 'No open project');
+    return;
+  }
   const nonDocOps = {
     'select',
     'time',
@@ -361,7 +392,7 @@ void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
     'preset_save',
     'preset_delete',
   };
-  final docOps = ops.where((o) => !nonDocOps.contains(o.op));
+  final docOps = ops.where((o) => !nonDocOps.contains(o.op)).toList();
   if (docOps.isNotEmpty) {
     groupBegin(ws);
     for (final o in docOps) {
@@ -373,12 +404,17 @@ void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
               layer: o.layer,
               name: o.name,
               number: o.value ?? 0,
-              word: o.word,
+              word: normalizePanelColorWord(o.name, o.word),
             );
           }
         case 'say':
           if (o.name.isNotEmpty) {
-            m.later('say', layer: o.layer, name: o.name, word: o.word);
+            m.later(
+              'say',
+              layer: o.layer,
+              name: o.name,
+              word: normalizePanelColorWord(o.name, o.word),
+            );
           }
         case 'key':
           if (o.name.isNotEmpty && o.at != null && o.value != null) {
@@ -452,7 +488,9 @@ void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
           }
       }
     }
-    ws.after(groupEnd(ws));
+    ws.after(groupEnd(ws), onDone);
+  } else {
+    onDone?.call(true, '');
   }
   for (final o in ops) {
     switch (o.op) {

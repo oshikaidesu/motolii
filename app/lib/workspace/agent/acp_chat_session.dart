@@ -77,9 +77,9 @@ class AcpChatSession extends ChangeNotifier {
   final entries = <Entry>[];
   var starting = true, sending = false;
 
-  /// Called when a tool call ends and when the agent's turn ends: a file may have been written, by whatever tool
-  /// (an edit, or a shell command the agent ran), so the pane looks at the files.
-  void Function()? settled;
+  /// Called when a tool call finishes (for live code hot-reload) and when the
+  /// agent's turn ends (`turnEnded: true`, when `ops.json` is applied once).
+  void Function({required bool turnEnded})? settled;
 
   /// The settings the agent offers for this session (ACP session config options: model, effort, mode…), as it
   /// declared them; each [choose] sends one back. Motolii keeps no list of its own.
@@ -137,7 +137,7 @@ class AcpChatSession extends ChangeNotifier {
                 })
                 ..onWriteTextFile((_, r, _) async {
                   writeAgentTextFile(r.path, r.content);
-                  settled?.call();
+                  settled?.call(turnEnded: false);
                   return const WriteTextFileResponse();
                 }))
               .connect(agent.transport);
@@ -413,7 +413,7 @@ class AcpChatSession extends ChangeNotifier {
         entries.add(Entry(Said.error, '$e'));
       }
     }
-    settled?.call();
+    settled?.call(turnEnded: true);
     sending = false;
     notifyListeners();
   }
@@ -514,7 +514,9 @@ class AcpChatSession extends ChangeNotifier {
     } else {
       e.call = {...e.call, ...json};
     }
-    if (json['status'] case 'completed' || 'failed') settled?.call();
+    if (json['status'] case 'completed' || 'failed') {
+      settled?.call(turnEnded: false);
+    }
   }
 
   /// Adds a line saying what went wrong outside the agent, such as code the engine refused.
