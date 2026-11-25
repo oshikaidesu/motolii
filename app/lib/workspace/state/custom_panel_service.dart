@@ -110,7 +110,13 @@ String customPanelCtxJson(
           'order': m?.value(l.id, 'order', 0) ?? 0.0,
           'visible': (m?.value(l.id, 'visible', at) ?? 1.0) > 0.5,
           'clip': (m?.value(l.id, 'clip', at) ?? 0.0) > 0.5,
+          'script': m?.word(l.id, 'script') ?? '',
           'fx': m?.word(l.id, 'fx') ?? '',
+          'keys': [
+            for (final f in l.keys)
+              double.parse((f / (fps > 0 ? fps : 60.0)).toStringAsFixed(3)),
+          ],
+          'animated': [for (final lane in l.lanes) lane.name],
           'start': m?.value(l.id, 'start', 0) ?? 0.0,
           'duration': m?.value(l.id, 'duration', 0) ?? -1.0,
           'x': m?.value(l.id, 'x', at) ?? 0.0,

@@ -206,6 +206,8 @@ void main() {
     expect(guide, contains('/tmp/fx/ops_result.json'));
     expect(guide, contains('ONCE when your turn ends'));
     expect(guide, contains('Creative partner mode'));
+    expect(guide, contains('say` `name: "script"'));
+    expect(guide, contains('up to 8 `--track@` params'));
   });
 
   testWidgets('AgentStarterPrompts renders custom context-aware starters', (

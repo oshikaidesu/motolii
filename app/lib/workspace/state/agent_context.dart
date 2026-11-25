@@ -49,9 +49,22 @@ List<String> sceneOutlineLines(WorkspaceController ws, {int maxLayers = 40}) {
     final y = _shortNum(m.value(l.id, 'y', at) ?? 0);
     final z = m.value(l.id, 'z', at) ?? 0;
     final fx = m.word(l.id, 'fx').trim();
+    final script = m.word(l.id, 'script').trim();
     final txt = kind == 'text'
         ? m.word(l.id, 'text').replaceAll('\n', ' ').trim()
         : '';
+    String keyInfo = '';
+    if (l.keys.isNotEmpty) {
+      final lo = l.keys.reduce((a, b) => a < b ? a : b) / fps;
+      final hi = l.keys.reduce((a, b) => a > b ? a : b) / fps;
+      final props = [for (final lane in l.lanes) lane.name].take(4).join(',');
+      final span = lo == hi
+          ? '${lo.toStringAsFixed(2)}s'
+          : '${lo.toStringAsFixed(2)}–${hi.toStringAsFixed(2)}s';
+      keyInfo = props.isNotEmpty
+          ? 'keys=${l.keys.length}@$span($props)'
+          : 'keys=${l.keys.length}@$span';
+    }
     final bits = <String>[
       if (sel.contains(l.id)) '*',
       '[${l.id}]',
@@ -61,6 +74,8 @@ List<String> sceneOutlineLines(WorkspaceController ws, {int maxLayers = 40}) {
       z == 0 ? 'pos=($x,$y)' : 'pos=($x,$y,${_shortNum(z)})',
       if (txt.isNotEmpty)
         'text="${txt.length > 24 ? '${txt.substring(0, 24)}…' : txt}"',
+      if (keyInfo.isNotEmpty) keyInfo,
+      if (script.isNotEmpty) 'script=${script.split('/').last}',
       if (fx.isNotEmpty)
         'fx=${fx.split(' ').map((p) => p.split('/').last).join(',')}',
     ];
