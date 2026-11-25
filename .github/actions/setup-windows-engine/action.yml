@@ -1,0 +1,133 @@
+name: Setup Windows Engine Toolchain
+description: Installs and caches MSVC x64, MSYS2, LLVM, Corrosion, GStreamer MSVC, vcpkg libraries, Ninja, Meson, and Rust for building Motolii on Windows x64.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup MSVC x64 developer environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Setup MSYS2 (zsh, make, nasm, patch, diffutils, unzip, perl, xz)
+      id: msys2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MSYS
+        update: false
+        path-type: inherit
+        install: zsh make nasm patch diffutils unzip perl xz curl git
+
+    - name: Install Ninja and Meson
+      shell: pwsh
+      run: |
+        python -m pip install --upgrade pip ninja meson
+
+    - name: Ensure Rust MSVC toolchain
+      shell: pwsh
+      run: |
+        rustup default stable-x86_64-pc-windows-msvc
+        rustc --version
+        cargo --version
+
+    - name: Cache Windows native build tools (LLVM, Corrosion, GStreamer, vcpkg)
+      id: tools_cache
+      uses: actions/cache@v4
+      with:
+        path: C:\motolii-tools
+        key: win-tools-v1-llvm23.1.6-gst1.28.8-cor0.6.1-vcpkg1
+
+    - name: Install LLVM 23.1.6 (win64 clang + llvm-link + opt)
+      if: steps.tools_cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $llvmDir = "C:\motolii-tools\llvm"
+        New-Item -ItemType Directory -Force -Path $llvmDir | Out-Null
+        $archive = "$env:RUNNER_TEMP\llvm.tar.xz"
+        curl.exe -fL --retry 3 -o $archive "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.6/clang+llvm-23.1.6-x86_64-pc-windows-msvc.tar.xz"
+        tar.exe -xf $archive -C $llvmDir --strip-components=1
+        Remove-Item -Force $archive
+
+    - name: Install Corrosion v0.6.1
+      if: steps.tools_cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $src = "$env:RUNNER_TEMP\corrosion"
+        git clone --depth 1 --branch v0.6.1 https://github.com/corrosion-rs/corrosion.git $src
+        cmake -S $src -B "$src\build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCORROSION_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX="C:/motolii-tools/corrosion"
+        cmake --install "$src\build"
+        Remove-Item -Recurse -Force $src
+
+    - name: Install GStreamer 1.28.8 MSVC x86_64 (runtime + devel)
+      if: steps.tools_cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $gstExe = "$env:RUNNER_TEMP\gstreamer-1.0-msvc-x86_64-1.28.8.exe"
+        curl.exe -fL --retry 3 -o $gstExe "https://gstreamer.freedesktop.org/data/pkg/windows/1.28.8/msvc/gstreamer-1.0-msvc-x86_64-1.28.8.exe"
+        $proc = Start-Process -FilePath $gstExe -ArgumentList '/VERYSILENT','/SP-','/SUPPRESSMSGBOXES','/NORESTART','/TYPE=devel','/DIR=C:\motolii-tools\gstreamer' -Wait -PassThru -NoNewWindow
+        if ($proc.ExitCode -ne 0) { throw "GStreamer installer exited with $($proc.ExitCode)" }
+        Remove-Item -Force $gstExe
+
+    - name: Install vcpkg x64-windows libraries (sqlite3[session], luajit, quickjs-ng, gtest)
+      if: steps.tools_cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $vcpkgRoot = if ($env:VCPKG_INSTALLATION_ROOT) { $env:VCPKG_INSTALLATION_ROOT } else { "C:\vcpkg" }
+        & "$vcpkgRoot\vcpkg.exe" install "sqlite3[session]:x64-windows" "luajit:x64-windows" "quickjs-ng:x64-windows" "gtest:x64-windows"
+        if ($LASTEXITCODE -ne 0) { throw "vcpkg install failed with $LASTEXITCODE" }
+        $dst = "C:\motolii-tools\vcpkg-installed\x64-windows"
+        New-Item -ItemType Directory -Force -Path $dst | Out-Null
+        Copy-Item -Recurse -Force "$vcpkgRoot\installed\x64-windows\*" $dst
+
+    - name: Export environment variables and tool PATH order
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $msys2Root = "${{ steps.msys2.outputs.msys2-location }}"
+        $pkgCfg = Get-ChildItem -Path "C:\motolii-tools\gstreamer" -Filter "pkg-config.exe" -Recurse | Select-Object -First 1
+        if (-not $pkgCfg) { throw "GStreamer pkg-config.exe not found under C:\motolii-tools\gstreamer" }
+        $gstRoot = (Split-Path (Split-Path $pkgCfg.FullName -Parent) -Parent) -replace '\\', '/'
+        $vcpkgLibs = "C:/motolii-tools/vcpkg-installed/x64-windows"
+        $corrosionDir = "C:/motolii-tools/corrosion"
+        $zshPath = Join-Path $msys2Root "usr\bin\zsh.exe"
+
+        @(
+          "GSTREAMER_1_0_ROOT_MSVC_X86_64=$gstRoot"
+          "MOTOLII_LIBRARIES=$vcpkgLibs"
+          "MOTOLII_CORROSION=$corrosionDir"
+          "MSYS2_PATH_TYPE=inherit"
+          "MSYS2_ZSH=$zshPath"
+        ) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        # Keep LLVM, MSVC, Python/Meson/Ninja, and GStreamer ahead of MSYS2 /usr/bin,
+        # and keep MSYS2 /usr/bin ahead of Windows System32 so POSIX `find` wins over FIND.EXE
+        # while MSVC `link.exe` wins over MSYS2's GNU `link.exe`.
+        $existing = ($env:PATH -split ';') | Where-Object { $_ -and $_ -notmatch '^C:\\msys64' -and $_ -ne "$msys2Root\usr\bin" -and $_ -ne "$msys2Root\usr\bin\core_perl" }
+        $sys32Idx = -1
+        for ($i = 0; $i -lt $existing.Count; $i++) {
+          if ($existing[$i] -match '(?i)\\Windows\\System32\\?$') { $sys32Idx = $i; break }
+        }
+        $msysEntries = @("$msys2Root\usr\bin", "$msys2Root\usr\bin\core_perl")
+        $front = @("C:\motolii-tools\llvm\bin", ($gstRoot -replace '/', '\') + "\bin")
+        if ($sys32Idx -ge 0) {
+          $ordered = $front + $existing[0..($sys32Idx - 1)] + $msysEntries + $existing[$sys32Idx..($existing.Count - 1)]
+        } else {
+          $ordered = $front + $existing + $msysEntries
+        }
+        # Set GITHUB_PATH in reverse? No, GITHUB_PATH prepends, so write directly to PATH in GITHUB_ENV for exact order.
+        "PATH=$($ordered -join ';')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+    - name: Verify Windows engine toolchain
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        foreach ($cmd in @("cl", "clang", "clang++", "clang-cl", "llvm-ar", "llvm-link", "opt", "cmake", "ninja", "meson", "python", "cargo", "pkg-config")) {
+          $found = Get-Command $cmd -ErrorAction SilentlyContinue
+          if (-not $found) { throw "Required tool not found on PATH: $cmd" }
+          Write-Host "$cmd -> $($found.Source)"
+        }
+        & $env:MSYS2_ZSH -c 'which find shasum make nasm patch unzip cygpath link cl clang clang-cl python'

@@ -45,6 +45,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     if (const wchar_t* gst = _wgetenv(L"GSTREAMER_1_0_ROOT_MSVC_X86_64"))
       path = (std::filesystem::path(gst) / L"bin").wstring() + L";" + path;
     _wputenv_s(L"PATH", path.c_str());
+
+    // Standalone release bundle ships GStreamer plugins beside motolii.exe.
+    const auto bundled_gst_plugins = exe_dir / L"gstreamer-1.0";
+    if (std::filesystem::is_directory(bundled_gst_plugins)) {
+      if (!_wgetenv(L"GST_PLUGIN_PATH_1_0"))
+        _wputenv_s(L"GST_PLUGIN_PATH_1_0", bundled_gst_plugins.c_str());
+      if (!_wgetenv(L"GST_PLUGIN_SYSTEM_PATH_1_0"))
+        _wputenv_s(L"GST_PLUGIN_SYSTEM_PATH_1_0", bundled_gst_plugins.c_str());
+    }
   }
 
   flutter::DartProject project(L"data");

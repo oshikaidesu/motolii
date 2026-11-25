@@ -1,4 +1,4 @@
-# Prebuilds heavy C++ engine dependencies (Filament/Dawn, Skia, ThorVG, libtess2, IRIS/OpenCV)
+# Prebuilds heavy C++ engine dependencies (Filament/Dawn, Skia, ThorVG, libtess2, IRIS/OpenCV, etc.)
 # only when engine/deps/** pins change (or manual dispatch), so release workflows finish in ~5-10 min.
 name: sdk-prebuilt
 on:
@@ -6,8 +6,12 @@ on:
   push:
     branches: [main]
     paths:
+      - 'engine/build.sh'
       - 'engine/deps/**'
+      - 'engine/gpu/**'
+      - 'engine/materials/**'
       - 'Brewfile'
+      - '.github/actions/setup-windows-engine/**'
       - '.github/workflows/sdk-prebuilt.yml'
 
 concurrency:
@@ -54,4 +58,120 @@ jobs:
             engine/third_party/iris/lib
             engine/third_party/ffmpeg_lgpl
             engine/third_party/onnxruntime
+          key: ${{ steps.key.outputs.sdk_key }}
+
+  windows-sdk:
+    runs-on: windows-2022
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute Windows SDK key
+        id: key
+        shell: pwsh
+        run: |
+          $hash = "${{ hashFiles('engine/build.sh', 'engine/deps/**', 'engine/gpu/**', 'engine/materials/**') }}".Substring(0, 16)
+          "sdk_key=sdk-win-x64-v1-$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: |
+            engine/third_party/filament_src/out/wgpu_install
+            engine/third_party/filament_src/out/wgpu/filament/motolii_probe/motolii_interop.lib
+            engine/third_party/filament_src/out/wgpu/third_party/dawn/gen
+            engine/third_party/filament_src/third_party/libassimp/contrib/rapidjson/include
+            engine/third_party/filament_src/third_party/zstd/lib
+            engine/third_party/filament_src/third_party/stb
+            engine/third_party/filament_src/third_party/cgltf
+            engine/third_party/filament_src/third_party/dawn
+            engine/third_party/filament_src/third_party/glslang
+            engine/third_party/filament_src/third_party/spirv-tools/include
+            engine/third_party/filament_src/libs/filamat/src
+            engine/third_party/skia_src/out/path/libskia.a
+            engine/third_party/skia_src/out/path/libpathops.a
+            engine/third_party/skia_src/include
+            engine/third_party/skia_src/src
+            engine/third_party/thorvg_src/inc
+            engine/third_party/thorvg_src/src
+            engine/third_party/thorvg_src/build_dawn/src/libthorvg-1.a
+            engine/third_party/thorvg_src/build_dawn/config.h
+            engine/third_party/libtess2/Include
+            engine/third_party/libtess2/build/libtess2.a
+            engine/third_party/psd_sdk/src
+            engine/third_party/psd_sdk/build_lib/libpsd_sdk.a
+            engine/third_party/curve_fit_nd/c
+            engine/third_party/curve_fit_nd/build/libcurve_fit_nd.a
+            engine/third_party/physics/JoltPhysics/Build/install
+            engine/third_party/ffmpeg_lgpl
+            engine/third_party/onnxruntime
+            engine/third_party/iris/IRIS/include
+            engine/third_party/iris/IRIS/utils/include
+            engine/third_party/iris/spdlog/include
+            engine/third_party/iris/json/single_include
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
+            engine/third_party/AbsentMotion/app/src/main/cpp
+            engine/third_party/stylo_src
+            engine/third_party/aexlo_src
+            engine/third_party/midi_roll/PianoRollSvg.js
+            engine/out/filament_webgpu
+            engine/out/small_studio
+            engine/out/lightroom
+            engine/out/motolii_ae_worker.exe
+            engine/out/deps.stamp
+          key: ${{ steps.key.outputs.sdk_key }}
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: ./.github/actions/setup-windows-engine
+      - name: Build Windows engine dependencies & library
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          & $env:MSYS2_ZSH engine/build.sh lib
+          if ($LASTEXITCODE -ne 0) { throw "engine/build.sh lib failed with $LASTEXITCODE" }
+      - uses: actions/cache/save@v4
+        if: success() && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            engine/third_party/filament_src/out/wgpu_install
+            engine/third_party/filament_src/out/wgpu/filament/motolii_probe/motolii_interop.lib
+            engine/third_party/filament_src/out/wgpu/third_party/dawn/gen
+            engine/third_party/filament_src/third_party/libassimp/contrib/rapidjson/include
+            engine/third_party/filament_src/third_party/zstd/lib
+            engine/third_party/filament_src/third_party/stb
+            engine/third_party/filament_src/third_party/cgltf
+            engine/third_party/filament_src/third_party/dawn
+            engine/third_party/filament_src/third_party/glslang
+            engine/third_party/filament_src/third_party/spirv-tools/include
+            engine/third_party/filament_src/libs/filamat/src
+            engine/third_party/skia_src/out/path/libskia.a
+            engine/third_party/skia_src/out/path/libpathops.a
+            engine/third_party/skia_src/include
+            engine/third_party/skia_src/src
+            engine/third_party/thorvg_src/inc
+            engine/third_party/thorvg_src/src
+            engine/third_party/thorvg_src/build_dawn/src/libthorvg-1.a
+            engine/third_party/thorvg_src/build_dawn/config.h
+            engine/third_party/libtess2/Include
+            engine/third_party/libtess2/build/libtess2.a
+            engine/third_party/psd_sdk/src
+            engine/third_party/psd_sdk/build_lib/libpsd_sdk.a
+            engine/third_party/curve_fit_nd/c
+            engine/third_party/curve_fit_nd/build/libcurve_fit_nd.a
+            engine/third_party/physics/JoltPhysics/Build/install
+            engine/third_party/ffmpeg_lgpl
+            engine/third_party/onnxruntime
+            engine/third_party/iris/IRIS/include
+            engine/third_party/iris/IRIS/utils/include
+            engine/third_party/iris/spdlog/include
+            engine/third_party/iris/json/single_include
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
+            engine/third_party/AbsentMotion/app/src/main/cpp
+            engine/third_party/stylo_src
+            engine/third_party/aexlo_src
+            engine/third_party/midi_roll/PianoRollSvg.js
+            engine/out/filament_webgpu
+            engine/out/small_studio
+            engine/out/lightroom
+            engine/out/motolii_ae_worker.exe
+            engine/out/deps.stamp
           key: ${{ steps.key.outputs.sdk_key }}

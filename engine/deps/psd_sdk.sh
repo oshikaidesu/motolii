@@ -35,7 +35,7 @@ SRCS=(
 if [ ! -f $L/build_lib/libpsd_sdk.a ]; then
   (cd $L/build_lib
    for s in $SRCS; do
-     ${CXX:-c++} -O2 -std=c++17 -Wno-deprecated-declarations -I ../src -c "../src/Psd/$s" -o "${s%.cpp}.o"
+     ${CXX:-c++} $CFLAGS -O2 -std=c++17 -Wno-deprecated-declarations -I ../src -c "../src/Psd/$s" -o "${s%.cpp}.o"
    done
    ${AR:-ar} rcs libpsd_sdk.a *.o)
 fi

@@ -6,14 +6,19 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 0.1.0-beta.1)'
+        description: 'Release version (e.g. 0.1.0-beta.2)'
         required: true
-        default: '0.1.0-beta.1'
-      build_windows:
-        description: 'Also run Windows x64 job (requires Windows engine SDK setup)'
+        default: '0.1.0-beta.2'
+      build_macos:
+        description: 'Build macOS arm64 release'
         required: false
         type: boolean
-        default: false
+        default: true
+      build_windows:
+        description: 'Build Windows x64 release (.exe installer + portable zip)'
+        required: false
+        type: boolean
+        default: true
   push:
     tags:
       - 'v*'
@@ -55,6 +60,7 @@ jobs:
 
   macos-arm64:
     needs: version
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_macos }}
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -119,11 +125,12 @@ jobs:
 
   windows-x64:
     needs: version
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_windows }}
-    runs-on: windows-latest
-    timeout-minutes: 90
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_windows }}
+    runs-on: windows-2022
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-windows-engine
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -131,48 +138,158 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - name: Compute Windows SDK cache key (matches sdk-prebuilt.yml)
+        id: sdk
+        shell: pwsh
+        run: |
+          $hash = "${{ hashFiles('engine/build.sh', 'engine/deps/**', 'engine/gpu/**', 'engine/materials/**') }}".Substring(0, 16)
+          "sdk_key=sdk-win-x64-v1-$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Restore Windows prebuilt SDK cache
-        uses: actions/cache@v4
+        id: sdk_cache
+        uses: actions/cache/restore@v4
         with:
           path: |
-            engine/third_party/filament_src
-            engine/third_party/skia_src
-            engine/third_party/thorvg_src
-            engine/third_party/libtess2
-            engine/third_party/iris
+            engine/third_party/filament_src/out/wgpu_install
+            engine/third_party/filament_src/out/wgpu/filament/motolii_probe/motolii_interop.lib
+            engine/third_party/filament_src/out/wgpu/third_party/dawn/gen
+            engine/third_party/filament_src/third_party/libassimp/contrib/rapidjson/include
+            engine/third_party/filament_src/third_party/zstd/lib
+            engine/third_party/filament_src/third_party/stb
+            engine/third_party/filament_src/third_party/cgltf
+            engine/third_party/filament_src/third_party/dawn
+            engine/third_party/filament_src/third_party/glslang
+            engine/third_party/filament_src/third_party/spirv-tools/include
+            engine/third_party/filament_src/libs/filamat/src
+            engine/third_party/skia_src/out/path/libskia.a
+            engine/third_party/skia_src/out/path/libpathops.a
+            engine/third_party/skia_src/include
+            engine/third_party/skia_src/src
+            engine/third_party/thorvg_src/inc
+            engine/third_party/thorvg_src/src
+            engine/third_party/thorvg_src/build_dawn/src/libthorvg-1.a
+            engine/third_party/thorvg_src/build_dawn/config.h
+            engine/third_party/libtess2/Include
+            engine/third_party/libtess2/build/libtess2.a
+            engine/third_party/psd_sdk/src
+            engine/third_party/psd_sdk/build_lib/libpsd_sdk.a
+            engine/third_party/curve_fit_nd/c
+            engine/third_party/curve_fit_nd/build/libcurve_fit_nd.a
+            engine/third_party/physics/JoltPhysics/Build/install
             engine/third_party/ffmpeg_lgpl
             engine/third_party/onnxruntime
-          key: sdk-win-x64-${{ hashFiles('engine/deps/**') }}
+            engine/third_party/iris/IRIS/include
+            engine/third_party/iris/IRIS/utils/include
+            engine/third_party/iris/spdlog/include
+            engine/third_party/iris/json/single_include
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
+            engine/third_party/AbsentMotion/app/src/main/cpp
+            engine/third_party/stylo_src
+            engine/third_party/aexlo_src
+            engine/third_party/midi_roll/PianoRollSvg.js
+            engine/out/filament_webgpu
+            engine/out/small_studio
+            engine/out/lightroom
+            engine/out/motolii_ae_worker.exe
+            engine/out/deps.stamp
+          key: ${{ steps.sdk.outputs.sdk_key }}
+      - name: Refresh deps.stamp mtime on SDK cache hit
+        if: steps.sdk_cache.outputs.cache-hit == 'true'
+        shell: pwsh
+        run: |
+          if (Test-Path "engine/out/deps.stamp") {
+            (Get-Item "engine/out/deps.stamp").LastWriteTimeUtc = [DateTime]::UtcNow
+          }
+      - name: Build Windows engine library (libmotolii.dll)
+        shell: pwsh
+        run: |
+          & $env:MSYS2_ZSH engine/build.sh lib
+          if ($LASTEXITCODE -ne 0) { throw "engine/build.sh lib failed with $LASTEXITCODE" }
+      - name: Save Windows prebuilt SDK cache on miss
+        if: steps.sdk_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            engine/third_party/filament_src/out/wgpu_install
+            engine/third_party/filament_src/out/wgpu/filament/motolii_probe/motolii_interop.lib
+            engine/third_party/filament_src/out/wgpu/third_party/dawn/gen
+            engine/third_party/filament_src/third_party/libassimp/contrib/rapidjson/include
+            engine/third_party/filament_src/third_party/zstd/lib
+            engine/third_party/filament_src/third_party/stb
+            engine/third_party/filament_src/third_party/cgltf
+            engine/third_party/filament_src/third_party/dawn
+            engine/third_party/filament_src/third_party/glslang
+            engine/third_party/filament_src/third_party/spirv-tools/include
+            engine/third_party/filament_src/libs/filamat/src
+            engine/third_party/skia_src/out/path/libskia.a
+            engine/third_party/skia_src/out/path/libpathops.a
+            engine/third_party/skia_src/include
+            engine/third_party/skia_src/src
+            engine/third_party/thorvg_src/inc
+            engine/third_party/thorvg_src/src
+            engine/third_party/thorvg_src/build_dawn/src/libthorvg-1.a
+            engine/third_party/thorvg_src/build_dawn/config.h
+            engine/third_party/libtess2/Include
+            engine/third_party/libtess2/build/libtess2.a
+            engine/third_party/psd_sdk/src
+            engine/third_party/psd_sdk/build_lib/libpsd_sdk.a
+            engine/third_party/curve_fit_nd/c
+            engine/third_party/curve_fit_nd/build/libcurve_fit_nd.a
+            engine/third_party/physics/JoltPhysics/Build/install
+            engine/third_party/ffmpeg_lgpl
+            engine/third_party/onnxruntime
+            engine/third_party/iris/IRIS/include
+            engine/third_party/iris/IRIS/utils/include
+            engine/third_party/iris/spdlog/include
+            engine/third_party/iris/json/single_include
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
+            engine/third_party/AbsentMotion/app/src/main/cpp
+            engine/third_party/stylo_src
+            engine/third_party/aexlo_src
+            engine/third_party/midi_roll/PianoRollSvg.js
+            engine/out/filament_webgpu
+            engine/out/small_studio
+            engine/out/lightroom
+            engine/out/motolii_ae_worker.exe
+            engine/out/deps.stamp
+          key: ${{ steps.sdk.outputs.sdk_key }}
       - name: Build Flutter Windows Release
         shell: pwsh
         run: |
           cd app
           flutter build windows --release
+          if ($LASTEXITCODE -ne 0) { throw "flutter build windows --release failed with $LASTEXITCODE" }
       - name: Bundle self-contained Windows folder
         shell: pwsh
         run: pwsh packaging/windows/bundle_windows.ps1 -DstDir dist/windows-x64
-      - name: Pack Windows Velopack release + delta
+      - name: Pack Windows Velopack release + delta + standalone zip
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          dotnet tool install -g vpk; $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
+          $ErrorActionPreference = "Stop"
+          dotnet tool install -g vpk; if ($LASTEXITCODE -ne 0) { dotnet tool update -g vpk }
+          $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
           New-Item -ItemType Directory -Force -Path dist/velopack-win | Out-Null
-          try { vpk download github --repoUrl "https://github.com/${{ github.repository }}" --token "$env:GH_TOKEN" --channel win-x64 -o dist/velopack-win } catch {}
+          try { vpk download github --repoUrl "https://github.com/${{ github.repository }}" --token "$GH_TOKEN" --channel win-x64 -o dist/velopack-win } catch {}
           vpk pack `
             --packId Motolii `
             --packVersion "${{ needs.version.outputs.ver }}" `
             --packDir dist/windows-x64 `
             --mainExe motolii.exe `
+            --runtime win-x64 `
             --channel win-x64 `
             --outputDir dist/velopack-win
+          if ($LASTEXITCODE -ne 0) { throw "vpk pack failed with $LASTEXITCODE" }
+          Compress-Archive -Path "dist/windows-x64/*" -DestinationPath "dist/velopack-win/Motolii-${{ needs.version.outputs.ver }}-windows-x64.zip" -Force
       - uses: actions/upload-artifact@v4
         with:
           name: release-windows-x64
           path: dist/velopack-win/**
 
   publish:
-    needs: [version, shelves-manifest, macos-arm64]
+    needs: [version, shelves-manifest, macos-arm64, windows-x64]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
@@ -186,9 +303,9 @@ jobs:
           draft: true
           prerelease: true
           body: |
-            ## Motolii ${{ needs.version.outputs.tag }} (macOS Apple Silicon Beta)
+            ## Motolii ${{ needs.version.outputs.tag }} (macOS Apple Silicon & Windows x64 Beta)
 
-            ### 初回起動について（未公証ベータ版 / Unsigned Beta）
+            ### macOS（未公証ベータ版 / Unsigned Beta）
             このベータビルドは Apple Developer ID による公証前のため、ダウンロード直後に macOS Gatekeeper の警告が出る場合があります。
             `/Applications` へコピー後、ターミナルで以下を 1 回実行してから起動してください：
 
@@ -196,9 +313,16 @@ jobs:
             xattr -cr /Applications/Motolii.app
             ```
 
+            ### Windows（x64・D3D12）
+            - `Motolii-win-x64-Setup.exe`: インストーラー（推奨）
+            - `Motolii-${{ needs.version.outputs.ver }}-windows-x64.zip`: 解凍して `motolii.exe` を直接起動できるポータブル版
+            - 未署名ベータのため、初回起動時に SmartScreen の警告が出た場合は「詳細情報」→「実行」を選択してください。
+
             ### 同梱ファイル
-            - macOS Apple Silicon (`osx-arm64`) Velopack パッケージ＆差分更新ファイル
+            - macOS Apple Silicon (`osx-arm64`) Velopack パッケージ＆スタンドアロン zip
+            - Windows x64 (`win-x64`) Velopack インストーラー (`Setup.exe`) ＆ポータブル zip
             - `shelves-manifest.json`（棚アイテムの SHA-256 差分同期用マニフェスト）
           files: |
             artifacts/shelves-manifest/shelves-manifest.json
             artifacts/release-macos-arm64/*
+            artifacts/release-windows-x64/*

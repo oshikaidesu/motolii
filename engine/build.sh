@@ -51,7 +51,7 @@ fi
 [ -f out/cmake/build.ninja ] || cmake -S . -B out/cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $WINDOWS > /dev/null
 # Windows looks for a DLL's own DLLs on PATH, not beside it: those not in GStreamer's folder go beside
 # libmotolii.dll, a folder the runner puts on PATH with GStreamer's (app/windows/runner/main.cpp).
-[[ $OSTYPE == (msys|cygwin)* ]] && cp -u third_party/onnxruntime/lib/*.dll third_party/ffmpeg_lgpl/bin/*.dll $MOTOLII_LIBRARIES/bin/*.dll out/
+[[ $OSTYPE == (msys|cygwin)* ]] && cp -u third_party/onnxruntime/lib/*.dll(N) third_party/ffmpeg_lgpl/bin/*.dll(N) $MOTOLII_LIBRARIES/bin/*.dll(N) out/
 case "$1" in
   lib)      cmake --build out/cmake --target motolii ;;
   test)     cmake --build out/cmake && ctest --test-dir out/cmake --output-on-failure ;;

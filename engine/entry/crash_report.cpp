@@ -10,10 +10,21 @@
 #include <cstring>
 #include <ctime>
 #include <exception>
+#include <filesystem>
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
 #include <execinfo.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
 
 namespace motolii {
 
@@ -23,31 +34,75 @@ static bool installed = false;
 
 static void make_dir() {
   const char* home = getenv("HOME");
+#ifdef _WIN32
+  if (!home) home = getenv("USERPROFILE");
+  if (!home) home = ".";
+#else
   if (!home) home = "/tmp";
+#endif
   char dir[480];
   snprintf(dir, sizeof dir, "%s/Library/Caches/Motolii", home);
-  mkdir(dir, 0755);
+  std::error_code ec;
+  std::filesystem::create_directories(dir, ec);
   snprintf(report_path, sizeof report_path, "%s/crash_report.txt", dir);
   snprintf(crumb_path, sizeof crumb_path, "%s/breadcrumb.txt", dir);
 }
 
-// Signal-safe: only async-signal-safe functions (open, write, close, backtrace).
+static void format_local_time(time_t now, char* buf, size_t len) {
+  struct tm lt {};
+#ifdef _WIN32
+  localtime_s(&lt, &now);
+#else
+  localtime_r(&now, &lt);
+#endif
+  strftime(buf, len, "%Y-%m-%d %H:%M:%S", &lt);
+}
+
+static void write_backtrace(FILE* f) {
+  void* frames[64];
+#ifdef _WIN32
+  const USHORT count = CaptureStackBackTrace(0, 64, frames, nullptr);
+  for (USHORT i = 0; i < count; ++i) fprintf(f, "0x%p\n", frames[i]);
+#else
+  int count = backtrace(frames, 64);
+  char** symbols = backtrace_symbols(frames, count);
+  if (symbols) {
+    for (int i = 0; i < count; ++i) fprintf(f, "%s\n", symbols[i]);
+    free(symbols);
+  }
+#endif
+}
+
+// Signal-safe on POSIX (only async-signal-safe functions: open, write, close, backtrace).
 static void write_signal_report(int sig) {
   if (!report_path[0]) return;
-  int fd = open(report_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-  if (fd < 0) return;
 
   const char* name = "unknown signal";
   switch (sig) {
     case SIGABRT: name = "SIGABRT"; break;
     case SIGSEGV: name = "SIGSEGV"; break;
+#ifdef SIGBUS
     case SIGBUS:  name = "SIGBUS"; break;
+#endif
+#ifdef SIGTRAP
     case SIGTRAP: name = "SIGTRAP"; break;
+#endif
     case SIGILL:  name = "SIGILL"; break;
     case SIGFPE:  name = "SIGFPE"; break;
   }
 
   time_t now = time(nullptr);
+#ifdef _WIN32
+  FILE* f = fopen(report_path, "w");
+  if (!f) return;
+  fprintf(f, "signal: %s (%d)\ntime: %lld\nbreadcrumb: %s\n\n",
+          name, sig, (long long)now, last_breadcrumb());
+  write_backtrace(f);
+  fclose(f);
+#else
+  int fd = open(report_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  if (fd < 0) return;
+
   char header[512];
   int n = snprintf(header, sizeof header,
                    "signal: %s (%d)\ntime: %ld\nbreadcrumb: %s\n\n",
@@ -59,6 +114,7 @@ static void write_signal_report(int sig) {
   backtrace_symbols_fd(frames, count, fd);
 
   close(fd);
+#endif
 }
 
 static void signal_handler(int sig) {
@@ -73,22 +129,13 @@ static void panic_handler(void*, utils::Panic const& p) {
   FILE* f = fopen(report_path, "w");
   if (!f) return;
 
-  time_t now = time(nullptr);
   char timebuf[64];
-  struct tm lt;
-  localtime_r(&now, &lt);
-  strftime(timebuf, sizeof timebuf, "%Y-%m-%d %H:%M:%S", &lt);
+  format_local_time(time(nullptr), timebuf, sizeof timebuf);
 
   fprintf(f, "Filament panic\ntime: %s\nreason: %s\nbreadcrumb: %s\n\n",
           timebuf, p.what(), last_breadcrumb());
 
-  void* frames[64];
-  int count = backtrace(frames, 64);
-  char** symbols = backtrace_symbols(frames, count);
-  if (symbols) {
-    for (int i = 0; i < count; ++i) fprintf(f, "%s\n", symbols[i]);
-    free(symbols);
-  }
+  write_backtrace(f);
   fclose(f);
 }
 
@@ -97,11 +144,8 @@ static void terminate_handler() {
   if (!report_path[0]) { std::abort(); return; }
   FILE* f = fopen(report_path, "w");
   if (f) {
-    time_t now = time(nullptr);
     char timebuf[64];
-    struct tm lt;
-    localtime_r(&now, &lt);
-    strftime(timebuf, sizeof timebuf, "%Y-%m-%d %H:%M:%S", &lt);
+    format_local_time(time(nullptr), timebuf, sizeof timebuf);
 
     const char* what = "unknown";
     if (auto ep = std::current_exception()) {
@@ -111,13 +155,7 @@ static void terminate_handler() {
     fprintf(f, "std::terminate\ntime: %s\nreason: %s\nbreadcrumb: %s\n\n",
             timebuf, what, last_breadcrumb());
 
-    void* frames[64];
-    int count = backtrace(frames, 64);
-    char** symbols = backtrace_symbols(frames, count);
-    if (symbols) {
-      for (int i = 0; i < count; ++i) fprintf(f, "%s\n", symbols[i]);
-      free(symbols);
-    }
+    write_backtrace(f);
     fclose(f);
   }
   std::abort();
@@ -135,6 +173,12 @@ void install_crash_handlers() {
   make_dir();
   utils::Panic::setPanicHandler(panic_handler, nullptr);
   std::set_terminate(terminate_handler);
+#ifdef _WIN32
+  std::signal(SIGABRT, signal_handler);
+  std::signal(SIGSEGV, signal_handler);
+  std::signal(SIGILL, signal_handler);
+  std::signal(SIGFPE, signal_handler);
+#else
   struct sigaction sa {};
   sa.sa_handler = signal_handler;
   sa.sa_flags = SA_RESETHAND;
@@ -144,6 +188,7 @@ void install_crash_handlers() {
   sigaction(SIGBUS, &sa, nullptr);
   sigaction(SIGILL, &sa, nullptr);
   sigaction(SIGFPE, &sa, nullptr);
+#endif
 }
 
 void breadcrumb(const char* what) {
