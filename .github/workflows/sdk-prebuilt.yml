@@ -125,6 +125,10 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
+          # Filament's CMakeLists.txt rejects MSYS2 when MSYSTEM is set; msys2/setup-msys2 puts it in GITHUB_ENV
+          # and the MSYS2 DLL can re-inject it into child processes even after zsh's `unset`.
+          # Removing it from the PowerShell environment before launching zsh prevents the DLL from seeing it.
+          Remove-Item Env:\MSYSTEM -ErrorAction SilentlyContinue
           & $env:MSYS2_ZSH engine/build.sh lib
           if ($LASTEXITCODE -ne 0) { throw "engine/build.sh lib failed with $LASTEXITCODE" }
       - uses: actions/cache/save@v4
