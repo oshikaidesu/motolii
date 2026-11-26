@@ -46,8 +46,14 @@ runs:
         New-Item -ItemType Directory -Force -Path $llvmDir | Out-Null
         $archive = "$env:RUNNER_TEMP\llvm.tar.xz"
         curl.exe -fL --retry 3 -o $archive "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.6/clang+llvm-23.1.6-x86_64-pc-windows-msvc.tar.xz"
-        tar.exe -xf $archive -C $llvmDir --strip-components=1
-        Remove-Item -Force $archive
+        # Use 7z two-step extraction (xz→tar→files) — 10-20x faster than tar.exe on Windows
+        & "C:\Program Files\7-Zip\7z.exe" x $archive -o"$env:RUNNER_TEMP" -y | Out-Null
+        $tarFile = "$env:RUNNER_TEMP\llvm.tar"
+        & "C:\Program Files\7-Zip\7z.exe" x $tarFile -o"$env:RUNNER_TEMP\llvm-extracted" -y | Out-Null
+        $innerDir = Get-ChildItem -Path "$env:RUNNER_TEMP\llvm-extracted" -Directory | Select-Object -First 1
+        Copy-Item -Recurse -Force (Join-Path $innerDir.FullName "*") $llvmDir
+        Remove-Item -Force $archive, $tarFile -ErrorAction SilentlyContinue
+        Remove-Item -Recurse -Force "$env:RUNNER_TEMP\llvm-extracted" -ErrorAction SilentlyContinue
 
     - name: Install Corrosion v0.6.1
       if: steps.tools_cache.outputs.cache-hit != 'true'
