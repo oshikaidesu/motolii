@@ -22,17 +22,18 @@ fi
 [ -d $T ] || { git init -q $T && git -C $T -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/thorvg/thorvg 920324543b0377d14f34ebcd561f27590ddb55de && git -C $T checkout -q FETCH_HEAD; }
 git -C $T diff --quiet && git -C $T apply --ignore-whitespace $PWD/deps/patches/thorvg/thorvg_z.patch $PWD/deps/patches/thorvg/thorvg_wg_upload.patch $PWD/deps/patches/thorvg/thorvg_length.patch $PWD/deps/patches/thorvg/thorvg_over.patch $PWD/deps/patches/thorvg/thorvg_matte_clip.patch $PWD/deps/patches/thorvg/thorvg_texture.patch $PWD/deps/patches/thorvg/thorvg_ttc.patch $PWD/deps/patches/thorvg/thorvg_otf_guard.patch
 mkdir -p $T/dawn_pc
+if [[ $OSTYPE == (msys|cygwin)* ]]; then F_PC=$(cygpath -m "$F"); else F_PC=$F; fi
 cat > $T/dawn_pc/wgpu_native.pc <<PC
 Name: wgpu_native
 Description: Dawn (from Filament's WebGPU build), under wgpu-native's name
 Version: 0.0.0
-Cflags: -I$F/third_party/dawn/include -I$F/out/wgpu/third_party/dawn/gen/include
-Libs: -L$F/out/wgpu_install/lib/$ARCH -lwebgpu_dawn
+Cflags: -I$F_PC/third_party/dawn/include -I$F_PC/out/wgpu/third_party/dawn/gen/include
+Libs: -L$F_PC/out/wgpu_install/lib/$ARCH -lwebgpu_dawn
 PC
 [ -f $T/build_dawn/build.ninja ] || PKG_CONFIG_PATH=$T/dawn_pc meson setup $T/build_dawn $T -Dengines=cpu,wg -Dloaders=svg,lottie,ttf,otf,png,jpg -Dextra=lottie_exp \
-    -Dthreads=true -Dstatic=true -Ddefault_library=static -Dbuildtype=release > /dev/null
-PKG_CONFIG_PATH=$T/dawn_pc meson configure $T/build_dawn -Dengines=cpu,wg -Dloaders=svg,lottie,ttf,otf,png,jpg -Dextra=lottie_exp > /dev/null   # (a source whose options changed makes meson set itself up again with ThorVG's own defaults: the CPU engine alone)
-ninja -C $T/build_dawn > /dev/null
+    -Dthreads=true -Dstatic=true -Ddefault_library=static -Dbuildtype=release
+PKG_CONFIG_PATH=$T/dawn_pc meson configure $T/build_dawn -Dengines=cpu,wg -Dloaders=svg,lottie,ttf,otf,png,jpg -Dextra=lottie_exp   # (a source whose options changed makes meson set itself up again with ThorVG's own defaults: the CPU engine alone)
+ninja -C $T/build_dawn
 clang++ -std=c++20 -O2 -I $T/inc -I $F/third_party/dawn/include -I $F/out/wgpu/third_party/dawn/gen/include gpu/thorvg_on_dawn.cpp \
     $T/build_dawn/src/libthorvg-1.a -L $F/out/wgpu_install/lib/$ARCH -lwebgpu_dawn $LINK -o out/thorvg_on_dawn
 if [[ $OSTYPE == (msys|cygwin)* && -n "$CI" ]]; then

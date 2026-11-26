@@ -16,7 +16,7 @@ runs:
         msystem: MSYS
         update: false
         path-type: inherit
-        install: zsh make nasm patch diffutils unzip perl xz curl git
+        install: zsh make nasm patch diffutils unzip perl xz curl git pkgconf
 
     - name: Install Ninja and Meson
       shell: pwsh

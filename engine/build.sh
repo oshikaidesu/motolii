@@ -24,9 +24,9 @@ if [ ! -f out/deps.stamp ] || [ -n "$(find build.sh deps gpu materials -newer ou
     ./deps/filament.sh
     (cd third_party/filament_src/out/wgpu && ninja motolii_interop > /dev/null)   # gpu/CMakeLists.txt, built inside Filament's build
     THORVG=third_party/thorvg_src
-    [ -f $THORVG/build_dawn/src/libthorvg-1.a ] || ./deps/thorvg.sh > /dev/null
-    meson configure $THORVG/build_dawn -Dengines=cpu,wg -Dextra=lottie_exp > /dev/null   # meson falls back to the CPU engine alone when it reconfigures itself
-    ninja -C $THORVG/build_dawn > /dev/null
+    [ -f $THORVG/build_dawn/src/libthorvg-1.a ] || ./deps/thorvg.sh
+    PKG_CONFIG_PATH=$THORVG/dawn_pc meson configure $THORVG/build_dawn -Dengines=cpu,wg -Dextra=lottie_exp   # meson falls back to the CPU engine alone when it reconfigures itself
+    ninja -C $THORVG/build_dawn
     ./deps/libtess2.sh
     ./deps/psd_sdk.sh
     ./deps/jolt.sh
